@@ -14,6 +14,7 @@ This library provides reusable, composable AI agent prompts and infrastructure f
 
 ✨ **Modular Design**: Base prompts + platform augmentations + project context
 🎓 **Skills Integration**: Anthropic Skills for specialized capabilities
+🚀 **Starter Templates**: Quick-start templates for existing projects
 🤝 **Multi-Agent Coordination**: Manager-led team collaboration
 🧠 **Advanced Context Management**: Never lose critical information
 🌲 **Git-Based Workflow**: Branch isolation prevents conflicts
@@ -23,6 +24,43 @@ This library provides reusable, composable AI agent prompts and infrastructure f
 ---
 
 ## Quick Start
+
+### For Existing Projects (Recommended - 5 Minutes)
+
+Use our **starter templates** to quickly set up AI agents in your existing project:
+
+```bash
+# Navigate to your project
+cd your-project
+
+# Run the template generator
+python3 path/to/AI_agents/starter-templates/generate-template.py --interactive
+
+# Or use command line directly
+python3 path/to/AI_agents/starter-templates/generate-template.py \
+  --type web-app \
+  --name "YourProject" \
+  --output .
+```
+
+**What you get:**
+- ✅ Complete `.ai-agents/` directory structure
+- ✅ Pre-configured context files (architecture, API contracts, coding standards)
+- ✅ Ready-to-use agent configurations
+- ✅ Comprehensive documentation
+
+**Available templates:**
+- `web-app` - Full-stack web applications (React + Node.js)
+- `mobile-app` - Mobile applications (React Native, Flutter, native)
+- `full-stack` - Complex multi-service systems
+- `api-service` - Backend API services
+- `data-pipeline` - Data processing pipelines
+
+See [starter-templates/README.md](starter-templates/README.md) for complete guide.
+
+---
+
+### For New Projects (Manual Setup)
 
 ### 1. Use This Library in Your Project
 
@@ -58,9 +96,9 @@ Create these in `.ai-agents/context/`:
 - `architecture.md` - Your system architecture
 - `coding-standards.md` - Your team conventions
 - `api-contracts.md` - Your API specifications
-- `type-definitions.md` - Shared types
+- `current-features.md` - Feature roadmap
 
-See [examples/](examples/) for templates.
+See [examples/](examples/) for templates or use [starter-templates/](starter-templates/) for ready-made templates.
 
 ### 5. Compose Your Agents
 
@@ -142,12 +180,18 @@ AI_agents/
 │   │   └── mobile-developer.md
 │   └── ...
 │
-├── skills/                  # Anthropic Skills integration ✨ NEW
+├── skills/                  # Anthropic Skills integration ✨
 │   ├── README.md            # Skills overview
 │   ├── CATALOG.md           # Available skills directory
 │   ├── INTEGRATION.md       # Technical guide
 │   ├── anthropic/           # Anthropic skills (submodule)
 │   └── custom/              # Project-specific skills
+│
+├── starter-templates/       # Project templates 🚀 NEW
+│   ├── generate-template.py # Template generator
+│   ├── web-app/            # Web application template
+│   ├── mobile-app/         # Mobile app template
+│   └── README.md           # Template documentation
 │
 ├── schemas/                 # JSON schemas
 │   ├── communication-protocol.json
@@ -166,7 +210,30 @@ AI_agents/
 
 ## Examples
 
-### Web Application Team
+### Quick Start with Starter Templates 🚀
+
+**Use pre-configured templates for instant setup:**
+
+```bash
+# For existing web app
+cd your-project
+python3 path/to/AI_agents/starter-templates/generate-template.py \
+  --type web-app \
+  --name "YourProject" \
+  --output .
+
+# For existing mobile app
+python3 path/to/AI_agents/starter-templates/generate-template.py \
+  --type mobile-app \
+  --name "YourApp" \
+  --output .
+```
+
+See [starter-templates/README.md](starter-templates/README.md) for complete guide and all available templates.
+
+---
+
+### Web Application Team (Manual Configuration)
 
 ```yaml
 # .ai-agents/config.yml
@@ -179,8 +246,8 @@ agents:
     platforms:
       - "platforms/web/frontend-developer.md"
     skills:
-      - "skills/anthropic/artifacts-builder"
-      - "skills/anthropic/theme-factory"
+      - "core/artifacts-builder"
+      - "design/theme-factory"
     project_context:
       - ".ai-agents/context/architecture.md"
       - ".ai-agents/context/api-contracts.md"
@@ -190,7 +257,7 @@ agents:
     platforms:
       - "platforms/web/backend-developer.md"
     skills:
-      - "skills/anthropic/mcp-builder"
+      - "core/mcp-builder"
 ```
 
 See [examples/web-app-team/](examples/web-app-team/) for complete example.
@@ -209,10 +276,12 @@ See [examples/mobile-app-team/](examples/mobile-app-team/) for React Native exam
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Detailed system architecture with Skills Integration |
 | [Context_Engineering.md](Context_Engineering.md) | Foundational principles (the "HOLY BIBLE") |
 | [SKILLS_GUIDE.md](SKILLS_GUIDE.md) | **Comprehensive skills guide** - Selection, usage, best practices |
+| [PARALLEL_EXECUTION_GUIDE.md](PARALLEL_EXECUTION_GUIDE.md) | Multi-agent parallelization strategies |
+| [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) | Adding skills to existing projects |
+| [starter-templates/README.md](starter-templates/README.md) | **Starter templates guide** - Quick setup for existing projects 🚀 |
 | [skills/README.md](skills/README.md) | Skills integration overview |
 | [skills/CATALOG.md](skills/CATALOG.md) | Available skills directory with token estimates |
 | [skills/INTEGRATION.md](skills/INTEGRATION.md) | Skills technical implementation guide |
-| [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) | Adding skills to existing projects |
 | [examples/](examples/) | Reference implementations with skills |
 
 ---
