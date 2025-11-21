@@ -452,6 +452,113 @@ feature/user-auth/
 
 ---
 
+## Coordination Models: Human vs Automated
+
+**IMPORTANT**: The workflow described above represents the **conceptual model** of multi-agent coordination. In practice, there are two ways to implement this:
+
+### 🤝 Human-Coordinated (Practical Today)
+
+**What it is**: You manually run agents in sequence and relay information between them.
+
+**How it works**:
+```
+You → Manager Agent (creates task plan)
+You → Backend Agent (works on TASK-001)
+You → Frontend Agent (works on TASK-002, you relay backend's progress)
+You → Manager Agent (coordinates integration, you provide status from both)
+```
+
+**Communication**:
+- Agents write status to `.ai-agents/state/team-communication.json`
+- You read the file and relay relevant info to other agents
+- Agents can see each other's updates by reading the shared file
+- You act as coordinator and decision-maker
+
+**Tools**:
+- Claude Code, ChatGPT, or any LLM tool
+- One agent session at a time
+- Manual switching between agents
+
+**Best for**:
+- ✅ **90% of users** - Most practical approach today
+- ✅ Small to medium teams (1-5 agents)
+- ✅ Projects where you want control and visibility
+- ✅ Learning multi-agent patterns
+- ✅ When using tools like Claude Code that run one session at a time
+
+**See**: [PRACTICAL_WORKFLOW_GUIDE.md](PRACTICAL_WORKFLOW_GUIDE.md) for complete tutorial
+
+---
+
+### 🤖 Fully Automated (Requires Custom Tooling)
+
+**What it is**: Programmatic orchestration system that runs multiple agents via LLM APIs.
+
+**How it works**:
+```python
+orchestrator = MultiAgentOrchestrator()
+orchestrator.assign_task("TASK-001", backend_agent)
+orchestrator.assign_task("TASK-002", frontend_agent)
+
+# Agents run in parallel, communicate automatically
+# Manager receives updates via callbacks
+# System coordinates integration automatically
+```
+
+**Communication**:
+- Direct agent-to-agent messaging via message queue
+- Automatic status propagation
+- Real-time coordination without human intervention
+
+**Tools**:
+- Custom Python scripts using LLM APIs (Claude API, OpenAI API)
+- Message queue (Redis, RabbitMQ) or event system
+- Orchestration framework (custom or tools like LangGraph, CrewAI)
+
+**Best for**:
+- ⚠️ Advanced users with programming experience
+- ⚠️ Large-scale projects (5+ agents)
+- ⚠️ CI/CD automation
+- ⚠️ When you need true parallel execution
+
+**See**: [scripts/orchestration/](scripts/orchestration/) for example implementations
+
+---
+
+### Quick Comparison
+
+| Aspect | Human-Coordinated | Fully Automated |
+|--------|-------------------|-----------------|
+| **Setup** | ✅ Simple (use any LLM tool) | ⚠️ Complex (custom code required) |
+| **Control** | ✅ Full visibility and control | ⚠️ Less direct control |
+| **Speed** | ⚠️ Sequential execution | ✅ True parallel execution |
+| **Communication** | Manual relay via shared file | Automatic via message queue |
+| **Best for** | Most users (90%) | Advanced automation |
+| **Learning curve** | Low - start immediately | High - requires programming |
+| **Cost** | Lower (one agent at a time) | Higher (multiple API calls) |
+
+---
+
+### Which Should You Use?
+
+**Start with Human-Coordinated** if you're:
+- New to multi-agent systems
+- Using Claude Code or similar interactive tools
+- Want to understand how agents work together
+- Working on small to medium projects
+- Prefer control over speed
+
+**Move to Automated** when you:
+- Have 5+ agents that need true parallelization
+- Built custom orchestration tooling
+- Need CI/CD integration
+- Have budget for parallel API calls
+- Understand the coordination patterns well
+
+**Most users should use Human-Coordinated workflows** - it's practical, cost-effective, and gives you full control. The library supports both models equally well.
+
+---
+
 ## Key Concepts
 
 ### Context Engineering

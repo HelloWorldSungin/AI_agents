@@ -1,0 +1,13 @@
+# Requirements for automated multi-agent orchestration scripts
+
+# Choose ONE of the following LLM providers:
+
+# Option 1: Anthropic Claude (recommended)
+anthropic>=0.39.0
+
+# Option 2: OpenAI GPT
+# openai>=1.54.0
+
+# Optional: For advanced features (future)
+# redis>=5.0.0  # For message queue-based orchestration
+# pyyaml>=6.0   # For config file parsing
