@@ -1,0 +1,318 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Project Configuration Schema",
+  "description": "Configuration for projects using the AI agents library",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["project_id", "agent_library", "agents"],
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "description": "Unique project identifier"
+    },
+    "project_name": {
+      "type": "string",
+      "description": "Human-readable project name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Project description"
+    },
+    "agent_library": {
+      "type": "object",
+      "required": ["repo", "version"],
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Git repository URL for the agent library"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Agent library version to use"
+        },
+        "update_strategy": {
+          "type": "string",
+          "enum": ["manual", "auto_patch", "auto_minor", "locked"],
+          "description": "How to handle library updates"
+        }
+      }
+    },
+    "agents": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z_]+$": {
+          "$ref": "#/definitions/agentConfig"
+        }
+      },
+      "description": "Agent configurations (key is agent name, value is config)"
+    },
+    "project": {
+      "type": "object",
+      "properties": {
+        "tech_stack": {
+          "type": "object",
+          "properties": {
+            "frontend": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "backend": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "mobile": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "database": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "infrastructure": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "coding_standards": {
+          "type": "object",
+          "properties": {
+            "linter": {
+              "type": "string"
+            },
+            "formatter": {
+              "type": "string"
+            },
+            "style_guide": {
+              "type": "string"
+            },
+            "test_framework": {
+              "type": "string"
+            },
+            "min_test_coverage": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            }
+          }
+        },
+        "git_workflow": {
+          "type": "object",
+          "properties": {
+            "main_branch": {
+              "type": "string",
+              "default": "main"
+            },
+            "development_branch": {
+              "type": "string",
+              "default": "develop"
+            },
+            "branch_naming": {
+              "type": "string",
+              "description": "Branch naming convention pattern"
+            },
+            "commit_message_format": {
+              "type": "string",
+              "description": "Commit message format (e.g., 'conventional')"
+            },
+            "require_pr": {
+              "type": "boolean",
+              "description": "Whether PRs are required for merges"
+            }
+          }
+        },
+        "quality_gates": {
+          "type": "object",
+          "properties": {
+            "require_tests": {
+              "type": "boolean"
+            },
+            "require_code_review": {
+              "type": "boolean"
+            },
+            "require_passing_ci": {
+              "type": "boolean"
+            },
+            "block_on_lint_errors": {
+              "type": "boolean"
+            },
+            "min_test_coverage": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            }
+          }
+        },
+        "ci_cd": {
+          "type": "object",
+          "properties": {
+            "provider": {
+              "type": "string",
+              "enum": ["github_actions", "gitlab_ci", "jenkins", "circleci", "custom"]
+            },
+            "test_on": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["push", "pr", "main", "develop", "release"]
+              }
+            },
+            "deploy_on": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["main", "develop", "release", "manual"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "context_files": {
+      "type": "object",
+      "properties": {
+        "architecture": {
+          "type": "string",
+          "description": "Path to architecture documentation"
+        },
+        "coding_standards": {
+          "type": "string",
+          "description": "Path to coding standards document"
+        },
+        "api_contracts": {
+          "type": "string",
+          "description": "Path to API contract definitions"
+        },
+        "business_logic": {
+          "type": "string",
+          "description": "Path to business logic documentation"
+        },
+        "type_definitions": {
+          "type": "string",
+          "description": "Path to shared type definitions"
+        }
+      }
+    },
+    "state_management": {
+      "type": "object",
+      "properties": {
+        "state_file": {
+          "type": "string",
+          "default": ".ai-agents/state/project-state.json",
+          "description": "Path to project state file"
+        },
+        "checkpoint_dir": {
+          "type": "string",
+          "default": ".ai-agents/checkpoints",
+          "description": "Directory for agent checkpoints"
+        },
+        "memory_dir": {
+          "type": "string",
+          "default": ".ai-agents/memory",
+          "description": "Directory for project memory"
+        }
+      }
+    },
+    "notifications": {
+      "type": "object",
+      "properties": {
+        "slack": {
+          "type": "object",
+          "properties": {
+            "webhook_url": { "type": "string" },
+            "channel": { "type": "string" },
+            "notify_on": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["task_complete", "blocker", "error", "deployment"]
+              }
+            }
+          }
+        },
+        "email": {
+          "type": "object",
+          "properties": {
+            "smtp_server": { "type": "string" },
+            "recipients": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "notify_on": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["daily_summary", "blocker", "error", "deployment"]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "definitions": {
+    "agentConfig": {
+      "type": "object",
+      "required": ["base"],
+      "properties": {
+        "base": {
+          "type": "string",
+          "description": "Base agent prompt path (e.g., 'base/software-developer.md')"
+        },
+        "platforms": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Platform augmentation paths"
+        },
+        "project_context": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Project-specific context files"
+        },
+        "tools": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Tool definition files"
+        },
+        "memory": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "retention_policy": {
+              "type": "string",
+              "enum": ["high_priority", "medium_priority", "low_priority"]
+            }
+          }
+        },
+        "coordination": {
+          "type": "object",
+          "properties": {
+            "manages": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Agent names this agent manages"
+            },
+            "reports_to": {
+              "type": "string",
+              "description": "Manager agent name"
+            }
+          }
+        },
+        "model": {
+          "type": "object",
+          "properties": {
+            "provider": { "type": "string" },
+            "model_name": { "type": "string" },
+            "temperature": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2
+            }
+          }
+        }
+      }
+    }
+  }
+}

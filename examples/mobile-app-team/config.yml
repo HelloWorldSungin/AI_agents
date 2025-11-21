@@ -1,0 +1,239 @@
+# AI Agents Configuration for Mobile Application Project
+# Example configuration for React Native mobile app development
+
+project_id: "fitness-mobile-app"
+project_name: "Fitness Tracker Mobile App"
+description: "Cross-platform fitness tracking mobile app with React Native"
+
+# Agent Library Configuration
+agent_library:
+  repo: "git@github.com:org/AI_agents.git"
+  version: "1.0.0"
+  update_strategy: "auto_patch"
+
+# Agent Definitions
+agents:
+  # Manager Agent
+  team_manager:
+    base: "base/manager.md"
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/workflows/mobile-release.md"
+    tools:
+      - "tools/communication-tools.md"
+    memory:
+      enabled: true
+      retention_policy: "high_priority"
+    coordination:
+      manages:
+        - "mobile_developer"
+        - "backend_developer"
+        - "qa_tester"
+        - "architect"
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.7
+
+  # Mobile Developer (React Native)
+  mobile_developer:
+    base: "base/software-developer.md"
+    platforms:
+      - "platforms/mobile/mobile-developer.md"
+      - "platforms/web/frontend-developer.md"  # React knowledge
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/coding-standards.md"
+      - ".ai-agents/context/api-contracts.md"
+      - ".ai-agents/context/design-system.md"
+    tools:
+      - "tools/git-tools.md"
+      - "tools/testing-tools.md"
+    memory:
+      enabled: true
+      retention_policy: "high_priority"
+    coordination:
+      reports_to: "team_manager"
+      collaborates_with:
+        - "backend_developer"
+        - "architect"
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.5
+
+  # Backend Developer (API)
+  backend_developer:
+    base: "base/software-developer.md"
+    platforms:
+      - "platforms/web/backend-developer.md"
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/coding-standards.md"
+      - ".ai-agents/context/api-contracts.md"
+      - ".ai-agents/context/database-schema.md"
+    tools:
+      - "tools/git-tools.md"
+      - "tools/testing-tools.md"
+      - "tools/build-tools.md"
+    memory:
+      enabled: true
+      retention_policy: "high_priority"
+    coordination:
+      reports_to: "team_manager"
+      collaborates_with:
+        - "mobile_developer"
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.5
+
+  # Architect
+  architect:
+    base: "base/architect.md"
+    platforms:
+      - "platforms/mobile/mobile-developer.md"
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/requirements.md"
+    tools:
+      - "tools/analysis-tools.md"
+    memory:
+      enabled: true
+      retention_policy: "high_priority"
+    coordination:
+      reports_to: "team_manager"
+      collaborates_with:
+        - "mobile_developer"
+        - "backend_developer"
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.7
+
+  # QA Tester
+  qa_tester:
+    base: "base/qa-tester.md"
+    platforms:
+      - "platforms/mobile/mobile-developer.md"
+    project_context:
+      - ".ai-agents/context/test-plan.md"
+      - ".ai-agents/context/requirements.md"
+      - ".ai-agents/context/device-matrix.md"
+    tools:
+      - "tools/testing-tools.md"
+    memory:
+      enabled: true
+      retention_policy: "medium_priority"
+    coordination:
+      reports_to: "team_manager"
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.3
+
+# Project-Specific Configuration
+project:
+  tech_stack:
+    mobile:
+      - "React Native"
+      - "TypeScript"
+      - "React Navigation"
+      - "Redux Toolkit"
+      - "React Native Paper"
+    backend:
+      - "Node.js"
+      - "Express"
+      - "TypeScript"
+      - "Prisma"
+    database:
+      - "PostgreSQL"
+      - "Redis"
+    infrastructure:
+      - "Docker"
+      - "AWS"
+      - "GitHub Actions"
+      - "Fastlane"
+
+  coding_standards:
+    linter: "ESLint"
+    formatter: "Prettier"
+    style_guide: "Airbnb"
+    test_framework: "Jest + React Native Testing Library"
+    min_test_coverage: 75
+
+  git_workflow:
+    main_branch: "main"
+    development_branch: "develop"
+    branch_naming: "feature/<feature-name>/agent/<agent-role>/<task>"
+    commit_message_format: "conventional"
+    require_pr: true
+
+  quality_gates:
+    require_tests: true
+    require_code_review: true
+    require_passing_ci: true
+    block_on_lint_errors: true
+    min_test_coverage: 75
+
+  ci_cd:
+    provider: "github_actions"
+    test_on:
+      - "push"
+      - "pr"
+    deploy_on:
+      - "main"
+
+# Mobile-Specific Configuration
+mobile_config:
+  platforms:
+    - "ios"
+    - "android"
+
+  minimum_versions:
+    ios: "13.0"
+    android: "21"  # Android 5.0
+
+  app_store:
+    ios:
+      bundle_id: "com.fitness.app"
+      team_id: "TEAM_ID"
+      provisioning_profile: "Fitness App Profile"
+    android:
+      package_name: "com.fitness.app"
+      signing_config: "release"
+
+  testing_devices:
+    ios:
+      - "iPhone 13 Pro"
+      - "iPhone SE (2nd generation)"
+      - "iPad Pro 12.9-inch"
+    android:
+      - "Pixel 6"
+      - "Samsung Galaxy S21"
+      - "OnePlus 9"
+
+# Context Files
+context_files:
+  architecture: ".ai-agents/context/architecture.md"
+  coding_standards: ".ai-agents/context/coding-standards.md"
+  api_contracts: ".ai-agents/context/api-contracts.md"
+  business_logic: ".ai-agents/context/business-logic.md"
+  design_system: ".ai-agents/context/design-system.md"
+  device_matrix: ".ai-agents/context/device-matrix.md"
+
+# State Management
+state_management:
+  state_file: ".ai-agents/state/project-state.json"
+  checkpoint_dir: ".ai-agents/checkpoints"
+  memory_dir: ".ai-agents/memory"
+
+# Notifications
+notifications:
+  slack:
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    channel: "#mobile-dev"
+    notify_on:
+      - "blocker"
+      - "error"
+      - "deployment"

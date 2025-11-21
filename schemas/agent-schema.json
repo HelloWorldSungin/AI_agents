@@ -1,0 +1,218 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Definition Schema",
+  "description": "Schema for defining and composing AI agents",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["agent_id", "version", "type", "base"],
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "pattern": "^[a-z]+-[a-z]+-[0-9]{3}$",
+      "description": "Unique agent identifier (e.g., 'frontend-dev-001')"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version (e.g., '1.0.0')"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["developer", "manager", "tester", "architect", "specialist"],
+      "description": "Agent type/role"
+    },
+    "base": {
+      "type": "string",
+      "description": "Path to base agent prompt (e.g., 'base/software-developer.md')"
+    },
+    "platforms": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Platform augmentations (e.g., ['platforms/web/frontend-developer.md'])"
+    },
+    "project_context": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Project-specific context files"
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Available tools (e.g., ['tools/git-tools.md'])"
+    },
+    "memory": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether memory/RAG is enabled"
+        },
+        "retention_policy": {
+          "type": "string",
+          "enum": ["high_priority", "medium_priority", "low_priority"],
+          "description": "How aggressively to retain memory"
+        },
+        "vector_db": {
+          "type": "object",
+          "properties": {
+            "provider": {
+              "type": "string",
+              "enum": ["pinecone", "weaviate", "chroma", "qdrant"]
+            },
+            "collection": {
+              "type": "string",
+              "description": "Vector database collection name"
+            },
+            "embedding_model": {
+              "type": "string",
+              "description": "Embedding model (e.g., 'text-embedding-ada-002')"
+            }
+          }
+        },
+        "checkpoint_frequency": {
+          "type": "integer",
+          "description": "Create checkpoint every N turns"
+        }
+      }
+    },
+    "coordination": {
+      "type": "object",
+      "properties": {
+        "manages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z]+-[a-z]+-[0-9]{3}$"
+          },
+          "description": "Agents managed by this agent (for managers)"
+        },
+        "reports_to": {
+          "type": "string",
+          "pattern": "^[a-z]+-[a-z]+-[0-9]{3}$",
+          "description": "Manager agent this agent reports to"
+        },
+        "collaborates_with": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z]+-[a-z]+-[0-9]{3}$"
+          },
+          "description": "Agents this agent frequently collaborates with"
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "properties": {
+        "max_context_tokens": {
+          "type": "integer",
+          "description": "Maximum context window size"
+        },
+        "context_warning_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Warn when context usage exceeds this percentage (e.g., 0.75)"
+        },
+        "allowed_file_patterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "File patterns this agent can modify (e.g., ['src/**/*.tsx'])"
+        },
+        "prohibited_operations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Operations this agent cannot perform"
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Programming languages (e.g., ['JavaScript', 'TypeScript', 'Python'])"
+        },
+        "frameworks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Frameworks (e.g., ['React', 'Next.js', 'Express'])"
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Domain expertise (e.g., ['frontend', 'api-design', 'security'])"
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["anthropic", "openai", "google", "custom"],
+          "description": "LLM provider"
+        },
+        "model_name": {
+          "type": "string",
+          "description": "Model identifier (e.g., 'claude-sonnet-4-5')"
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Sampling temperature"
+        },
+        "max_tokens": {
+          "type": "integer",
+          "description": "Maximum tokens per response"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "created_by": {
+          "type": "string",
+          "description": "Person or system that created this agent"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of agent purpose"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tags for categorization"
+        }
+      }
+    }
+  }
+}

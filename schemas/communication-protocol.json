@@ -1,0 +1,428 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Communication Protocol",
+  "description": "Standardized message format for inter-agent communication",
+  "version": "1.0.0",
+
+  "definitions": {
+    "agentId": {
+      "type": "string",
+      "pattern": "^[a-z]+-[a-z]+-[0-9]{3}$",
+      "description": "Unique agent identifier (e.g., 'frontend-dev-001')"
+    },
+    "taskId": {
+      "type": "string",
+      "pattern": "^TASK-[0-9]{3,}$",
+      "description": "Unique task identifier (e.g., 'TASK-123')"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"],
+      "description": "Priority level"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "in_progress", "blocked", "completed", "failed"],
+      "description": "Task or agent status"
+    }
+  },
+
+  "oneOf": [
+    {
+      "title": "Status Update",
+      "type": "object",
+      "required": ["type", "agent_id", "task_id", "status", "timestamp"],
+      "properties": {
+        "type": {
+          "const": "status_update"
+        },
+        "agent_id": {
+          "$ref": "#/definitions/agentId"
+        },
+        "task_id": {
+          "$ref": "#/definitions/taskId"
+        },
+        "status": {
+          "$ref": "#/definitions/status"
+        },
+        "progress": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Completion percentage"
+        },
+        "completed_items": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of completed subtasks or milestones"
+        },
+        "next_items": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of upcoming tasks"
+        },
+        "estimated_completion": {
+          "$ref": "#/definitions/timestamp",
+          "description": "Estimated completion time"
+        },
+        "blockers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of current blockers"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional context or information"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    },
+    {
+      "title": "Task Assignment",
+      "type": "object",
+      "required": ["type", "task_id", "assigned_to", "title", "priority", "timestamp"],
+      "properties": {
+        "type": {
+          "const": "task_assignment"
+        },
+        "task_id": {
+          "$ref": "#/definitions/taskId"
+        },
+        "assigned_to": {
+          "$ref": "#/definitions/agentId"
+        },
+        "title": {
+          "type": "string",
+          "description": "Brief task title"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed task description"
+        },
+        "priority": {
+          "$ref": "#/definitions/priority"
+        },
+        "estimated_effort": {
+          "type": "string",
+          "description": "Estimated effort (e.g., '4 hours', '2 days')"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/taskId" },
+          "description": "List of tasks that must be completed first"
+        },
+        "branch": {
+          "type": "string",
+          "description": "Git branch for this task"
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "related_files": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Files relevant to this task"
+            },
+            "requirements": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Paths to requirement documents"
+            },
+            "api_contracts": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Paths to API contract documents"
+            }
+          }
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Criteria for task completion"
+        },
+        "deadline": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    },
+    {
+      "title": "Blocker Report",
+      "type": "object",
+      "required": ["type", "agent_id", "task_id", "blocker_description", "severity", "timestamp"],
+      "properties": {
+        "type": {
+          "const": "blocker"
+        },
+        "agent_id": {
+          "$ref": "#/definitions/agentId"
+        },
+        "task_id": {
+          "$ref": "#/definitions/taskId"
+        },
+        "blocker_description": {
+          "type": "string",
+          "description": "Description of what is blocking progress"
+        },
+        "severity": {
+          "$ref": "#/definitions/priority"
+        },
+        "blocking_task": {
+          "$ref": "#/definitions/taskId",
+          "description": "Task that is causing the blocker"
+        },
+        "blocking_agent": {
+          "$ref": "#/definitions/agentId",
+          "description": "Agent responsible for resolving the blocker"
+        },
+        "can_proceed_with_workaround": {
+          "type": "boolean",
+          "description": "Whether work can continue with a temporary workaround"
+        },
+        "workaround": {
+          "type": "string",
+          "description": "Description of temporary workaround if applicable"
+        },
+        "needs_resolution_by": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    },
+    {
+      "title": "Dependency Request",
+      "type": "object",
+      "required": ["type", "requesting_agent", "requires_from", "requirement", "priority", "timestamp"],
+      "properties": {
+        "type": {
+          "const": "dependency_request"
+        },
+        "requesting_agent": {
+          "$ref": "#/definitions/agentId"
+        },
+        "requires_from": {
+          "$ref": "#/definitions/agentId"
+        },
+        "requirement": {
+          "type": "string",
+          "description": "What is needed"
+        },
+        "justification": {
+          "type": "string",
+          "description": "Why this is needed"
+        },
+        "priority": {
+          "$ref": "#/definitions/priority"
+        },
+        "needed_by": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    },
+    {
+      "title": "Conflict Notification",
+      "type": "object",
+      "required": ["type", "agent_id", "conflict_type", "details", "timestamp"],
+      "properties": {
+        "type": {
+          "const": "conflict_detected"
+        },
+        "agent_id": {
+          "$ref": "#/definitions/agentId"
+        },
+        "conflicting_with": {
+          "$ref": "#/definitions/agentId",
+          "description": "Agent involved in the conflict"
+        },
+        "conflict_type": {
+          "type": "string",
+          "enum": ["merge_conflict", "resource_conflict", "interface_definition", "technical_disagreement"],
+          "description": "Type of conflict"
+        },
+        "details": {
+          "type": "string",
+          "description": "Detailed description of the conflict"
+        },
+        "affected_files": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Files involved in the conflict"
+        },
+        "needs_coordination": {
+          "type": "boolean",
+          "description": "Whether manager coordination is required"
+        },
+        "proposed_resolution": {
+          "type": "string",
+          "description": "Suggested way to resolve the conflict"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    },
+    {
+      "title": "Task Completion",
+      "type": "object",
+      "required": ["type", "agent_id", "task_id", "timestamp"],
+      "properties": {
+        "type": {
+          "const": "task_complete"
+        },
+        "agent_id": {
+          "$ref": "#/definitions/agentId"
+        },
+        "task_id": {
+          "$ref": "#/definitions/taskId"
+        },
+        "deliverables": {
+          "type": "object",
+          "properties": {
+            "files": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Files created or modified"
+            },
+            "branch": {
+              "type": "string",
+              "description": "Git branch containing the work"
+            },
+            "commits": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Commit hashes"
+            },
+            "tests": {
+              "type": "string",
+              "description": "Test results summary"
+            },
+            "documentation": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Documentation files updated"
+            }
+          }
+        },
+        "ready_for_review": {
+          "type": "boolean",
+          "description": "Whether the work is ready for code review"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes about the completion"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    },
+    {
+      "title": "Coordination Directive",
+      "type": "object",
+      "required": ["type", "participants", "topic", "timestamp"],
+      "properties": {
+        "type": {
+          "const": "coordination_required"
+        },
+        "participants": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/agentId" },
+          "minItems": 2,
+          "description": "Agents that need to coordinate"
+        },
+        "topic": {
+          "type": "string",
+          "description": "What needs to be coordinated"
+        },
+        "action_required": {
+          "type": "string",
+          "description": "Specific action agents should take"
+        },
+        "deliverable": {
+          "type": "string",
+          "description": "Expected output from coordination"
+        },
+        "deadline": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    },
+    {
+      "title": "Code Review Feedback",
+      "type": "object",
+      "required": ["type", "agent_id", "task_id", "status", "timestamp"],
+      "properties": {
+        "type": {
+          "const": "feedback"
+        },
+        "agent_id": {
+          "$ref": "#/definitions/agentId"
+        },
+        "task_id": {
+          "$ref": "#/definitions/taskId"
+        },
+        "feedback_type": {
+          "type": "string",
+          "enum": ["code_review", "architectural_review", "security_review", "quality_check"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["approved", "changes_requested", "rejected"]
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["comment", "severity"],
+            "properties": {
+              "file": {
+                "type": "string",
+                "description": "File path"
+              },
+              "line": {
+                "type": "integer",
+                "description": "Line number"
+              },
+              "comment": {
+                "type": "string",
+                "description": "The feedback comment"
+              },
+              "severity": {
+                "type": "string",
+                "enum": ["info", "low", "medium", "high", "critical"]
+              },
+              "suggested_fix": {
+                "type": "string",
+                "description": "Suggested code fix"
+              }
+            }
+          }
+        },
+        "action_required": {
+          "type": "string",
+          "description": "What the agent should do next"
+        },
+        "timestamp": {
+          "$ref": "#/definitions/timestamp"
+        }
+      }
+    }
+  ]
+}

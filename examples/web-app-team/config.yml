@@ -1,0 +1,180 @@
+# AI Agents Configuration for Web Application Project
+# This is an example configuration showing how to use the AI agents library
+
+project_id: "ecommerce-web-app"
+project_name: "E-Commerce Web Application"
+description: "Full-stack e-commerce platform with React frontend and Node.js backend"
+
+# Agent Library Configuration
+agent_library:
+  repo: "git@github.com:org/AI_agents.git"
+  version: "1.0.0"
+  update_strategy: "auto_patch"  # auto-update patch versions (1.0.x)
+
+# Agent Definitions
+agents:
+  # Manager Agent - Coordinates the team
+  team_manager:
+    base: "base/manager.md"
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/workflows/feature-development.md"
+    tools:
+      - "tools/communication-tools.md"
+    memory:
+      enabled: true
+      retention_policy: "high_priority"
+    coordination:
+      manages:
+        - "frontend_developer"
+        - "backend_developer"
+        - "qa_tester"
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.7
+
+  # Frontend Developer
+  frontend_developer:
+    base: "base/software-developer.md"
+    platforms:
+      - "platforms/web/frontend-developer.md"
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/coding-standards.md"
+      - ".ai-agents/context/api-contracts.md"
+    tools:
+      - "tools/git-tools.md"
+      - "tools/testing-tools.md"
+    memory:
+      enabled: true
+      retention_policy: "high_priority"
+    coordination:
+      reports_to: "team_manager"
+      collaborates_with:
+        - "backend_developer"
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.5
+
+  # Backend Developer
+  backend_developer:
+    base: "base/software-developer.md"
+    platforms:
+      - "platforms/web/backend-developer.md"
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/coding-standards.md"
+      - ".ai-agents/context/api-contracts.md"
+      - ".ai-agents/context/database-schema.md"
+    tools:
+      - "tools/git-tools.md"
+      - "tools/testing-tools.md"
+      - "tools/build-tools.md"
+    memory:
+      enabled: true
+      retention_policy: "high_priority"
+    coordination:
+      reports_to: "team_manager"
+      collaborates_with:
+        - "frontend_developer"
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.5
+
+  # QA Tester
+  qa_tester:
+    base: "base/qa-tester.md"
+    platforms:
+      - "platforms/web/frontend-developer.md"  # Needs web knowledge for E2E testing
+    project_context:
+      - ".ai-agents/context/test-plan.md"
+      - ".ai-agents/context/requirements.md"
+    tools:
+      - "tools/testing-tools.md"
+    memory:
+      enabled: true
+      retention_policy: "medium_priority"
+    coordination:
+      reports_to: "team_manager"
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.3
+
+# Project-Specific Configuration
+project:
+  tech_stack:
+    frontend:
+      - "React"
+      - "TypeScript"
+      - "Redux Toolkit"
+      - "React Router"
+      - "TailwindCSS"
+    backend:
+      - "Node.js"
+      - "Express"
+      - "TypeScript"
+      - "Prisma"
+    database:
+      - "PostgreSQL"
+      - "Redis"
+    infrastructure:
+      - "Docker"
+      - "AWS"
+      - "GitHub Actions"
+
+  coding_standards:
+    linter: "ESLint"
+    formatter: "Prettier"
+    style_guide: "Airbnb"
+    test_framework: "Jest + React Testing Library"
+    min_test_coverage: 80
+
+  git_workflow:
+    main_branch: "main"
+    development_branch: "develop"
+    branch_naming: "feature/<feature-name>/agent/<agent-role>/<task>"
+    commit_message_format: "conventional"
+    require_pr: true
+
+  quality_gates:
+    require_tests: true
+    require_code_review: true
+    require_passing_ci: true
+    block_on_lint_errors: true
+    min_test_coverage: 80
+
+  ci_cd:
+    provider: "github_actions"
+    test_on:
+      - "push"
+      - "pr"
+    deploy_on:
+      - "main"
+
+# Context Files (project-specific)
+context_files:
+  architecture: ".ai-agents/context/architecture.md"
+  coding_standards: ".ai-agents/context/coding-standards.md"
+  api_contracts: ".ai-agents/context/api-contracts.md"
+  business_logic: ".ai-agents/context/business-logic.md"
+  type_definitions: ".ai-agents/context/type-definitions.md"
+
+# State Management
+state_management:
+  state_file: ".ai-agents/state/project-state.json"
+  checkpoint_dir: ".ai-agents/checkpoints"
+  memory_dir: ".ai-agents/memory"
+
+# Notifications (optional)
+notifications:
+  slack:
+    webhook_url: "${SLACK_WEBHOOK_URL}"  # Use environment variable
+    channel: "#dev-team"
+    notify_on:
+      - "blocker"
+      - "error"
+      - "deployment"
