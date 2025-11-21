@@ -1,0 +1,38 @@
+# {{PROJECT_NAME}} - Mobile App AI Agents Configuration
+
+agents:
+  mobile_developer:
+    base: "base/software-developer.md"
+    platforms:
+      - "platforms/mobile/mobile-developer.md"
+    skills:
+      - "design/theme-factory"
+      - "core/artifacts-builder"  # For UI components
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/coding-standards.md"
+      - ".ai-agents/context/current-features.md"
+    tools:
+      - "tools/git-tools.md"
+
+  qa_tester:
+    base: "base/qa-tester.md"
+    skills:
+      - "documents/xlsx"  # Test reports
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/current-features.md"
+    tools:
+      - "tools/testing-tools.md"
+
+  team_manager:
+    base: "base/manager.md"
+    skills:
+      - "communication/internal-comms"
+      - "documents/xlsx"
+    project_context:
+      - ".ai-agents/context/current-features.md"
+    coordination:
+      manages:
+        - "mobile_developer"
+        - "qa_tester"

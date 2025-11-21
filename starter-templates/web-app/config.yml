@@ -1,0 +1,154 @@
+# {{PROJECT_NAME}} - AI Agents Configuration
+
+# This file configures the AI agents for your project.
+# Customize the agents, skills, and context files to match your needs.
+
+agents:
+  # ============================================================================
+  # FRONTEND DEVELOPER
+  # Handles React/UI development, component building, styling
+  # ============================================================================
+  frontend_developer:
+    base: "base/software-developer.md"
+
+    platforms:
+      - "platforms/web/frontend-developer.md"
+
+    skills:
+      - "core/artifacts-builder"      # React component creation
+      - "design/theme-factory"         # UI theming and styling
+      # Optional: Add more skills as needed
+      # - "core/webapp-testing"        # For frontend testing
+      # - "design/algorithmic-art"     # For data visualizations
+
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/api-contracts.md"
+      - ".ai-agents/context/coding-standards.md"
+      - ".ai-agents/context/current-features.md"
+
+    tools:
+      - "tools/git-tools.md"
+      - "tools/testing-tools.md"
+
+  # ============================================================================
+  # BACKEND DEVELOPER
+  # Handles API development, database work, business logic
+  # ============================================================================
+  backend_developer:
+    base: "base/software-developer.md"
+
+    platforms:
+      - "platforms/web/backend-developer.md"
+
+    skills:
+      - "core/mcp-builder"             # API design and MCP servers
+      # Optional: Add more skills
+      # - "documents/xlsx"             # For data exports/reports
+
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/api-contracts.md"
+      - ".ai-agents/context/coding-standards.md"
+      - ".ai-agents/context/current-features.md"
+
+    tools:
+      - "tools/git-tools.md"
+      - "tools/database-tools.md"
+
+  # ============================================================================
+  # QA TESTER
+  # Handles automated testing, test planning, quality assurance
+  # ============================================================================
+  qa_tester:
+    base: "base/qa-tester.md"
+
+    skills:
+      - "core/webapp-testing"          # Playwright automation
+      - "documents/xlsx"                # Test data and reports
+      # Optional: Add more skills
+      # - "documents/docx"             # For test documentation
+
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/coding-standards.md"
+      - ".ai-agents/context/current-features.md"
+
+    tools:
+      - "tools/testing-tools.md"
+
+  # ============================================================================
+  # TEAM MANAGER
+  # Coordinates the team, breaks down tasks, tracks progress
+  # ============================================================================
+  team_manager:
+    base: "base/manager.md"
+
+    skills:
+      - "communication/internal-comms"  # Status updates, communications
+      - "documents/xlsx"                # Metrics tracking
+      # Optional: Add more skills
+      # - "documents/pptx"             # For presentations
+      # - "documents/docx"             # For documentation
+
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/current-features.md"
+
+    coordination:
+      manages:
+        - "frontend_developer"
+        - "backend_developer"
+        - "qa_tester"
+
+# ==============================================================================
+# OPTIONAL AGENTS
+# Uncomment and customize as needed
+# ==============================================================================
+
+#  devops_engineer:
+#    base: "base/software-developer.md"
+#    platforms:
+#      - "platforms/devops/devops-engineer.md"  # When available
+#    skills:
+#      - "core/skill-creator"          # For creating deployment workflows
+#    project_context:
+#      - ".ai-agents/context/architecture.md"
+
+#  architect:
+#    base: "base/architect.md"
+#    skills:
+#      - "core/skill-creator"
+#      - "core/mcp-builder"
+#      - "documents/docx"
+#    project_context:
+#      - ".ai-agents/context/architecture.md"
+#      - ".ai-agents/context/current-features.md"
+
+# ==============================================================================
+# CONFIGURATION NOTES
+# ==============================================================================
+
+# Token Budget Guidelines:
+# - Aim for 2-3 skills per agent (6,000-9,000 tokens)
+# - Maximum 4-5 skills per agent (~12,000 tokens)
+# - Monitor token usage when composing agents
+# - Remove unused skills to stay within budget
+
+# Skill Categories:
+# - core/           : Development skills (artifacts-builder, mcp-builder, etc.)
+# - communication/  : Communication skills (internal-comms)
+# - design/         : Design skills (theme-factory, canvas-design, etc.)
+# - documents/      : Document manipulation (docx, xlsx, pptx, pdf)
+# - custom/         : Your project-specific skills
+
+# Platform Augmentations:
+# - platforms/web/frontend-developer.md  : React, frontend expertise
+# - platforms/web/backend-developer.md   : Node.js, API expertise
+# - platforms/mobile/mobile-developer.md : React Native, Flutter
+
+# To compose agents:
+# cd .ai-agents/library
+# python3 scripts/compose-agent.py --config ../../config.yml --all
+
+# The composed agents will be in: .ai-agents/composed/
