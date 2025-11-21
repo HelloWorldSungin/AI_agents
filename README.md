@@ -115,6 +115,121 @@ Use the composed prompts to initialize your AI agents with your LLM provider.
 
 ---
 
+## Where to Place .ai-agents/
+
+### The Simple Rule
+
+**`.ai-agents/` goes next to `.git/`** - Place it at your repository root, regardless of where your code lives.
+
+### Common Scenarios
+
+#### Scenario 1: Standard Repository
+```
+my-project/              ← Repository root
+├── .git/
+├── .ai-agents/          ✅ Place here
+├── src/
+├── package.json
+└── README.md
+```
+
+#### Scenario 2: Code in Subdirectory
+```
+my-project/              ← Repository root
+├── .git/
+├── .ai-agents/          ✅ Place here (NOT in app/)
+├── app/                 ← Code lives here
+│   ├── src/
+│   └── package.json
+├── docs/
+└── README.md
+```
+
+**Why?** The library uses relative paths from repository root. Config references like `context/architecture.md` assume `.ai-agents/` is at the root.
+
+#### Scenario 3: Monorepo - Single Team
+```
+monorepo/                ← Repository root
+├── .git/
+├── .ai-agents/          ✅ Single shared setup
+├── packages/
+│   ├── frontend/
+│   ├── backend/
+│   └── mobile/
+└── package.json
+```
+
+**Best for:** One team working across all packages with shared standards.
+
+#### Scenario 4: Monorepo - Per-Package Teams
+```
+monorepo/                ← Repository root
+├── .git/
+├── packages/
+│   ├── frontend/
+│   │   └── .ai-agents/  ✅ Per-package setup
+│   ├── backend/
+│   │   └── .ai-agents/  ✅ Per-package setup
+│   └── mobile/
+│       └── .ai-agents/  ✅ Per-package setup
+└── package.json
+```
+
+**Best for:** Independent teams with different tech stacks and standards.
+
+### Quick Decision Guide
+
+| Your Project Structure | Where to Place .ai-agents/ | Why |
+|------------------------|---------------------------|-----|
+| Standard repo | Next to .git/ | Standard setup |
+| Code in subdirectory | Next to .git/ (NOT in subdirectory) | Relative paths from root |
+| Monorepo - single team | Root, next to .git/ | Shared config for all packages |
+| Monorepo - multiple teams | Inside each package/ | Independent configs per team |
+| Nested repositories | Next to each .git/ | Each repo is independent |
+
+### Pro Tips
+
+✅ **DO:**
+- Place at repository root (next to `.git/`)
+- Use relative paths in configs (e.g., `../../src/components`)
+- Add `.ai-agents/state/` and `.ai-agents/checkpoints/` to `.gitignore`
+
+❌ **DON'T:**
+- Place inside code directories (e.g., `src/.ai-agents/`)
+- Use absolute paths in configs
+- Commit agent runtime state
+
+### Starter Template Automatic Placement
+
+When using starter templates, the `--output` parameter determines placement:
+
+```bash
+# Standard repo - output to current directory (repository root)
+cd my-project/
+python3 path/to/AI_agents/starter-templates/generate-template.py \
+  --type web-app \
+  --name "MyProject" \
+  --output .
+
+# Code in subdirectory - still output to root
+cd my-project/  # Repository root
+python3 path/to/AI_agents/starter-templates/generate-template.py \
+  --type web-app \
+  --name "MyProject" \
+  --output .  # Creates my-project/.ai-agents/
+
+# Monorepo with per-package setup
+cd monorepo/packages/frontend/
+python3 path/to/AI_agents/starter-templates/generate-template.py \
+  --type web-app \
+  --name "Frontend" \
+  --output .  # Creates monorepo/packages/frontend/.ai-agents/
+```
+
+**The generator always creates `.ai-agents/` in the `--output` directory.**
+
+---
+
 ## Architecture
 
 ### Layered Composition
