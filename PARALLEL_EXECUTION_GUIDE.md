@@ -64,6 +64,410 @@ Total: 6 hours (2x speedup)
 
 ---
 
+## Physical Workspace Setup
+
+Before diving into parallel execution strategies, you need to understand how to physically set up workspaces for multiple agents to work simultaneously.
+
+### The Question: Do I Need Multiple Repository Clones?
+
+When running agents in parallel, you have three options for managing physical workspaces. The right choice depends on whether you're orchestrating agents manually or running them truly in parallel.
+
+---
+
+### Option 1: Single Repository (Sequential Execution)
+
+**Setup:**
+```
+my-project/
+├── .git/
+├── .ai-agents/
+└── src/
+```
+
+**How it works:**
+- One physical repository with one working directory
+- Agents work sequentially, switching branches between tasks
+- Agent A checks out `feature/auth/agent/backend-dev/api`, works, commits
+- Agent B checks out `feature/auth/agent/frontend-dev/ui`, works, commits
+
+**Workflow:**
+```bash
+# Agent A's turn
+cd my-project
+git checkout -b feature/auth/agent/backend-dev/api
+# Agent A works here...
+git add . && git commit -m "Implement auth API"
+
+# Agent B's turn (after Agent A)
+git checkout -b feature/auth/agent/frontend-dev/ui
+# Agent B works here...
+git add . && git commit -m "Build login UI"
+```
+
+**Pros:**
+- ✅ Simplest setup (no additional configuration)
+- ✅ No extra disk space required
+- ✅ Perfect for human-in-the-loop workflows
+- ✅ One LLM session at a time (e.g., Claude Code)
+
+**Cons:**
+- ❌ No true parallelization (only one agent active at a time)
+- ❌ Agents must wait for each other
+
+**Best for:**
+- **Human-in-the-loop workflows** where you manually work with one agent at a time
+- **Claude Code or similar tools** where you interact with one LLM session
+- **Small teams** where sequential execution is acceptable
+- **Simple projects** where parallel speedup isn't critical
+
+**Recommended for 90% of users.**
+
+---
+
+### Option 2: Git Worktrees (True Parallel Execution) ⭐ RECOMMENDED
+
+**Setup:**
+```
+my-project/
+├── .git/                          # Shared git database
+├── .ai-agents/                    # Shared library setup
+└── main-workspace/                # Your main working directory
+
+my-project-worktrees/              # Parallel agent workspaces
+├── backend-dev-001/               # Backend agent's workspace
+│   ├── .git -> ../my-project/.git # Symlink to shared .git
+│   ├── .ai-agents/                # Can symlink or copy
+│   └── src/                       # Agent's working files
+├── frontend-dev-001/              # Frontend agent's workspace
+│   ├── .git -> ../my-project/.git
+│   └── src/
+└── qa-tester-001/                 # QA agent's workspace
+    ├── .git -> ../my-project/.git
+    └── src/
+```
+
+**How to set up:**
+```bash
+# Starting from your main repository
+cd my-project
+
+# Create worktrees directory
+mkdir -p ../my-project-worktrees
+
+# Create a worktree for each agent (each on their own branch)
+git worktree add ../my-project-worktrees/backend-dev-001 \
+  -b feature/auth/agent/backend-dev/api
+
+git worktree add ../my-project-worktrees/frontend-dev-001 \
+  -b feature/auth/agent/frontend-dev/ui
+
+git worktree add ../my-project-worktrees/qa-tester-001 \
+  -b feature/auth/agent/qa/tests
+
+# List all worktrees
+git worktree list
+
+# Output:
+# /Users/you/my-project              abc123 [main]
+# /Users/you/my-project-worktrees/backend-dev-001   def456 [feature/auth/agent/backend-dev/api]
+# /Users/you/my-project-worktrees/frontend-dev-001 ghi789 [feature/auth/agent/frontend-dev/ui]
+# /Users/you/my-project-worktrees/qa-tester-001    jkl012 [feature/auth/agent/qa/tests]
+```
+
+**How it works:**
+- **One `.git` database** shared by all worktrees (space efficient)
+- **Multiple working directories**, one per agent
+- Each worktree checks out a different branch
+- All commits go to the shared `.git` database
+- Agents work simultaneously in their own directories
+
+**Workflow:**
+```bash
+# Terminal 1: Backend agent working
+cd my-project-worktrees/backend-dev-001
+# Run backend agent (API, Claude, GPT-4, etc.)
+# Works on feature/auth/agent/backend-dev/api branch
+
+# Terminal 2: Frontend agent working (SIMULTANEOUSLY)
+cd my-project-worktrees/frontend-dev-001
+# Run frontend agent
+# Works on feature/auth/agent/frontend-dev/ui branch
+
+# Terminal 3: QA agent working (SIMULTANEOUSLY)
+cd my-project-worktrees/qa-tester-001
+# Run QA agent
+# Works on feature/auth/agent/qa/tests branch
+
+# All three agents work at the same time, no conflicts!
+```
+
+**Cleanup when done:**
+```bash
+# Remove worktrees after agents complete
+cd my-project
+git worktree remove ../my-project-worktrees/backend-dev-001
+git worktree remove ../my-project-worktrees/frontend-dev-001
+git worktree remove ../my-project-worktrees/qa-tester-001
+
+# Or remove all at once
+git worktree prune
+```
+
+**Pros:**
+- ✅ **True parallelization** (multiple agents run simultaneously)
+- ✅ **Space efficient** (shares `.git` database)
+- ✅ **No remote sync needed** (all use same local `.git`)
+- ✅ **Clean separation** of agent workspaces
+- ✅ **Native git feature** (no special tools needed)
+- ✅ **Perfect for CI/CD** (each job gets own workspace)
+
+**Cons:**
+- ⚠️ Slightly more complex setup (one extra command per agent)
+- ⚠️ Need to manage multiple directories
+- ⚠️ Requires understanding of git worktrees
+
+**Best for:**
+- **Automated multi-agent orchestration systems**
+- **CI/CD pipelines** running agents in parallel
+- **API-driven agent execution** (multiple LLM API calls)
+- **Development teams** that want maximum throughput
+- **Testing parallel execution** strategies locally
+
+**Recommended for true parallel execution.**
+
+---
+
+### Option 3: Full Repository Clones (Maximum Isolation)
+
+**Setup:**
+```
+repos/
+├── backend-agent-workspace/
+│   └── my-project/             # Full clone with own .git
+│       ├── .git/
+│       ├── .ai-agents/
+│       └── src/
+├── frontend-agent-workspace/
+│   └── my-project/             # Full clone with own .git
+│       ├── .git/
+│       ├── .ai-agents/
+│       └── src/
+└── qa-agent-workspace/
+    └── my-project/             # Full clone with own .git
+        ├── .git/
+        ├── .ai-agents/
+        └── src/
+```
+
+**How to set up:**
+```bash
+# Clone once for each agent
+git clone git@github.com:you/my-project.git repos/backend-agent-workspace/my-project
+git clone git@github.com:you/my-project.git repos/frontend-agent-workspace/my-project
+git clone git@github.com:you/my-project.git repos/qa-agent-workspace/my-project
+
+# Each agent creates their branch in their own clone
+cd repos/backend-agent-workspace/my-project
+git checkout -b feature/auth/agent/backend-dev/api
+
+cd repos/frontend-agent-workspace/my-project
+git checkout -b feature/auth/agent/frontend-dev/ui
+
+cd repos/qa-agent-workspace/my-project
+git checkout -b feature/auth/agent/qa/tests
+```
+
+**How it works:**
+- **Completely independent** clones (separate `.git` for each)
+- Each agent has full isolation
+- Must push to remote to share changes
+- Most disk space (full `.git` per clone)
+
+**Workflow:**
+```bash
+# Agent A works and pushes
+cd repos/backend-agent-workspace/my-project
+# Work...
+git push origin feature/auth/agent/backend-dev/api
+
+# Agent B fetches updates if needed
+cd repos/frontend-agent-workspace/my-project
+git fetch origin
+# Work independently...
+git push origin feature/auth/agent/frontend-dev/ui
+```
+
+**Pros:**
+- ✅ **Maximum isolation** (no shared state)
+- ✅ **Conceptually simplest** (each agent owns a repo)
+- ✅ **Works across machines** (agents on different servers)
+- ✅ **Works in containers** (Docker, Kubernetes)
+
+**Cons:**
+- ❌ **Most disk space** (full `.git` directory per clone)
+- ❌ **Must push/pull** to sync changes
+- ❌ **More setup overhead** (clone per agent)
+- ❌ **Network dependency** (need to push to remote)
+
+**Best for:**
+- **Distributed systems** (agents on different physical machines)
+- **Docker/Kubernetes** deployments (each agent in own container)
+- **Cloud-based agent runners** (AWS Lambda, GitHub Actions)
+- **Maximum security isolation** requirements
+- **Agents managed by different teams**
+
+**Recommended for distributed/containerized systems.**
+
+---
+
+### Quick Decision Guide
+
+| Your Scenario | Recommended Setup | Why |
+|--------------|-------------------|-----|
+| Working with Claude Code manually | **Single Repository** | One agent at a time, simplest workflow |
+| Using LLM APIs with one agent at a time | **Single Repository** | Sequential execution is fine |
+| Running 3-5 agents in parallel locally | **Git Worktrees** | True parallelization, space efficient |
+| CI/CD with parallel agent jobs | **Git Worktrees** | Each job needs own workspace |
+| Each agent in Docker container | **Full Clones** | Container isolation |
+| Agents on different machines/servers | **Full Clones** | Natural for distributed systems |
+| Local testing of parallel execution | **Git Worktrees** | Easy setup, easy cleanup |
+| Production multi-agent orchestration | **Git Worktrees** or **Full Clones** | Depends on infrastructure |
+
+---
+
+### Practical Example: Setting Up Git Worktrees
+
+Here's a complete example for a typical web app with 3 agents:
+
+```bash
+# 1. Start in your main project
+cd ~/projects/my-app
+
+# 2. Create directory for agent worktrees
+mkdir -p ../my-app-agents
+
+# 3. Create worktree for each agent
+git worktree add ../my-app-agents/backend feature/auth/agent/backend-dev/api
+git worktree add ../my-app-agents/frontend feature/auth/agent/frontend-dev/ui
+git worktree add ../my-app-agents/qa feature/auth/agent/qa/tests
+
+# 4. Verify setup
+git worktree list
+
+# 5. Directory structure:
+# ~/projects/
+# ├── my-app/                  <- Main workspace (your work)
+# │   ├── .git/                <- Shared by all worktrees
+# │   └── .ai-agents/
+# └── my-app-agents/
+#     ├── backend/             <- Backend agent workspace
+#     │   └── src/
+#     ├── frontend/            <- Frontend agent workspace
+#     │   └── src/
+#     └── qa/                  <- QA agent workspace
+#         └── tests/
+
+# 6. Each agent works in their directory simultaneously
+# Terminal 1:
+cd ~/projects/my-app-agents/backend
+# Run backend agent here
+
+# Terminal 2 (parallel):
+cd ~/projects/my-app-agents/frontend
+# Run frontend agent here
+
+# Terminal 3 (parallel):
+cd ~/projects/my-app-agents/qa
+# Run QA agent here
+
+# 7. When done, remove worktrees
+cd ~/projects/my-app
+git worktree remove ../my-app-agents/backend
+git worktree remove ../my-app-agents/frontend
+git worktree remove ../my-app-agents/qa
+
+# Or remove all at once
+rm -rf ../my-app-agents
+git worktree prune
+```
+
+---
+
+### Integration with .ai-agents/ Library
+
+**Important**: Regardless of which workspace setup you choose, the `.ai-agents/` directory follows the same placement rules from the README:
+
+**Single Repository:**
+```
+my-project/
+├── .git/
+├── .ai-agents/          ← Place here (next to .git)
+└── src/
+```
+
+**Git Worktrees:**
+```
+# Option A: Shared .ai-agents (symlink)
+my-project/.ai-agents/   ← Main .ai-agents setup
+my-project-worktrees/backend/.ai-agents -> ../../my-project/.ai-agents
+
+# Option B: Copy .ai-agents to each worktree
+my-project/.ai-agents/
+my-project-worktrees/backend/.ai-agents/   ← Copy
+my-project-worktrees/frontend/.ai-agents/  ← Copy
+
+# Recommendation: Use symlinks to avoid duplication
+```
+
+**Setup symlinks:**
+```bash
+cd my-project-worktrees/backend
+ln -s ../../my-project/.ai-agents .ai-agents
+
+cd my-project-worktrees/frontend
+ln -s ../../my-project/.ai-agents .ai-agents
+```
+
+**Full Clones:**
+```
+# Each clone needs its own .ai-agents
+repos/backend-agent-workspace/my-project/.ai-agents/
+repos/frontend-agent-workspace/my-project/.ai-agents/
+repos/qa-agent-workspace/my-project/.ai-agents/
+
+# Sync via git (commit .ai-agents to repository)
+```
+
+---
+
+### Summary: Physical Setup
+
+**Key Takeaways:**
+
+1. **Most users should use Single Repository**
+   - Human-in-the-loop workflows
+   - Working with one agent at a time
+   - Simplest and most practical
+
+2. **Use Git Worktrees for true parallel execution**
+   - Multiple agents running simultaneously
+   - Space efficient (shared `.git`)
+   - Perfect for CI/CD and automation
+
+3. **Use Full Clones for distributed systems**
+   - Agents on different machines
+   - Docker/Kubernetes deployments
+   - Maximum isolation
+
+4. **Don't over-engineer**
+   - Start with Single Repository
+   - Move to Worktrees only when you need parallelization
+   - Only use Full Clones for distributed infrastructure
+
+The rest of this guide focuses on the **logical aspects** of parallel execution (task decomposition, dependencies, coordination) which apply regardless of which physical setup you choose.
+
+---
+
 ## Key Principles
 
 ### 1. Independence Through Contracts
