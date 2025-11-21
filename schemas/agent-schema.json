@@ -46,6 +46,18 @@
       },
       "description": "Available tools (e.g., ['tools/git-tools.md'])"
     },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of Anthropic Skills to load for this agent",
+      "examples": [
+        "core/web-artifacts-builder",
+        "communication/internal-comms",
+        "documents/pdf"
+      ]
+    },
     "memory": {
       "type": "object",
       "properties": {

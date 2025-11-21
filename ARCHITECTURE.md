@@ -14,6 +14,7 @@
 - [Agent Composition Model](#agent-composition-model)
 - [Multi-Agent Collaboration](#multi-agent-collaboration)
 - [Context Management](#context-management)
+- [Skills Integration](#skills-integration)
 - [Repository Structure](#repository-structure)
 - [Integration Guide](#integration-guide)
 - [Best Practices](#best-practices)
@@ -466,6 +467,601 @@ Context Usage Thresholds:
      │   • Pause operations
      │   • Immediate session restart required
 ```
+
+---
+
+## Skills Integration
+
+### What Are Skills?
+
+**Skills** are modular instruction packages that extend AI agent capabilities with specialized knowledge, workflows, and tool integrations. They transform general-purpose agents into domain experts by providing focused guidance for specific tasks and technologies.
+
+#### Skills vs Tools vs Platform Augmentations
+
+Understanding the distinctions between these three concepts is crucial for effective agent composition:
+
+| Aspect | Skills | Tools | Platform Augmentations |
+|--------|--------|-------|------------------------|
+| **Purpose** | Domain expertise & workflows | Actions & operations | Platform-specific knowledge |
+| **Content** | Instructions, procedures, best practices | Function definitions, APIs | Framework expertise, patterns |
+| **Loading** | Composed into agent prompt | Available as callable functions | Merged into base agent |
+| **Structure** | Markdown + resources (scripts, docs) | JSON schemas, function signatures | Markdown augmentation layers |
+| **Usage** | Guides agent behavior | Executed explicitly by agent | Always active for platform |
+| **Scope** | Task-specific (e.g., PDF creation) | Action-specific (e.g., file read) | Platform-wide (e.g., React expertise) |
+| **Token Impact** | 2-5k tokens per skill | Minimal (schema only) | 2-3k tokens per platform |
+
+**When to Use Each:**
+
+- **Skills**: When you need specialized workflows, domain expertise, or tool integration guidance
+  - Example: `artifacts-builder` for React component creation, `mcp-builder` for API integration
+
+- **Tools**: When you need agents to perform specific actions
+  - Example: Git operations, file manipulation, API calls
+
+- **Platform Augmentations**: When you need platform-specific development knowledge
+  - Example: `frontend-developer.md` for React/web expertise, `mobile-developer.md` for React Native
+
+**How They Work Together:**
+
+```
+Complete Agent = Base + Platform + Tools + Skills + Project Context
+
+Example Frontend Developer:
+├── Base: software-developer.md (universal engineering)
+├── Platform: web/frontend-developer.md (React, web APIs)
+├── Tools: git-tools.md, testing-tools.md (actions available)
+├── Skills: artifacts-builder, theme-factory (specialized workflows)
+└── Context: architecture.md, coding-standards.md (project specifics)
+```
+
+### Skills Architecture
+
+The skills layer sits between platform augmentations and project context in the composition model:
+
+```
+┌─────────────────────────────────────────┐
+│   Project Context (Layer 4)             │
+│   • Your specific requirements          │
+│   • Business logic                      │
+│   • API contracts                       │
+│   • Team conventions                    │
+├─────────────────────────────────────────┤
+│   Skills (Layer 3) ✨ NEW               │
+│   • Domain expertise                    │
+│   • Specialized workflows               │
+│   • Tool integrations                   │
+│   • Reusable procedures                 │
+├─────────────────────────────────────────┤
+│   Platform Augmentation (Layer 2)       │
+│   • Web/Mobile/Desktop expertise        │
+│   • Framework knowledge                 │
+│   • Platform best practices             │
+├─────────────────────────────────────────┤
+│   Base Agent Foundation (Layer 1)       │
+│   • Core software engineering           │
+│   • Testing, debugging, git             │
+│   • Universal best practices            │
+└─────────────────────────────────────────┘
+
+Updated Composition Model:
+Base Agent → Platform → Skills → Tools → Project Context
+```
+
+**Why This Order?**
+
+1. **Base** provides universal software engineering capabilities
+2. **Platform** adds platform-specific knowledge (React, Node.js, etc.)
+3. **Skills** provide specialized workflows that build on platform knowledge
+4. **Tools** define actions that skills can reference in their workflows
+5. **Project Context** applies everything to your specific requirements
+
+### Skills Directory Structure
+
+```
+skills/
+├── README.md                # Skills overview
+├── CATALOG.md              # Complete skills directory
+├── INTEGRATION.md          # Technical integration guide
+├── QUICK_START.md          # 5-minute getting started
+│
+├── core/                   # Development & technical skills
+│   ├── artifacts-builder/  # React component creation
+│   ├── webapp-testing/     # Playwright-based testing
+│   ├── mcp-builder/        # MCP server development
+│   ├── skill-creator/      # Custom skill creation
+│   └── .gitkeep
+│
+├── communication/          # Communication & documentation
+│   ├── internal-comms/     # Team communications
+│   └── .gitkeep
+│
+├── design/                 # Design & creative skills
+│   ├── theme-factory/      # UI theming
+│   ├── algorithmic-art/    # Generative art with p5.js
+│   ├── canvas-design/      # Visual asset generation
+│   └── .gitkeep
+│
+├── documents/              # Document manipulation
+│   ├── docx/              # Word documents
+│   ├── pdf/               # PDF manipulation
+│   ├── xlsx/              # Excel spreadsheets
+│   ├── pptx/              # PowerPoint presentations
+│   └── .gitkeep
+│
+└── custom/                 # Project-specific skills
+    ├── template/           # Skill creation template
+    │   ├── README.md
+    │   └── SKILL.md
+    └── .gitkeep
+```
+
+**Anthropic Skills vs Custom Skills:**
+
+- **Anthropic Skills** (in `core/`, `communication/`, `design/`, `documents/`)
+  - Professional skills from Anthropic's curated collection
+  - Production-tested and well-documented
+  - Referenced as submodule or copied into repository
+  - Licensed under Apache 2.0 or source-available
+
+- **Custom Skills** (in `custom/`)
+  - Project-specific or organization-specific skills
+  - Created using the template in `custom/template/`
+  - Tailored to your unique workflows and requirements
+  - Your choice of license
+
+**Project-Specific Skills Location:**
+
+Projects can define their own skills in `.ai-agents/skills/` which override library skills:
+
+```
+your-project/
+└── .ai-agents/
+    └── skills/
+        └── custom/
+            └── my-workflow/
+                └── SKILL.md
+```
+
+### Skill Composition Process
+
+The `compose-agent.py` script handles skill loading automatically:
+
+```python
+# Skill resolution process
+def resolve_skill_path(skill_name):
+    # 1. Check if skill includes category (e.g., "design/theme-factory")
+    if '/' in skill_name:
+        skill_path = f"skills/{skill_name}.md"
+    else:
+        # 2. Default to core category (e.g., "artifacts-builder" → "skills/core/artifacts-builder.md")
+        skill_path = f"skills/core/{skill_name}.md"
+
+    # 3. Check library skills directory first
+    library_skill = library_path / skill_path
+    if library_skill.exists():
+        return library_skill
+
+    # 4. Check project-specific skills directory
+    project_skill = project_path / ".ai-agents" / skill_path
+    if project_skill.exists():
+        return project_skill
+
+    # 5. Skill not found - warning issued
+    return None
+```
+
+**Resolution Order:**
+
+1. **Explicit category**: If skill specified as `"category/skill-name"`, look only in that category
+2. **Default category**: If skill specified as `"skill-name"`, default to `core/` category
+3. **Library first**: Check library's `skills/` directory
+4. **Project override**: Check project's `.ai-agents/skills/` directory
+5. **Not found**: Issue warning and continue (agent still usable)
+
+**Token Budget Considerations:**
+
+Each skill adds to the agent's base token count:
+
+| Skill Category | Avg Tokens | Example |
+|----------------|------------|---------|
+| Core Development | 3,000-5,000 | artifacts-builder: ~3,500 |
+| Communication | 2,500-3,500 | internal-comms: ~3,000 |
+| Design | 2,000-3,000 | theme-factory: ~2,500 |
+| Documents | 3,000-4,000 | docx: ~3,500 |
+| Custom | Varies | Depends on complexity |
+
+**Recommended Token Budget by Agent:**
+
+- **Minimal** (0 skills): 3,000-5,000 tokens (base only)
+- **Standard** (1-2 skills): 6,000-10,000 tokens
+- **Advanced** (3-4 skills): 10,000-15,000 tokens
+- **Specialized** (5+ skills): 15,000+ tokens (⚠️ monitor carefully)
+
+### Skills by Agent Type
+
+Recommended skill assignments based on agent roles:
+
+| Agent Type | Primary Skills | Optional Skills | Token Budget |
+|------------|---------------|-----------------|--------------|
+| **Manager** | internal-comms, xlsx | docx, pptx, pdf | 8,000-12,000 |
+| **Frontend Dev** | artifacts-builder, theme-factory | webapp-testing, canvas-design | 9,000-15,000 |
+| **Backend Dev** | mcp-builder | webapp-testing, xlsx | 7,000-11,000 |
+| **QA Tester** | webapp-testing | docx, xlsx | 6,000-10,000 |
+| **Architect** | skill-creator, mcp-builder | docx, pptx | 7,000-12,000 |
+| **Mobile Dev** | theme-factory | artifacts-builder | 8,000-13,000 |
+
+**Example Configurations:**
+
+**Frontend Developer (Standard)**:
+```yaml
+frontend_developer:
+  base: "base/software-developer.md"        # ~3,000 tokens
+  platforms:
+    - "platforms/web/frontend-developer.md" # ~2,500 tokens
+  skills:
+    - "core/artifacts-builder"              # ~3,500 tokens
+    - "design/theme-factory"                # ~2,500 tokens
+  # Total: ~11,500 tokens (within budget)
+```
+
+**Backend Developer (Minimal)**:
+```yaml
+backend_developer:
+  base: "base/software-developer.md"        # ~3,000 tokens
+  platforms:
+    - "platforms/web/backend-developer.md"  # ~2,500 tokens
+  skills:
+    - "core/mcp-builder"                    # ~4,500 tokens
+  # Total: ~10,000 tokens (within budget)
+```
+
+**Manager (Advanced)**:
+```yaml
+team_manager:
+  base: "base/manager.md"                   # ~3,500 tokens
+  skills:
+    - "communication/internal-comms"        # ~3,000 tokens
+    - "documents/xlsx"                      # ~4,000 tokens
+    - "documents/docx"                      # ~3,500 tokens
+  # Total: ~14,000 tokens (approaching limit)
+```
+
+### Custom Skills
+
+#### Creating Project-Specific Skills
+
+Projects can create custom skills tailored to their specific workflows:
+
+**Step 1: Use the Template**
+```bash
+cp -r skills/custom/template skills/custom/my-workflow
+cd skills/custom/my-workflow
+```
+
+**Step 2: Edit SKILL.md**
+```markdown
+---
+name: my-workflow
+description: Custom workflow for our project's specific needs
+license: MIT
+---
+
+# My Workflow Skill
+
+Instructions for this specialized workflow...
+```
+
+**Step 3: Add Supporting Resources** (optional)
+```
+my-workflow/
+├── SKILL.md              # Main instructions
+├── scripts/              # Automation scripts
+│   └── helper.py
+├── references/           # Documentation
+│   └── api-guide.md
+└── assets/              # Templates, configs
+    └── template.json
+```
+
+**Step 4: Reference in Configuration**
+```yaml
+agents:
+  backend_developer:
+    skills:
+      - "custom/my-workflow"  # Automatically resolves to custom/my-workflow/SKILL.md
+```
+
+#### Best Practices for Custom Skills
+
+1. **Keep Skills Focused**: One skill = one clear purpose
+2. **Use Progressive Disclosure**: Organize from high-level to detailed
+3. **Include Examples**: Show concrete usage patterns
+4. **Bundle Resources**: Scripts for deterministic operations
+5. **Document Prerequisites**: Required libraries, tools, knowledge
+6. **Test Thoroughly**: Verify with target agents before deployment
+7. **Version Control**: Track changes and maintain compatibility
+
+#### Advanced: Skill Creator Skill
+
+For sophisticated skill development, use the `skill-creator` skill:
+
+```yaml
+architect:
+  skills:
+    - "core/skill-creator"  # Provides comprehensive skill development guidance
+```
+
+This skill provides:
+- Systematic design methodology
+- Progressive disclosure patterns
+- Resource bundling strategies
+- Testing and iteration workflows
+- Packaging for distribution
+
+### Token Budget Management with Skills
+
+#### Updated Guidelines
+
+With skills integrated, token budget management becomes more critical:
+
+**Budget Allocation:**
+
+```
+Claude Sonnet 4.5: 200,000 tokens total
+├── Agent Prompt: 6,000-12,000 (3-6%)
+│   ├── Base: 3,000-4,000
+│   ├── Platform: 2,000-3,000
+│   ├── Skills: 0-6,000 (0-3 skills)
+│   └── Project Context: 1,000-2,000
+│
+└── Conversation: 188,000-194,000 (94-97%)
+    ├── Working Memory: 50%
+    ├── Cached Context: 30%
+    └── Buffer: ~17%
+```
+
+**Warning Thresholds:**
+
+| Threshold | Agent Prompt Size | Action Required |
+|-----------|-------------------|-----------------|
+| **Green** | < 9,000 tokens | No action |
+| **Yellow** | 9,000-10,500 tokens | Review skills, consider removing non-essential |
+| **Orange** | 10,500-12,000 tokens | Remove 1-2 skills or reduce context |
+| **Red** | > 12,000 tokens | ⚠️ Immediate reduction required |
+
+**Automatic Warnings:**
+
+The composition script automatically warns when approaching limits:
+
+```bash
+$ python compose-agent.py --config config.yml --agent frontend_developer
+
+✓ Saved: frontend_developer.md
+  Tokens: 11,200 / 12,000 recommended
+  Context usage: 5.60%
+  ⚠️  Approaching token budget limit
+  Remaining budget: 800 tokens
+```
+
+**Over-Budget Suggestions:**
+
+When over budget, the script suggests reductions:
+
+```bash
+  ⚠️  WARNING: Agent prompt exceeds recommended size!
+  Recommendation: 1,500 tokens over budget
+
+  Suggestions to reduce token usage:
+  - Consider removing 3 skill(s)
+    Skills: artifacts-builder, theme-factory, webapp-testing
+  - Review 4 project context files
+```
+
+#### Optimization Strategies
+
+**Strategy 1: Skill Prioritization**
+```yaml
+# Before (15,000 tokens - too much)
+frontend_developer:
+  skills:
+    - "core/artifacts-builder"
+    - "design/theme-factory"
+    - "core/webapp-testing"
+    - "design/canvas-design"
+
+# After (11,500 tokens - optimized)
+frontend_developer:
+  skills:
+    - "core/artifacts-builder"      # Essential
+    - "design/theme-factory"        # Essential
+  # Move webapp-testing to QA tester
+  # Remove canvas-design (rarely used)
+```
+
+**Strategy 2: Context Consolidation**
+```yaml
+# Before (many small files)
+project_context:
+  - ".ai-agents/context/architecture.md"
+  - ".ai-agents/context/coding-standards.md"
+  - ".ai-agents/context/api-contracts.md"
+  - ".ai-agents/context/type-definitions.md"
+  - ".ai-agents/context/deployment.md"
+
+# After (consolidated)
+project_context:
+  - ".ai-agents/context/core-knowledge.md"  # Combined essential info
+  - ".ai-agents/context/api-contracts.md"   # Keep separate (frequently updated)
+```
+
+**Strategy 3: Specialized Agents**
+```yaml
+# Instead of one agent with all skills
+super_developer:
+  skills: [artifacts-builder, mcp-builder, webapp-testing, theme-factory]
+
+# Create focused agents
+frontend_developer:
+  skills: [artifacts-builder, theme-factory]
+
+backend_developer:
+  skills: [mcp-builder]
+
+qa_tester:
+  skills: [webapp-testing]
+```
+
+**Strategy 4: Project-Specific Overrides**
+
+Move rarely-used information out of base prompt:
+
+```yaml
+# Keep in prompt (always needed)
+project_context:
+  - ".ai-agents/context/architecture.md"
+  - ".ai-agents/context/api-contracts.md"
+
+# Move to RAG/vector DB (reference when needed)
+# - coding-standards.md
+# - troubleshooting-guide.md
+# - deployment-procedures.md
+```
+
+### Best Practices
+
+#### 1. Strategic Skill Selection
+
+**Do:**
+- Assign 1-3 skills per agent based on primary function
+- Choose skills that align with agent's platform augmentation
+- Test agents with skills before adding more
+- Monitor actual skill usage in conversations
+
+**Don't:**
+- Add all available skills to every agent
+- Assign skills that overlap with platform augmentation
+- Include skills "just in case" - add when needed
+- Ignore token budget warnings
+
+#### 2. Skill Composition Strategies
+
+**Layered Approach:**
+```yaml
+# Phase 1: Start minimal
+frontend_developer:
+  base: "base/software-developer.md"
+  platforms:
+    - "platforms/web/frontend-developer.md"
+  # No skills yet - validate base functionality
+
+# Phase 2: Add essential skills
+frontend_developer:
+  skills:
+    - "core/artifacts-builder"  # Primary need identified
+
+# Phase 3: Add complementary skills
+frontend_developer:
+  skills:
+    - "core/artifacts-builder"
+    - "design/theme-factory"    # Improves UI quality
+```
+
+**Role-Based Assignment:**
+```yaml
+# Manager: Communication & documentation focus
+team_manager:
+  skills:
+    - "communication/internal-comms"
+    - "documents/xlsx"
+
+# Frontend: UI development focus
+frontend_developer:
+  skills:
+    - "core/artifacts-builder"
+    - "design/theme-factory"
+
+# Backend: Integration focus
+backend_developer:
+  skills:
+    - "core/mcp-builder"
+
+# QA: Testing focus
+qa_tester:
+  skills:
+    - "core/webapp-testing"
+```
+
+#### 3. Monitoring Skill Effectiveness
+
+Track whether skills are actually being used:
+
+**Metrics to Monitor:**
+- **Usage frequency**: How often is each skill referenced?
+- **Success rate**: Do tasks succeed when skills are available?
+- **Token efficiency**: Is the skill worth its token cost?
+- **Agent feedback**: Does agent report skills as helpful?
+
+**Example Tracking:**
+```yaml
+# In project documentation
+skill_usage_log:
+  artifacts-builder:
+    used_in_sessions: 45
+    successful_tasks: 42
+    avg_tokens: 3500
+    value_rating: "high"
+    decision: "keep"
+
+  canvas-design:
+    used_in_sessions: 2
+    successful_tasks: 2
+    avg_tokens: 2000
+    value_rating: "low"
+    decision: "remove - rarely used"
+```
+
+#### 4. Version Management
+
+**Library Version Pinning:**
+```yaml
+agent_library:
+  version: "1.0.0"  # Pin to specific version
+  update_strategy: "manual"  # Explicit updates only
+```
+
+**Skills Version Tracking:**
+```markdown
+# In composed agent prompt
+# Skills loaded:
+# - artifacts-builder (v1.2.0, 3500 tokens)
+# - theme-factory (v1.0.0, 2500 tokens)
+# Total skills: 6000 tokens
+```
+
+#### 5. Testing New Skills
+
+Before adding a skill to production:
+
+1. **Compose in test environment**
+```bash
+python compose-agent.py --config test-config.yml --agent test_developer
+```
+
+2. **Review token impact**
+```
+✓ Tokens: 9,800 / 12,000 recommended
+  Context usage: 4.90%
+```
+
+3. **Test with sample tasks**
+- Verify skill is loaded correctly
+- Confirm agent references skill appropriately
+- Validate skill improves performance
+
+4. **Deploy to production**
+- Update production config
+- Recompose production agents
+- Monitor usage in real sessions
 
 ---
 

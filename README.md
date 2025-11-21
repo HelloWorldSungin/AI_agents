@@ -13,6 +13,7 @@ This library provides reusable, composable AI agent prompts and infrastructure f
 ### Key Features
 
 ✨ **Modular Design**: Base prompts + platform augmentations + project context
+🎓 **Skills Integration**: Anthropic Skills for specialized capabilities
 🤝 **Multi-Agent Coordination**: Manager-led team collaboration
 🧠 **Advanced Context Management**: Never lose critical information
 🌲 **Git-Based Workflow**: Branch isolation prevents conflicts
@@ -82,20 +83,25 @@ Use the composed prompts to initialize your AI agents with your LLM provider.
 
 ```
 ┌─────────────────────────────────────────┐
-│   Project Context (Your Requirements)  │
-│   • Business logic                      │
-│   • API contracts                       │
-│   • Team conventions                    │
+│   Project Context (Your Requirements)   │
+│   • Business logic                       │
+│   • API contracts                        │
+│   • Team conventions                     │
 ├─────────────────────────────────────────┤
-│   Platform Augmentation (Specialized)   │
-│   • Web/Mobile/Desktop expertise        │
-│   • Framework knowledge                 │
-│   • Platform best practices             │
+│   Skills (Domain Expertise) ✨ NEW      │
+│   • Specialized workflows                │
+│   • Tool integrations                    │
+│   • Domain knowledge                     │
 ├─────────────────────────────────────────┤
-│   Base Agent (Universal)                │
-│   • Core software engineering           │
-│   • Testing, debugging, git             │
-│   • Security, performance               │
+│   Platform Augmentation (Specialized)    │
+│   • Web/Mobile/Desktop expertise         │
+│   • Framework knowledge                  │
+│   • Platform best practices              │
+├─────────────────────────────────────────┤
+│   Base Agent (Universal)                 │
+│   • Core software engineering            │
+│   • Testing, debugging, git              │
+│   • Security, performance                │
 └─────────────────────────────────────────┘
 ```
 
@@ -136,6 +142,13 @@ AI_agents/
 │   │   └── mobile-developer.md
 │   └── ...
 │
+├── skills/                  # Anthropic Skills integration ✨ NEW
+│   ├── README.md            # Skills overview
+│   ├── CATALOG.md           # Available skills directory
+│   ├── INTEGRATION.md       # Technical guide
+│   ├── anthropic/           # Anthropic skills (submodule)
+│   └── custom/              # Project-specific skills
+│
 ├── schemas/                 # JSON schemas
 │   ├── communication-protocol.json
 │   ├── state-management.json
@@ -165,6 +178,9 @@ agents:
     base: "base/software-developer.md"
     platforms:
       - "platforms/web/frontend-developer.md"
+    skills:
+      - "skills/anthropic/artifacts-builder"
+      - "skills/anthropic/theme-factory"
     project_context:
       - ".ai-agents/context/architecture.md"
       - ".ai-agents/context/api-contracts.md"
@@ -173,6 +189,8 @@ agents:
     base: "base/software-developer.md"
     platforms:
       - "platforms/web/backend-developer.md"
+    skills:
+      - "skills/anthropic/mcp-builder"
 ```
 
 See [examples/web-app-team/](examples/web-app-team/) for complete example.
@@ -188,9 +206,14 @@ See [examples/mobile-app-team/](examples/mobile-app-team/) for React Native exam
 | Document | Description |
 |----------|-------------|
 | [README.md](README.md) | This file - quick start guide |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Detailed system architecture |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Detailed system architecture with Skills Integration |
 | [Context_Engineering.md](Context_Engineering.md) | Foundational principles (the "HOLY BIBLE") |
-| [examples/](examples/) | Reference implementations |
+| [SKILLS_GUIDE.md](SKILLS_GUIDE.md) | **Comprehensive skills guide** - Selection, usage, best practices |
+| [skills/README.md](skills/README.md) | Skills integration overview |
+| [skills/CATALOG.md](skills/CATALOG.md) | Available skills directory with token estimates |
+| [skills/INTEGRATION.md](skills/INTEGRATION.md) | Skills technical implementation guide |
+| [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) | Adding skills to existing projects |
+| [examples/](examples/) | Reference implementations with skills |
 
 ---
 
@@ -206,11 +229,11 @@ User: "Implement user authentication"
 
 ```
 Manager creates:
-├── TASK-001: Design auth architecture (Architect)
-├── TASK-002: Implement JWT service (Backend Dev)
-├── TASK-003: Create auth API (Backend Dev)
-├── TASK-004: Build login form (Frontend Dev)
-└── TASK-005: Write tests (QA Tester)
+├── TASK-001: Design auth architecture (Architect + skill-creator skill)
+├── TASK-002: Implement JWT service (Backend Dev + mcp-builder skill)
+├── TASK-003: Create auth API (Backend Dev + mcp-builder skill)
+├── TASK-004: Build login form (Frontend Dev + artifacts-builder + theme-factory skills)
+└── TASK-005: Write tests (QA Tester + webapp-testing skill)
 ```
 
 ### 3. Agents Work in Parallel
@@ -352,18 +375,25 @@ A: Update the submodule and test. Use semantic versioning to manage compatibilit
 
 1. **Start Simple** - Begin with one agent, add more as needed
 2. **Define Interfaces First** - API contracts before implementation
-3. **Use Branch Isolation** - One branch per agent per task
-4. **Monitor Context** - Watch for context usage warnings
-5. **Regular Checkpoints** - Every 10 turns or at 75% context
-6. **Quality Gates** - Enforce tests, reviews, coverage
-7. **Structured Communication** - Use JSON message protocol
+3. **Choose Skills Strategically** - Assign 1-3 skills per agent based on role (see [SKILLS_GUIDE.md](SKILLS_GUIDE.md))
+4. **Use Branch Isolation** - One branch per agent per task
+5. **Monitor Context** - Watch for context usage warnings, especially with skills
+6. **Regular Checkpoints** - Every 10 turns or at 75% context
+7. **Quality Gates** - Enforce tests, reviews, coverage
+8. **Structured Communication** - Use JSON message protocol
+9. **Track Skill Effectiveness** - Monitor which skills are actually used and improve outcomes
 
 ---
 
 ## Roadmap
 
+- [x] **Skills integration with Anthropic Skills repository** (Phase 1-5 complete!)
+- [x] **Comprehensive skills documentation and guides**
+- [x] **Token budget management with skills**
+- [x] **Custom skills framework and templates**
+- [x] **Example projects showcasing skills usage**
 - [ ] Additional platform augmentations (Desktop, Data, DevOps)
-- [ ] More example projects
+- [ ] Lazy loading for skills (on-demand activation)
 - [ ] Automated testing for prompts
 - [ ] Visual workflow designer
 - [ ] Metrics dashboard

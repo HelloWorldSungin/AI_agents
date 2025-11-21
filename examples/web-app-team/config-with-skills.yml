@@ -1,0 +1,104 @@
+# AI Agents Configuration for Web Application Project (WITH SKILLS)
+# This is a test configuration showing skills integration
+
+project_id: "ecommerce-web-app-skills-test"
+project_name: "E-Commerce Web Application (Skills Test)"
+description: "Full-stack e-commerce platform with React frontend and Node.js backend - Testing Skills Integration"
+
+# Agent Library Configuration
+agent_library:
+  repo: "git@github.com:org/AI_agents.git"
+  version: "1.0.0"
+  update_strategy: "auto_patch"
+
+# Agent Definitions
+agents:
+  # Manager Agent - Coordinates the team
+  team_manager:
+    base: "base/manager.md"
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/workflows/feature-development.md"
+    tools:
+      - "tools/communication-tools.md"
+    skills:
+      - "communication/internal-comms"
+    memory:
+      enabled: true
+      retention_policy: "high_priority"
+    coordination:
+      manages:
+        - "frontend_developer"
+        - "backend_developer"
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.7
+
+  # Frontend Developer
+  frontend_developer:
+    base: "base/software-developer.md"
+    platforms:
+      - "platforms/web/frontend-developer.md"
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/coding-standards.md"
+    tools:
+      - "tools/git-tools.md"
+    skills:
+      - "core/web-artifacts-builder"
+      - "communication/internal-comms"
+    memory:
+      enabled: true
+      retention_policy: "high_priority"
+    coordination:
+      reports_to: "team_manager"
+      collaborates_with:
+        - "backend_developer"
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.5
+
+  # Test agent with missing skill (should handle gracefully)
+  test_agent:
+    base: "base/software-developer.md"
+    skills:
+      - "core/web-artifacts-builder"
+      - "nonexistent/missing-skill"
+      - "documents/pdf"
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.5
+
+# Project-Specific Configuration
+project:
+  tech_stack:
+    frontend:
+      - "React"
+      - "TypeScript"
+    backend:
+      - "Node.js"
+      - "Express"
+
+  coding_standards:
+    linter: "ESLint"
+    formatter: "Prettier"
+    style_guide: "Airbnb"
+    test_framework: "Jest"
+    min_test_coverage: 80
+
+  git_workflow:
+    main_branch: "main"
+    development_branch: "develop"
+    branch_naming: "feature/<feature-name>"
+    commit_message_format: "conventional"
+    require_pr: true
+
+  quality_gates:
+    require_tests: true
+    require_code_review: true
+    require_passing_ci: true
+    block_on_lint_errors: true
+    min_test_coverage: 80

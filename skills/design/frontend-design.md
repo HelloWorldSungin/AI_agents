@@ -1,0 +1,1 @@
+../anthropic/frontend-design/SKILL.md

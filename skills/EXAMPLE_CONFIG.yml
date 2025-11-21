@@ -1,0 +1,212 @@
+# Example Agent Configuration with Anthropic Skills
+# This demonstrates how to integrate skills into your agent configurations
+
+# Project Information
+project_name: "Example Web Application"
+description: "Full-stack web app with React frontend and Node.js backend"
+
+# Agent Library Configuration
+agent_library:
+  version: "1.0.0"
+  source: "https://github.com/your-org/AI_agents"
+
+# Agent Definitions with Skills
+agents:
+  # ============================================
+  # TEAM MANAGER
+  # ============================================
+  team_manager:
+    base: "base/manager.md"
+
+    # Skills for communication and documentation
+    skills:
+      - "skills/anthropic/internal-comms"    # Team communications
+      - "skills/anthropic/xlsx"               # Metrics and reporting
+      - "skills/anthropic/docx"               # Documentation
+
+    coordination:
+      manages:
+        - frontend_developer
+        - backend_developer
+        - qa_tester
+
+    memory:
+      enabled: true
+      retention_policy: "high_priority"
+      checkpoint_frequency: 10
+
+  # ============================================
+  # ARCHITECT
+  # ============================================
+  architect:
+    base: "base/architect.md"
+
+    # Skills for design and architecture
+    skills:
+      - "skills/anthropic/skill-creator"     # For designing team capabilities
+      - "skills/anthropic/mcp-builder"       # Integration architecture
+      - "skills/anthropic/docx"              # Technical documentation
+
+    project_context:
+      - ".ai-agents/context/architecture.md"
+
+    coordination:
+      reports_to: team_manager
+      collaborates_with:
+        - frontend_developer
+        - backend_developer
+
+    memory:
+      enabled: true
+      retention_policy: "high_priority"
+
+  # ============================================
+  # FRONTEND DEVELOPER
+  # ============================================
+  frontend_developer:
+    base: "base/software-developer.md"
+
+    # Platform specialization
+    platforms:
+      - "platforms/web/frontend-developer.md"
+
+    # Skills for frontend development
+    skills:
+      - "skills/anthropic/artifacts-builder"  # React components with Tailwind
+      - "skills/anthropic/theme-factory"      # Professional styling
+      - "skills/anthropic/webapp-testing"     # Component testing
+
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/ui-guidelines.md"
+      - ".ai-agents/context/component-library.md"
+
+    coordination:
+      reports_to: team_manager
+      collaborates_with:
+        - backend_developer
+        - qa_tester
+
+    memory:
+      enabled: true
+      retention_policy: "medium_priority"
+      checkpoint_frequency: 15
+
+  # ============================================
+  # BACKEND DEVELOPER
+  # ============================================
+  backend_developer:
+    base: "base/software-developer.md"
+
+    # Platform specialization
+    platforms:
+      - "platforms/web/backend-developer.md"
+
+    # Skills for backend development
+    skills:
+      - "skills/anthropic/mcp-builder"        # API and service integrations
+
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/api-contracts.md"
+      - ".ai-agents/context/database-schema.md"
+
+    coordination:
+      reports_to: team_manager
+      collaborates_with:
+        - frontend_developer
+        - qa_tester
+
+    memory:
+      enabled: true
+      retention_policy: "medium_priority"
+      checkpoint_frequency: 15
+
+  # ============================================
+  # QA TESTER
+  # ============================================
+  qa_tester:
+    base: "base/qa-tester.md"
+
+    # Skills for testing
+    skills:
+      - "skills/anthropic/webapp-testing"     # Playwright testing
+      - "skills/anthropic/docx"               # Test reports
+
+    project_context:
+      - ".ai-agents/context/test-plan.md"
+      - ".ai-agents/context/api-contracts.md"
+
+    coordination:
+      reports_to: team_manager
+      collaborates_with:
+        - frontend_developer
+        - backend_developer
+
+    memory:
+      enabled: true
+      retention_policy: "medium_priority"
+      checkpoint_frequency: 20
+
+# ============================================
+# PROJECT CONFIGURATION
+# ============================================
+project:
+  tech_stack:
+    frontend:
+      - "React 18"
+      - "TypeScript"
+      - "Tailwind CSS"
+      - "shadcn/ui"
+    backend:
+      - "Node.js"
+      - "Express"
+      - "TypeScript"
+      - "PostgreSQL"
+    testing:
+      - "Jest"
+      - "React Testing Library"
+      - "Playwright"
+      - "Supertest"
+
+  coding_standards:
+    linter: "ESLint"
+    formatter: "Prettier"
+    style_guide: "Airbnb TypeScript"
+    test_framework: "Jest"
+    min_test_coverage: 80
+
+  git_workflow:
+    main_branch: "main"
+    development_branch: "develop"
+    branch_naming: "feature/<name>/agent/<role>/<task>"
+    commit_message_format: "Conventional Commits"
+
+  quality_gates:
+    require_tests: true
+    require_code_review: true
+    require_passing_ci: true
+    block_on_lint_errors: true
+    min_test_coverage: 80
+
+# ============================================
+# NOTES ON SKILL USAGE
+# ============================================
+#
+# Token Budget Estimates (per agent):
+# - team_manager:       ~12,000 tokens (base + 3 skills)
+# - architect:          ~13,000 tokens (base + 3 skills)
+# - frontend_developer: ~18,000 tokens (base + platform + 3 skills + context)
+# - backend_developer:  ~14,000 tokens (base + platform + 1 skill + context)
+# - qa_tester:          ~10,000 tokens (base + 2 skills + context)
+#
+# Total Team: ~67,000 tokens (well within budget)
+#
+# Skills are loaded from the Anthropic Skills submodule at:
+# skills/anthropic/<skill-name>/SKILL.md
+#
+# To compose agents with these skills:
+# python scripts/compose-agent.py --config .ai-agents/config.yml --all
+#
+# To compose a single agent:
+# python scripts/compose-agent.py --config .ai-agents/config.yml --agent frontend_developer

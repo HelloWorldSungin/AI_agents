@@ -21,6 +21,11 @@ agents:
       - ".ai-agents/workflows/mobile-release.md"
     tools:
       - "tools/communication-tools.md"
+    # Skills: Communication and documentation for team coordination
+    skills:
+      - "communication/internal-comms"  # Team status updates, release notes
+      - "documents/pptx"                # Stakeholder presentations
+      - "documents/xlsx"                # Release tracking, metrics
     memory:
       enabled: true
       retention_policy: "high_priority"
@@ -49,6 +54,11 @@ agents:
     tools:
       - "tools/git-tools.md"
       - "tools/testing-tools.md"
+    # Skills: Mobile UI development and styling
+    skills:
+      - "design/theme-factory"        # PRIMARY: Consistent mobile UI themes
+      - "core/web-artifacts-builder"  # React/React Native component patterns
+      - "core/skill-creator"          # Custom mobile-specific skills
     memory:
       enabled: true
       retention_policy: "high_priority"
@@ -76,6 +86,11 @@ agents:
       - "tools/git-tools.md"
       - "tools/testing-tools.md"
       - "tools/build-tools.md"
+    # Skills: Backend API development and integrations
+    skills:
+      - "core/mcp-builder"      # PRIMARY: Mobile API integrations, MCP servers
+      - "core/webapp-testing"   # API endpoint testing
+      - "documents/xlsx"        # Data exports for mobile analytics
     memory:
       enabled: true
       retention_policy: "high_priority"
@@ -98,6 +113,11 @@ agents:
       - ".ai-agents/context/requirements.md"
     tools:
       - "tools/analysis-tools.md"
+    # Skills: Architecture design and documentation
+    skills:
+      - "core/skill-creator"      # PRIMARY: Designing custom mobile patterns
+      - "documents/pptx"          # Architecture presentations
+      - "communication/internal-comms"  # Technical documentation
     memory:
       enabled: true
       retention_policy: "high_priority"
@@ -122,6 +142,11 @@ agents:
       - ".ai-agents/context/device-matrix.md"
     tools:
       - "tools/testing-tools.md"
+    # Skills: Mobile testing and reporting
+    skills:
+      - "core/webapp-testing"  # Automated testing for React Native web views
+      - "documents/xlsx"       # Device matrix, test results tracking
+      - "documents/pdf"        # Test reports and certification docs
     memory:
       enabled: true
       retention_policy: "medium_priority"

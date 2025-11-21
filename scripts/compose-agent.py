@@ -7,7 +7,8 @@ This script composes complete agent prompts by combining:
 2. Platform augmentations
 3. Project-specific context
 4. Tool definitions
-5. Memory configurations
+5. Anthropic Skills
+6. Memory configurations
 
 Usage:
     python compose-agent.py --config config.yml --agent frontend_developer
@@ -17,6 +18,7 @@ Usage:
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -46,6 +48,95 @@ class AgentComposer:
         except Exception as e:
             print(f"Error reading {path}: {e}")
             return ""
+
+    def resolve_skill_path(self, skill: str) -> Optional[Path]:
+        """
+        Resolve skill path from skill name.
+
+        Supports both formats:
+        - "skill-name" -> looks in skills/core/skill-name.md
+        - "category/skill-name" -> looks in skills/category/skill-name.md
+
+        Checks both library and project-specific skills directories.
+
+        Args:
+            skill: Skill identifier
+
+        Returns:
+            Path to skill file if found, None otherwise
+        """
+        # Check if skill includes category
+        if '/' in skill:
+            # Format: category/skill-name
+            skill_path = f"skills/{skill}.md"
+        else:
+            # Format: skill-name (default to core category)
+            skill_path = f"skills/core/{skill}.md"
+
+        # Check library skills directory first
+        library_skill = self.library_path / skill_path
+        if library_skill.exists():
+            return library_skill
+
+        # Check project-specific skills directory
+        project_skill = self.project_path / ".ai-agents" / skill_path
+        if project_skill.exists():
+            return project_skill
+
+        return None
+
+    def count_tokens(self, text: str) -> int:
+        """
+        Estimate token count for text.
+
+        Uses a simple approximation: ~4 characters per token for English text.
+        This is a rough estimate; actual token count may vary.
+
+        Args:
+            text: Text to count tokens for
+
+        Returns:
+            Estimated token count
+        """
+        # Simple approximation: 4 characters per token
+        # This is conservative; actual ratio is often closer to 3-3.5
+        return len(text) // 4
+
+    def analyze_token_budget(self, content: str, agent_name: str, agent_config: Dict) -> Dict:
+        """
+        Analyze token usage and budget.
+
+        Args:
+            content: Composed agent content
+            agent_name: Name of the agent
+            agent_config: Agent configuration
+
+        Returns:
+            Dictionary with token analysis results
+        """
+        total_tokens = self.count_tokens(content)
+
+        # Default context window for Claude Sonnet 4.5 is 200k tokens
+        max_context = 200000
+
+        # We want to leave plenty of room for conversation
+        # Recommendation: agent prompt should be < 12k tokens (6% of context)
+        recommended_max = 12000
+
+        # Warning threshold at 75% of recommended max
+        warning_threshold = int(recommended_max * 0.75)
+
+        result = {
+            'total_tokens': total_tokens,
+            'max_context': max_context,
+            'recommended_max': recommended_max,
+            'warning_threshold': warning_threshold,
+            'percentage_of_context': (total_tokens / max_context) * 100,
+            'within_budget': total_tokens <= recommended_max,
+            'needs_warning': total_tokens >= warning_threshold
+        }
+
+        return result
 
     def compose_agent(
         self,
@@ -143,7 +234,27 @@ class AgentComposer:
 
             components.append("\n")
 
-        # 5. Add project-specific instructions
+        # 5. Load Anthropic Skills
+        if 'skills' in agent_config and agent_config['skills']:
+            components.append("# ========================================")
+            components.append("# ANTHROPIC SKILLS")
+            components.append("# ========================================\n")
+
+            for skill in agent_config['skills']:
+                # Resolve skill path from library or project directory
+                skill_path = self.resolve_skill_path(skill)
+                if skill_path:
+                    components.append(f"\n## Skill: {skill}\n")
+                    components.append(self.load_markdown(skill_path))
+                    components.append("\n")
+                else:
+                    print(f"Warning: Skill not found: {skill}")
+                    print(f"  Searched in library: skills/{skill}.md")
+                    print(f"  Searched in project: .ai-agents/skills/{skill}.md")
+
+            components.append("\n")
+
+        # 6. Add project-specific instructions
         components.append("# ========================================")
         components.append("# PROJECT-SPECIFIC CONFIGURATION")
         components.append("# ========================================\n")
@@ -151,7 +262,7 @@ class AgentComposer:
         project_info = self._generate_project_info(project_config)
         components.append(project_info)
 
-        # 6. Add coordination info
+        # 7. Add coordination info
         if 'coordination' in agent_config:
             coord_info = self._generate_coordination_info(
                 agent_name,
@@ -160,7 +271,7 @@ class AgentComposer:
             components.append("\n")
             components.append(coord_info)
 
-        # 7. Add memory configuration
+        # 8. Add memory configuration
         if 'memory' in agent_config and agent_config['memory'].get('enabled'):
             memory_info = self._generate_memory_info(agent_config['memory'])
             components.append("\n")
@@ -276,15 +387,56 @@ class AgentComposer:
         from datetime import datetime
         return datetime.now().isoformat()
 
-    def save_agent(self, agent_name: str, content: str, output_dir: Path):
-        """Save composed agent to file."""
+    def save_agent(self, agent_name: str, content: str, output_dir: Path, agent_config: Dict):
+        """
+        Save composed agent to file with token analysis.
+
+        Args:
+            agent_name: Name of the agent
+            content: Composed agent content
+            output_dir: Output directory
+            agent_config: Agent configuration for analysis
+        """
         output_dir.mkdir(parents=True, exist_ok=True)
         output_file = output_dir / f"{agent_name}.md"
 
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(content)
 
+        # Analyze token usage
+        analysis = self.analyze_token_budget(content, agent_name, agent_config)
+
         print(f"✓ Saved: {output_file}")
+        print(f"  Tokens: {analysis['total_tokens']:,} / {analysis['recommended_max']:,} recommended")
+        print(f"  Context usage: {analysis['percentage_of_context']:.2f}%")
+
+        # Warn if approaching or exceeding budget
+        if not analysis['within_budget']:
+            print(f"  ⚠️  WARNING: Agent prompt exceeds recommended size!")
+            print(f"  Recommendation: {analysis['total_tokens'] - analysis['recommended_max']:,} tokens over budget")
+            self._suggest_reductions(agent_name, agent_config)
+        elif analysis['needs_warning']:
+            print(f"  ⚠️  Approaching token budget limit")
+            print(f"  Remaining budget: {analysis['recommended_max'] - analysis['total_tokens']:,} tokens")
+
+    def _suggest_reductions(self, agent_name: str, agent_config: Dict):
+        """Suggest ways to reduce token usage."""
+        suggestions = []
+
+        if 'skills' in agent_config and agent_config['skills']:
+            suggestions.append(f"  - Consider removing {len(agent_config['skills'])} skill(s)")
+            suggestions.append(f"    Skills: {', '.join(agent_config['skills'])}")
+
+        if 'platforms' in agent_config and len(agent_config['platforms']) > 1:
+            suggestions.append(f"  - Consider consolidating {len(agent_config['platforms'])} platform augmentations")
+
+        if 'project_context' in agent_config and len(agent_config['project_context']) > 3:
+            suggestions.append(f"  - Review {len(agent_config['project_context'])} project context files")
+
+        if suggestions:
+            print(f"\n  Suggestions to reduce token usage:")
+            for suggestion in suggestions:
+                print(suggestion)
 
 
 def main():
@@ -380,7 +532,7 @@ def main():
         composed = composer.compose_agent(agent_name, agent_config, config)
 
         if composed:
-            composer.save_agent(agent_name, composed, output_dir)
+            composer.save_agent(agent_name, composed, output_dir, agent_config)
         else:
             print(f"✗ Failed to compose {agent_name}")
 

@@ -9,6 +9,87 @@ This example demonstrates how to configure a multi-agent team for a full-stack w
 - **Backend Developer**: Node.js + Express API development
 - **QA Tester**: Testing and quality assurance
 
+## Skills Integration
+
+This example demonstrates how Anthropic Skills enhance each agent's capabilities beyond their base prompts.
+
+### Team Manager Skills
+
+**Skills**: `communication/internal-comms`, `documents/pptx`, `core/skill-creator`
+**Token Budget**: ~11,000 tokens (3,000 base + ~8,000 skills)
+
+The manager uses skills to:
+- Generate standardized team status updates (3P format: Progress/Plans/Problems)
+- Create professional stakeholder presentations
+- Understand and compose new team capabilities
+
+**Example Usage**:
+```
+User: "Create a weekly status update for the engineering team"
+Manager: Uses internal-comms skill to generate a formatted 3P update
+```
+
+### Frontend Developer Skills
+
+**Skills**: `core/web-artifacts-builder`, `core/webapp-testing`, `design/theme-factory`
+**Token Budget**: ~13,000 tokens (3,000 base + 3,000 platform + ~7,000 skills)
+
+The frontend developer uses skills to:
+- Build interactive React components with Tailwind CSS and shadcn/ui
+- Test components and UI behavior with Playwright
+- Apply professional themes and styling consistently
+
+**Example Usage**:
+```
+User: "Create a responsive product card component"
+Frontend Dev: Uses web-artifacts-builder to generate React component with Tailwind
+              Uses theme-factory to apply Ocean Depths theme
+              Uses webapp-testing to verify responsive behavior
+```
+
+### Backend Developer Skills
+
+**Skills**: `core/mcp-builder`, `core/webapp-testing`, `documents/xlsx`
+**Token Budget**: ~12,000 tokens (3,000 base + 3,000 platform + ~6,000 skills)
+
+The backend developer uses skills to:
+- Design and implement MCP servers for API integrations
+- Test API endpoints and backend functionality
+- Generate data exports and reports
+
+**Example Usage**:
+```
+User: "Create an MCP server for the Stripe API"
+Backend Dev: Uses mcp-builder skill to design and implement TypeScript MCP server
+             Uses webapp-testing to verify API endpoints
+```
+
+### QA Tester Skills
+
+**Skills**: `core/webapp-testing`, `documents/xlsx`, `documents/pdf`
+**Token Budget**: ~11,000 tokens (3,000 base + ~8,000 skills)
+
+The QA tester uses skills to:
+- Perform end-to-end testing with Playwright
+- Track test results in structured spreadsheets
+- Generate professional test reports
+
+**Example Usage**:
+```
+User: "Test the checkout flow"
+QA Tester: Uses webapp-testing to automate E2E test
+           Captures screenshots at each step
+           Uses xlsx to log test results
+           Uses pdf to generate test report
+```
+
+### Total Team Token Budget
+
+**Without Skills**: ~12,000 tokens (4 agents x 3,000 base)
+**With Skills**: ~47,000 tokens (base + platforms + skills)
+
+This represents a ~4x increase in context usage, providing significantly enhanced capabilities.
+
 ## Project Setup
 
 ### 1. Install the AI Agents Library
@@ -118,6 +199,28 @@ python .ai-agents/library/scripts/compose-agent.py \
 
 ## Usage
 
+### Composing Agents with Skills
+
+```bash
+# Compose frontend developer with all skills
+python scripts/compose-agent.py \
+  --config examples/web-app-team/config.yml \
+  --agent frontend_developer \
+  --output .ai-agents/prompts/frontend-developer-full.md
+
+# Verify skills are loaded
+grep "web-artifacts-builder" .ai-agents/prompts/frontend-developer-full.md
+```
+
+The composed prompt will include:
+1. Base software developer prompt (~3,000 tokens)
+2. Web frontend platform augmentation (~3,000 tokens)
+3. Three skills (~7,000 tokens):
+   - web-artifacts-builder
+   - webapp-testing
+   - theme-factory
+4. Project context files (variable)
+
 ### Starting a New Feature
 
 1. **Manager receives user request**
@@ -125,20 +228,35 @@ python .ai-agents/library/scripts/compose-agent.py \
    User: "Implement user authentication"
    ```
 
-2. **Manager breaks down the task**
+2. **Manager breaks down the task and uses internal-comms skill**
    ```
-   Manager creates:
+   Manager creates tasks and generates 3P update:
+
+   PROGRESS:
+   - Analyzed authentication requirements
+   - Created task breakdown for 4 agents
+
+   PLANS:
    - TASK-001: Design auth architecture (Architect)
    - TASK-002: Implement JWT service (Backend Dev)
    - TASK-003: Create auth API (Backend Dev)
    - TASK-004: Build login form (Frontend Dev)
    - TASK-005: Write tests (QA Tester)
+
+   PROBLEMS:
+   - None currently
    ```
 
-3. **Agents work in parallel**
+3. **Agents work in parallel (using skills)**
    ```
-   Backend Dev → feature/user-auth/agent/backend-dev/jwt-service
-   Frontend Dev → feature/user-auth/agent/frontend-dev/login-form
+   Backend Dev → Uses mcp-builder to design JWT service
+              → feature/user-auth/agent/backend-dev/jwt-service
+
+   Frontend Dev → Uses web-artifacts-builder to create login form
+               → Uses theme-factory for professional styling
+               → feature/user-auth/agent/frontend-dev/login-form
+
+   QA Tester → Uses webapp-testing to prepare test scenarios
    ```
 
 4. **Agents report progress**

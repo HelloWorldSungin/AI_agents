@@ -1,0 +1,1 @@
+../anthropic/mcp-builder/SKILL.md

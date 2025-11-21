@@ -1,0 +1,237 @@
+# Skills Showcase Configuration
+# Demonstrates different skill combinations and their impacts on agent capabilities
+
+project_id: "skills-showcase"
+project_name: "Skills Showcase Examples"
+description: "Comparative examples showing agents with different skill configurations"
+
+# Agent Library Configuration
+agent_library:
+  repo: "git@github.com:org/AI_agents.git"
+  version: "1.0.0"
+  update_strategy: "auto_patch"
+
+# Agent Definitions - Progressive Complexity
+
+agents:
+  # =============================================================================
+  # BASELINE: Minimal Configuration (No Skills)
+  # =============================================================================
+  # Purpose: Establish baseline token budget and capabilities
+  # Use Case: When you need general-purpose development without specialization
+
+  minimal_developer:
+    base: "base/software-developer.md"
+    # No platforms, no skills - pure base prompt
+    # Token Budget: ~3,000 tokens
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.5
+
+  # =============================================================================
+  # LIGHT: Single Skill Addition
+  # =============================================================================
+  # Purpose: Show impact of adding one specialized skill
+  # Use Case: When you need one specific capability enhancement
+
+  testing_specialist:
+    base: "base/qa-tester.md"
+    skills:
+      - "core/webapp-testing"  # PRIMARY: Playwright-based testing
+    # Token Budget: ~7,000 tokens (3,000 base + 4,000 skill)
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.3
+
+  # =============================================================================
+  # STANDARD: Frontend Specialist (Multiple Related Skills)
+  # =============================================================================
+  # Purpose: Demonstrate cohesive skill combination for frontend work
+  # Use Case: Production frontend development with testing
+
+  frontend_specialist:
+    base: "base/software-developer.md"
+    platforms:
+      - "platforms/web/frontend-developer.md"
+    skills:
+      - "core/web-artifacts-builder"  # PRIMARY: React + Tailwind
+      - "design/theme-factory"        # Professional styling
+      - "core/webapp-testing"         # Component testing
+    # Token Budget: ~13,000 tokens (3,000 base + 3,000 platform + 7,000 skills)
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.5
+
+  # =============================================================================
+  # ADVANCED: Full-Stack Developer (Cross-Domain Skills)
+  # =============================================================================
+  # Purpose: Show how to combine frontend and backend capabilities
+  # Use Case: Full-stack development with end-to-end ownership
+
+  fullstack_developer:
+    base: "base/software-developer.md"
+    platforms:
+      - "platforms/web/frontend-developer.md"
+      - "platforms/web/backend-developer.md"
+    skills:
+      - "core/web-artifacts-builder"  # Frontend: React components
+      - "core/mcp-builder"            # Backend: API integrations
+      - "core/webapp-testing"         # Testing: Full stack
+    # Token Budget: ~16,000 tokens (3,000 base + 6,000 platforms + 7,000 skills)
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.5
+
+  # =============================================================================
+  # SPECIALIZED: QA Engineer (Testing + Documentation)
+  # =============================================================================
+  # Purpose: Demonstrate skill combination for quality assurance role
+  # Use Case: Comprehensive testing with professional reporting
+
+  qa_engineer:
+    base: "base/qa-tester.md"
+    skills:
+      - "core/webapp-testing"  # PRIMARY: Automated testing
+      - "documents/xlsx"       # Test data and results
+      - "documents/pdf"        # Test reports
+      - "documents/docx"       # Test documentation
+    # Token Budget: ~14,000 tokens (3,000 base + 11,000 skills)
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.3
+
+  # =============================================================================
+  # LEADERSHIP: Engineering Manager (Communication + Documentation)
+  # =============================================================================
+  # Purpose: Show skill combination for management and coordination
+  # Use Case: Team leadership, reporting, stakeholder communication
+
+  engineering_manager:
+    base: "base/manager.md"
+    skills:
+      - "communication/internal-comms"  # PRIMARY: Team communication
+      - "documents/pptx"                # Presentations
+      - "documents/xlsx"                # Metrics and tracking
+      - "core/skill-creator"            # Understanding team capabilities
+    # Token Budget: ~14,000 tokens (3,000 base + 11,000 skills)
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.7
+
+  # =============================================================================
+  # ARCHITECT: System Design (Strategic Skills)
+  # =============================================================================
+  # Purpose: Demonstrate skills for architectural and strategic work
+  # Use Case: System design, pattern creation, technical leadership
+
+  system_architect:
+    base: "base/architect.md"
+    platforms:
+      - "platforms/web/frontend-developer.md"  # Understanding frontend
+      - "platforms/web/backend-developer.md"   # Understanding backend
+    skills:
+      - "core/skill-creator"            # PRIMARY: Creating team patterns
+      - "core/mcp-builder"              # Integration architecture
+      - "documents/pptx"                # Architecture presentations
+      - "communication/internal-comms"  # Technical communication
+    # Token Budget: ~17,000 tokens (3,000 base + 6,000 platforms + 8,000 skills)
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.7
+
+  # =============================================================================
+  # CREATIVE: UI/UX Developer (Design-Focused Skills)
+  # =============================================================================
+  # Purpose: Show design and creative skill combination
+  # Use Case: UI/UX development with visual design capabilities
+
+  ui_ux_developer:
+    base: "base/software-developer.md"
+    platforms:
+      - "platforms/web/frontend-developer.md"
+    skills:
+      - "core/web-artifacts-builder"  # React component creation
+      - "design/theme-factory"        # PRIMARY: Professional themes
+      - "design/algorithmic-art"      # Generative visualizations
+      - "design/canvas-design"        # Visual assets
+    # Token Budget: ~14,000 tokens (3,000 base + 3,000 platform + 8,000 skills)
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.6
+
+  # =============================================================================
+  # DOCUMENTATION: Technical Writer (Document-Focused Skills)
+  # =============================================================================
+  # Purpose: Demonstrate documentation-focused skill combination
+  # Use Case: Technical documentation, user guides, API docs
+
+  technical_writer:
+    base: "base/software-developer.md"  # Technical understanding
+    skills:
+      - "documents/docx"                # PRIMARY: Technical documentation
+      - "documents/pdf"                 # Published documentation
+      - "documents/pptx"                # Training materials
+      - "communication/internal-comms"  # Communication guidelines
+    # Token Budget: ~13,000 tokens (3,000 base + 10,000 skills)
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.5
+
+  # =============================================================================
+  # MAXIMUM: Polyglot Developer (Maximum Skill Load)
+  # =============================================================================
+  # Purpose: Test maximum practical skill combination
+  # Use Case: Understanding upper limits (NOT recommended for production)
+  # WARNING: High token budget - use sparingly
+
+  polyglot_developer:
+    base: "base/software-developer.md"
+    platforms:
+      - "platforms/web/frontend-developer.md"
+      - "platforms/web/backend-developer.md"
+    skills:
+      - "core/web-artifacts-builder"
+      - "core/mcp-builder"
+      - "core/webapp-testing"
+      - "design/theme-factory"
+      - "documents/xlsx"
+      - "communication/internal-comms"
+    # Token Budget: ~20,000 tokens (3,000 base + 6,000 platforms + 11,000 skills)
+    # WARNING: This configuration is for testing limits only
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.5
+
+# Configuration Notes
+# ===================
+#
+# Token Budget Guidelines:
+# - Minimal (no skills):     ~3,000 tokens
+# - Light (1 skill):         ~7,000 tokens
+# - Standard (2-3 skills):   ~10,000-13,000 tokens
+# - Advanced (3-4 skills):   ~13,000-17,000 tokens
+# - Maximum (5+ skills):     ~17,000-25,000 tokens
+#
+# Recommendations:
+# - Start with minimal configuration
+# - Add skills incrementally based on actual needs
+# - Monitor context usage in production
+# - Remove unused skills after 5+ sessions
+# - Aim for 2-4 skills per agent in production
+#
+# Skill Selection Strategy:
+# 1. Identify primary agent function
+# 2. Add PRIMARY skill for core capability
+# 3. Add SECONDARY skills for common tasks
+# 4. Test and measure actual skill usage
+# 5. Remove skills with < 10% usage rate

@@ -1,0 +1,1 @@
+../anthropic/algorithmic-art/SKILL.md

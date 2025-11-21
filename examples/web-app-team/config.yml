@@ -21,6 +21,11 @@ agents:
       - ".ai-agents/workflows/feature-development.md"
     tools:
       - "tools/communication-tools.md"
+    # Skills: Communication and documentation for team coordination
+    skills:
+      - "communication/internal-comms"  # Team status updates, reports
+      - "documents/pptx"                # Presentations for stakeholders
+      - "core/skill-creator"            # Understanding team capabilities
     memory:
       enabled: true
       retention_policy: "high_priority"
@@ -46,6 +51,11 @@ agents:
     tools:
       - "tools/git-tools.md"
       - "tools/testing-tools.md"
+    # Skills: Frontend development and testing
+    skills:
+      - "core/web-artifacts-builder"  # PRIMARY: React components, UI development
+      - "core/webapp-testing"         # Component and E2E testing
+      - "design/theme-factory"        # Professional UI styling
     memory:
       enabled: true
       retention_policy: "high_priority"
@@ -72,6 +82,11 @@ agents:
       - "tools/git-tools.md"
       - "tools/testing-tools.md"
       - "tools/build-tools.md"
+    # Skills: Backend development and integrations
+    skills:
+      - "core/mcp-builder"      # PRIMARY: MCP servers, API integrations
+      - "core/webapp-testing"   # API testing
+      - "documents/xlsx"        # Data exports and reports
     memory:
       enabled: true
       retention_policy: "high_priority"
@@ -94,6 +109,11 @@ agents:
       - ".ai-agents/context/requirements.md"
     tools:
       - "tools/testing-tools.md"
+    # Skills: Testing and reporting
+    skills:
+      - "core/webapp-testing"  # PRIMARY: E2E testing with Playwright
+      - "documents/xlsx"       # Test data and results tracking
+      - "documents/pdf"        # Test reports and deliverables
     memory:
       enabled: true
       retention_policy: "medium_priority"

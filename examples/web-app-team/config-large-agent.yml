@@ -1,0 +1,67 @@
+# Test config with many skills to test token warnings
+
+project_id: "large-agent-test"
+project_name: "Large Agent Test"
+description: "Testing token budget warnings"
+
+agent_library:
+  repo: "git@github.com:org/AI_agents.git"
+  version: "1.0.0"
+  update_strategy: "auto_patch"
+
+agents:
+  large_agent:
+    base: "base/software-developer.md"
+    platforms:
+      - "platforms/web/frontend-developer.md"
+      - "platforms/web/backend-developer.md"
+    project_context:
+      - ".ai-agents/context/architecture.md"
+      - ".ai-agents/context/coding-standards.md"
+      - ".ai-agents/context/api-contracts.md"
+      - ".ai-agents/context/database-schema.md"
+    tools:
+      - "tools/git-tools.md"
+      - "tools/testing-tools.md"
+      - "tools/build-tools.md"
+    skills:
+      - "core/web-artifacts-builder"
+      - "communication/internal-comms"
+      - "documents/pdf"
+    memory:
+      enabled: true
+      retention_policy: "high_priority"
+    model:
+      provider: "anthropic"
+      model_name: "claude-sonnet-4-5"
+      temperature: 0.5
+
+project:
+  tech_stack:
+    frontend:
+      - "React"
+      - "TypeScript"
+    backend:
+      - "Node.js"
+      - "Express"
+
+  coding_standards:
+    linter: "ESLint"
+    formatter: "Prettier"
+    style_guide: "Airbnb"
+    test_framework: "Jest"
+    min_test_coverage: 80
+
+  git_workflow:
+    main_branch: "main"
+    development_branch: "develop"
+    branch_naming: "feature/<feature-name>"
+    commit_message_format: "conventional"
+    require_pr: true
+
+  quality_gates:
+    require_tests: true
+    require_code_review: true
+    require_passing_ci: true
+    block_on_lint_errors: true
+    min_test_coverage: 80
