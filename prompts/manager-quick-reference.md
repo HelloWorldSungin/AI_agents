@@ -35,6 +35,91 @@ Delegate immediately - don't implement yourself.
 
 ---
 
+## Choose Your Workflow Mode
+
+### 🔹 Simple Mode (Default)
+
+**Use for:**
+- Established projects
+- 1-3 agents
+- Infrastructure already validated
+
+**Workflow:**
+```
+Manager → Task Agents → Integration Agent
+```
+
+**Init Prompt:** Use template above as-is
+
+---
+
+### 🔸 Complex Mode (Advanced)
+
+**Use for:**
+- New projects (first feature)
+- 5+ agents
+- Complex infrastructure
+- Code review required
+
+**Workflow:**
+```
+Manager → IT Specialist → Task Agents → Senior Engineer
+```
+
+**Init Prompt:** Add to template above:
+```markdown
+Mode: COMPLEX
+
+Steps:
+1. Read communication file
+2. Create 2-4 task breakdown
+3. Delegate to IT Specialist (infrastructure setup)
+4. Wait for "Ready" confirmation
+5. Delegate tasks to Task Engineers
+6. Delegate to Senior Engineer (review + integration)
+
+First action: Delegate infrastructure setup to IT Specialist.
+```
+
+**IT Specialist Template:**
+```markdown
+description: "Validate infrastructure"
+subagent_type: "general-purpose"
+prompt: "You are an IT Specialist for [PROJECT].
+
+Read: prompts/it-specialist-agent.md
+
+Run all 8 infrastructure checks:
+1. API credentials
+2. Backend services
+3. Testing infrastructure
+4. Skills library
+5. Worktree .env files
+6. Port management
+7. API client
+8. Git workflow
+
+Create .ai-agents/infrastructure-setup.md
+Report: 'Ready' or 'Blockers: X, Y, Z'"
+```
+
+**Senior Engineer Template:**
+```markdown
+description: "Review and integrate"
+subagent_type: "general-purpose"
+prompt: "You are a Senior Engineer for [PROJECT].
+
+Read: prompts/senior-engineer-agent.md
+
+Branches to review:
+- [BRANCH-1]: [Description]
+- [BRANCH-2]: [Description]
+
+Review, test, merge, and report quality assessment."
+```
+
+---
+
 ## Task Delegation Quick Template
 
 ```markdown
