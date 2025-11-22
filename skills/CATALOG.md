@@ -519,6 +519,61 @@ team_manager:
 
 Project-specific skills created for your organization.
 
+### appflowy-integration
+
+**Path**: `skills/custom/appflowy-integration`
+**License**: Apache 2.0
+**Token Estimate**: ~3,800 tokens
+
+**Description**: Integration with AppFlowy project management tool for task tracking, database management, and workspace organization. Enables agents to create tasks, update project status, and sync work with AppFlowy's REST API.
+
+**Capabilities**:
+- Create and update tasks in AppFlowy databases
+- Manage workspaces and folders
+- Track project progress automatically
+- Generate project dashboards
+- Sync agent work with AppFlowy
+- Support for self-hosted deployments (Synology NAS, Docker)
+
+**When to Use**:
+- Tracking agent tasks in project management system
+- Managing project workspaces and databases
+- Organizing work items in Kanban boards
+- Automating project status updates
+- Generating project reports and dashboards
+
+**Recommended For**:
+- All agents (for task tracking)
+- Project Manager (PRIMARY)
+- Software Developer (SECONDARY)
+
+**Dependencies**:
+- Python 3.7+
+- `requests` library
+- AppFlowy instance (self-hosted or cloud)
+- JWT authentication token
+
+**Example Usage**:
+```yaml
+software_developer:
+  skills:
+    - "skills/custom/appflowy-integration"
+  project_context:
+    - ".ai-agents/context/appflowy-config.md"
+```
+
+**Scripts Included**:
+- `appflowy_client.py`: Python API client
+- `task_tracker.py`: CLI task tracker
+
+**Deployment Options**:
+- Docker deployment
+- Synology NAS (DS 923+)
+- AI home server
+- See `references/setup_guide.md` for details
+
+---
+
 ### template
 
 **Path**: `skills/custom/template`
