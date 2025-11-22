@@ -5,11 +5,12 @@ Integration skill for AppFlowy, an open-source project management and collaborat
 ## Overview
 
 This skill enables AI agents to:
-- Create and update tasks in AppFlowy databases
-- Manage workspaces and folders
-- Track project progress
-- Generate project dashboards
-- Sync agent work with AppFlowy
+- ✅ Create and update tasks in AppFlowy databases
+- ✅ Set up new project workspaces automatically
+- ✅ Manage and monitor self-hosted AppFlowy servers
+- ✅ Track project progress and generate dashboards
+- ✅ Sync agent work with AppFlowy
+- ✅ Backup and restore AppFlowy data
 
 ## Quick Start
 
@@ -67,6 +68,33 @@ python appflowy_client.py
 
 ## Usage Examples
 
+### Set Up New Project Workspace
+```bash
+# Interactive setup
+python workspace_setup.py
+
+# Or with command-line args
+python workspace_setup.py --project "My New Project" --team dev1@team.com dev2@team.com
+```
+
+### Manage AppFlowy Server
+```bash
+# Start server
+./manage_server.sh start
+
+# Check status
+./manage_server.sh status
+
+# View logs
+./manage_server.sh logs
+
+# Backup database
+./manage_server.sh backup
+
+# Update to latest version
+./manage_server.sh update
+```
+
 ### Create a Task
 ```bash
 python task_tracker.py create "Implement feature X" \
@@ -111,11 +139,22 @@ appflowy-integration/
 ├── README.md                   # This file
 ├── scripts/
 │   ├── appflowy_client.py      # Python API client
-│   └── task_tracker.py         # CLI task tracker
+│   ├── task_tracker.py         # CLI task tracker
+│   ├── workspace_setup.py      # Workspace setup helper
+│   └── manage_server.sh        # Server management script
 └── references/
     ├── docker-compose.yml      # Docker deployment
     └── setup_guide.md          # Detailed setup guide
 ```
+
+## Key Features
+
+- 🚀 **Workspace Setup Automation** - Initialize project workspaces with one command
+- 🔧 **Server Management** - Complete lifecycle management (start, stop, monitor, backup, update)
+- 📋 **Task Tracking** - Create and manage tasks from command line or Python
+- 📊 **Project Dashboards** - Generate status reports and team summaries
+- 🏠 **Self-Hosted Support** - Full support for Synology NAS, Docker, home servers
+- 🔐 **Secure** - JWT authentication with token refresh support
 
 ## Requirements
 
@@ -123,6 +162,8 @@ appflowy-integration/
 - `requests` library: `pip install requests`
 - AppFlowy instance (self-hosted or cloud)
 - JWT authentication token
+- Docker & Docker Compose (for self-hosted deployment)
+- `jq` (optional, for JSON formatting in scripts)
 
 ## Self-Hosted Deployment
 

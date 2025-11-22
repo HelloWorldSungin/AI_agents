@@ -409,7 +409,264 @@ standup = generate_standup_summary(client, database_id)
 print(standup)
 ```
 
-### Step 5: Error Handling and Best Practices
+**Pattern 4: New Project Workspace Setup**
+```python
+def create_project_workspace(client, project_name, team_members=None):
+    """
+    Create a new workspace for a project with initial setup.
+
+    This pattern is useful when starting a new project and you want
+    to automatically set up the AppFlowy workspace structure.
+
+    Args:
+        client: AppFlowy client instance
+        project_name: Name of the new project
+        team_members: List of team member emails to add
+    """
+    from datetime import datetime
+
+    # Note: Workspace creation API may require admin permissions
+    # Check AppFlowy API documentation for latest endpoint
+
+    # 1. Create workspace (if API supports it)
+    # For now, this assumes workspace exists and we find it by name
+    workspaces = client.list_workspaces()
+    workspace = next(
+        (w for w in workspaces if w.get('name') == project_name),
+        None
+    )
+
+    if not workspace:
+        print(f"⚠️  Workspace '{project_name}' not found.")
+        print("Please create it manually in AppFlowy UI, then run setup again.")
+        return None
+
+    workspace_id = workspace['id']
+    print(f"✅ Using workspace: {project_name} (ID: {workspace_id})")
+
+    # 2. Check if Tasks database exists, create note if it doesn't
+    databases = client.list_databases(workspace_id)
+    tasks_db = next((db for db in databases if db.get('name') == 'Tasks'), None)
+
+    if not tasks_db:
+        print("⚠️  'Tasks' database not found in workspace.")
+        print("Please create a 'Tasks' database in AppFlowy UI with fields:")
+        print("  - title (text)")
+        print("  - status (select: Todo, In Progress, Completed, Blocked)")
+        print("  - priority (select: High, Medium, Low)")
+        print("  - assignee (text)")
+        print("  - due_date (date)")
+        print("  - description (text)")
+        return None
+    else:
+        print(f"✅ Tasks database found (ID: {tasks_db['id']})")
+
+    # 3. Create initial project setup task
+    setup_task = {
+        'title': f'Project Setup: {project_name}',
+        'description': f'Initialize project workspace and documentation. Created: {datetime.utcnow().isoformat()}',
+        'status': 'In Progress',
+        'priority': 'High',
+        'assignee': 'Project Lead'
+    }
+
+    try:
+        task = client.create_row(tasks_db['id'], setup_task, workspace_id)
+        print(f"✅ Created initial setup task (ID: {task.get('id')})")
+    except Exception as e:
+        print(f"⚠️  Could not create setup task: {e}")
+
+    # 4. Return workspace configuration
+    return {
+        'workspace_id': workspace_id,
+        'workspace_name': project_name,
+        'tasks_database_id': tasks_db['id'],
+        'setup_complete': True,
+        'message': f'Workspace ready for {project_name}'
+    }
+
+# Usage
+config = create_project_workspace(client, "New AI Project", ["dev1@team.com", "dev2@team.com"])
+if config:
+    print(f"\n📋 Save these values:")
+    print(f"export APPFLOWY_WORKSPACE_ID='{config['workspace_id']}'")
+    print(f"export APPFLOWY_TASKS_DB_ID='{config['tasks_database_id']}'")
+```
+
+### Step 5: Managing AppFlowy Backend Server
+
+Start, stop, and monitor your self-hosted AppFlowy instance:
+
+**Start Backend Server:**
+
+```bash
+# Using Docker Compose
+cd /path/to/appflowy-deploy
+docker-compose up -d
+
+# Check status
+docker-compose ps
+
+# View startup logs
+docker-compose logs -f appflowy
+
+# Wait for healthy status
+docker-compose ps | grep appflowy | grep healthy
+```
+
+**Stop Backend Server:**
+
+```bash
+# Graceful shutdown
+docker-compose down
+
+# Stop but keep data
+docker-compose stop
+
+# Stop and remove volumes (⚠️ deletes all data!)
+docker-compose down -v
+```
+
+**Monitor Server:**
+
+```bash
+# View real-time logs
+docker-compose logs -f
+
+# Check resource usage
+docker stats appflowy appflowy-db
+
+# Check API health
+curl http://localhost:8080/health
+
+# Test workspace endpoint
+curl -H "Authorization: Bearer $APPFLOWY_API_TOKEN" \
+  http://localhost:8080/api/workspace
+```
+
+**Server Management Script:**
+
+```bash
+#!/bin/bash
+# save as: scripts/manage_server.sh
+
+COMPOSE_FILE="/path/to/docker-compose.yml"
+
+case "$1" in
+  start)
+    echo "🚀 Starting AppFlowy server..."
+    docker-compose -f "$COMPOSE_FILE" up -d
+    echo "⏳ Waiting for server to be healthy..."
+    sleep 10
+    docker-compose -f "$COMPOSE_FILE" ps
+    ;;
+
+  stop)
+    echo "🛑 Stopping AppFlowy server..."
+    docker-compose -f "$COMPOSE_FILE" down
+    ;;
+
+  restart)
+    echo "🔄 Restarting AppFlowy server..."
+    docker-compose -f "$COMPOSE_FILE" restart
+    ;;
+
+  status)
+    echo "📊 AppFlowy server status:"
+    docker-compose -f "$COMPOSE_FILE" ps
+    echo -e "\n💾 Resource usage:"
+    docker stats --no-stream appflowy appflowy-db
+    ;;
+
+  logs)
+    docker-compose -f "$COMPOSE_FILE" logs -f --tail=100
+    ;;
+
+  health)
+    echo "🏥 Health check:"
+    curl -s http://localhost:8080/health | jq . || echo "API not responding"
+    ;;
+
+  backup)
+    BACKUP_DIR="/path/to/backups"
+    DATE=$(date +%Y%m%d_%H%M%S)
+    echo "💾 Backing up database..."
+    docker-compose -f "$COMPOSE_FILE" exec -T postgres \
+      pg_dump -U appflowy_user appflowy | \
+      gzip > "${BACKUP_DIR}/appflowy_${DATE}.sql.gz"
+    echo "✅ Backup saved: ${BACKUP_DIR}/appflowy_${DATE}.sql.gz"
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop|restart|status|logs|health|backup}"
+    exit 1
+    ;;
+esac
+```
+
+**Automatic Startup on Boot:**
+
+```bash
+# Create systemd service (Linux)
+sudo nano /etc/systemd/system/appflowy.service
+```
+
+```ini
+[Unit]
+Description=AppFlowy Server
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/path/to/appflowy-deploy
+ExecStart=/usr/bin/docker-compose up -d
+ExecStop=/usr/bin/docker-compose down
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+# Enable service
+sudo systemctl enable appflowy.service
+sudo systemctl start appflowy.service
+
+# Check status
+sudo systemctl status appflowy.service
+```
+
+**Synology NAS Auto-Start:**
+
+1. Open Container Manager
+2. Select AppFlowy containers
+3. Settings → Enable "Auto-restart"
+4. Or use Task Scheduler:
+   - Create triggered task
+   - Trigger: Boot-up
+   - Command: `docker-compose -f /volume1/docker/appflowy/docker-compose.yml up -d`
+
+**Troubleshooting Server Issues:**
+
+```bash
+# Check if port is already in use
+netstat -tuln | grep 8080
+lsof -i :8080
+
+# Check Docker service
+sudo systemctl status docker
+
+# Verify container health
+docker inspect appflowy | grep -A 10 Health
+
+# Reset everything (⚠️ destroys data)
+docker-compose down -v
+docker-compose up -d
+```
+
+### Step 6: Error Handling and Best Practices
 
 **Robust Error Handling:**
 ```python
