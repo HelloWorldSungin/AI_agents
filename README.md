@@ -15,8 +15,9 @@ This library provides reusable, composable AI agent prompts and infrastructure f
 ✨ **Modular Design**: Base prompts + platform augmentations + project context
 🎓 **Skills Integration**: Anthropic Skills for specialized capabilities
 🚀 **Starter Templates**: Quick-start templates for existing projects
-🤝 **Multi-Agent Coordination**: Manager-led team collaboration
-🧠 **Advanced Context Management**: Never lose critical information
+🤝 **Dual-Mode Workflows**: Simple Mode (default) + Complex Mode (with infrastructure validation & code review)
+⚙️ **Specialized Agents**: IT Specialist for infrastructure, Senior Engineer for code review
+🧠 **Advanced Context Management**: Ultra-lean Manager context (15-25%)
 🌲 **Git-Based Workflow**: Branch isolation prevents conflicts
 📡 **Structured Communication**: JSON-based inter-agent messaging
 🎯 **Platform Agnostic**: Web, mobile, desktop, and more
@@ -258,19 +259,42 @@ python3 path/to/AI_agents/starter-templates/generate-template.py \
 └─────────────────────────────────────────┘
 ```
 
-### Multi-Agent Team
+### Multi-Agent Team Workflows
 
+**🔹 Simple Mode** (90% of projects - Default)
 ```
 ┌──────────────┐
-│   Manager    │ ← Orchestrates the team
+│   Manager    │ ← Plans & coordinates
 └──────┬───────┘
        │
    ┌───┴───┬──────────┬─────────┐
    │       │          │         │
-┌──▼───┐ ┌▼──────┐ ┌─▼─────┐ ┌─▼──┐
-│Archi-│ │Frontend│ │Backend│ │ QA │
-│tect  │ │  Dev   │ │  Dev  │ │Test│
-└──────┘ └────────┘ └───────┘ └────┘
+┌──▼───┐ ┌▼──────┐ ┌─▼─────┐ ┌─▼────────┐
+│Archi-│ │Frontend│ │Backend│ │Integration│
+│tect  │ │  Dev   │ │  Dev  │ │  Agent   │
+└──────┘ └────────┘ └───────┘ └──────────┘
+```
+
+**🔸 Complex Mode** (10% of projects - Advanced)
+```
+        ┌──────────────┐
+        │   Manager    │ ← Coordinates only
+        └──────┬───────┘
+               │
+       ┌───────┴───────┐
+       │               │
+┌──────▼─────┐    ┌────▼──────────┐
+│     IT     │    │    Senior     │
+│ Specialist │    │   Engineer    │
+│(Infra)     │    │(Review+Merge) │
+└──────┬─────┘    └────▲──────────┘
+       │               │
+       │          ┌────┴────┬──────────┬─────────┐
+       └─────────►│         │          │         │
+                ┌─▼─────┐ ┌▼──────┐ ┌─▼─────┐ ┌─▼──┐
+                │Backend│ │Frontend│ │Backend│ │ QA │
+                │ Dev 1 │ │  Dev   │ │ Dev 2 │ │Test│
+                └───────┘ └────────┘ └───────┘ └────┘
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed documentation.
@@ -286,6 +310,12 @@ AI_agents/
 │   ├── manager.md
 │   ├── qa-tester.md
 │   └── architect.md
+│
+├── prompts/                 # Manager & specialized agent prompts ✨ NEW
+│   ├── manager-task-delegation.md      # Comprehensive Manager guide (dual-mode)
+│   ├── manager-quick-reference.md      # Quick-start Manager template
+│   ├── it-specialist-agent.md          # Infrastructure validation specialist
+│   └── senior-engineer-agent.md        # Code review & integration specialist
 │
 ├── platforms/               # Platform specializations
 │   ├── web/
@@ -391,9 +421,14 @@ See [examples/mobile-app-team/](examples/mobile-app-team/) for React Native exam
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Detailed system architecture with Skills Integration |
 | [Context_Engineering.md](Context_Engineering.md) | Foundational principles (the "HOLY BIBLE") |
 | [SKILLS_GUIDE.md](SKILLS_GUIDE.md) | **Comprehensive skills guide** - Selection, usage, best practices |
+| [PRACTICAL_WORKFLOW_GUIDE.md](PRACTICAL_WORKFLOW_GUIDE.md) | **Human-coordinated workflows** - Step-by-step multi-agent coordination |
 | [PARALLEL_EXECUTION_GUIDE.md](PARALLEL_EXECUTION_GUIDE.md) | Multi-agent parallelization strategies |
 | [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) | Adding skills to existing projects |
 | [starter-templates/README.md](starter-templates/README.md) | **Starter templates guide** - Quick setup for existing projects 🚀 |
+| [prompts/manager-task-delegation.md](prompts/manager-task-delegation.md) | **Manager guide** - Dual-mode workflow (Simple + Complex) |
+| [prompts/manager-quick-reference.md](prompts/manager-quick-reference.md) | **Manager quick-start** - Copy-paste templates |
+| [prompts/it-specialist-agent.md](prompts/it-specialist-agent.md) | **IT Specialist** - Infrastructure validation (8 critical checks) |
+| [prompts/senior-engineer-agent.md](prompts/senior-engineer-agent.md) | **Senior Engineer** - Code review & integration |
 | [skills/README.md](skills/README.md) | Skills integration overview |
 | [skills/CATALOG.md](skills/CATALOG.md) | Available skills directory with token estimates |
 | [skills/INTEGRATION.md](skills/INTEGRATION.md) | Skills technical implementation guide |
@@ -403,21 +438,51 @@ See [examples/mobile-app-team/](examples/mobile-app-team/) for React Native exam
 
 ## How It Works
 
+### Dual-Mode Workflow System
+
+The library supports two workflow modes depending on project complexity:
+
+**🔹 Simple Mode** (90% of projects):
+```
+User → Manager → Task Agents → Integration Agent
+```
+
+**🔸 Complex Mode** (10% of projects):
+```
+User → Manager → IT Specialist → Task Agents → Senior Engineer
+```
+
+### Example: User Authentication Feature
+
 ### 1. User Makes a Request
 
 ```
 User: "Implement user authentication"
 ```
 
-### 2. Manager Breaks Down the Task
+### 2. Manager Chooses Mode & Breaks Down Task
+
+**Complex Mode** (new project with infrastructure needs):
 
 ```
-Manager creates:
-├── TASK-001: Design auth architecture (Architect + skill-creator skill)
-├── TASK-002: Implement JWT service (Backend Dev + mcp-builder skill)
-├── TASK-003: Create auth API (Backend Dev + mcp-builder skill)
-├── TASK-004: Build login form (Frontend Dev + artifacts-builder + theme-factory skills)
-└── TASK-005: Write tests (QA Tester + webapp-testing skill)
+Manager:
+1. Chooses Complex Mode (first feature, needs infrastructure validation)
+2. Delegates to IT Specialist for infrastructure setup
+3. Creates task breakdown:
+   ├── TASK-001: Implement JWT service (Backend Dev + mcp-builder skill)
+   ├── TASK-002: Create auth API (Backend Dev + mcp-builder skill)
+   ├── TASK-003: Build login form (Frontend Dev + artifacts-builder skill)
+   └── TASK-004: Write tests (QA Tester + webapp-testing skill)
+4. Delegates to Senior Engineer for review & integration
+```
+
+**Simple Mode** (established project):
+
+```
+Manager:
+1. Creates task breakdown (same as above)
+2. Delegates directly to Task Agents
+3. Delegates to Integration Agent when complete
 ```
 
 ### 3. Agents Work in Parallel
@@ -452,9 +517,9 @@ feature/user-auth/
 
 ---
 
-## Coordination Models: Human vs Automated
+## Coordination Models: Three Approaches
 
-**IMPORTANT**: The workflow described above represents the **conceptual model** of multi-agent coordination. In practice, there are two ways to implement this:
+**IMPORTANT**: The workflow described above represents the **conceptual model** of multi-agent coordination. In practice, there are **three ways** to implement this:
 
 ### 🤝 Human-Coordinated (Practical Today)
 
@@ -487,6 +552,52 @@ You → Manager Agent (coordinates integration, you provide status from both)
 - ✅ When using tools like Claude Code that run one session at a time
 
 **See**: [PRACTICAL_WORKFLOW_GUIDE.md](PRACTICAL_WORKFLOW_GUIDE.md) for complete tutorial
+
+---
+
+### 🔧 Task Tool Delegation (Best of Both Worlds) ✨ **NEW**
+
+**What it is**: Manager spawns agents using Claude Code's Task tool. Each agent gets a fresh context window.
+
+**How it works**:
+```
+Manager (in Claude Code):
+  ├─ Uses Task tool → IT Specialist (fresh context, 0 tokens)
+  ├─ Uses Task tool → Backend Dev (fresh context, 0 tokens)
+  ├─ Uses Task tool → Frontend Dev (fresh context, 0 tokens)
+  └─ Uses Task tool → Senior Engineer (fresh context, 0 tokens)
+
+Each agent:
+  - Starts with 0 tokens (no inherited context)
+  - Reads only what Manager provides in prompt
+  - Reports back to Manager when done
+  - Manager context stays lean (~15-25%)
+```
+
+**Communication**:
+- Manager delegates via Task tool
+- Agents read `team-communication.json` for context
+- Agents report back with brief summaries
+- Manager acknowledges and moves to next task
+
+**Tools**:
+- Claude Code (Task tool feature)
+- No API costs (runs within Claude Code session)
+- Single user session, multiple sub-agents
+- Fresh context per agent (isolation benefits)
+
+**Best for**:
+- ✅ **Recommended for most users** - Great balance of control and efficiency
+- ✅ Complex projects (5+ agents)
+- ✅ First-time infrastructure setup
+- ✅ Projects needing code review
+- ✅ When you want Manager to stay lean (<25% context)
+
+**Dual-Mode Workflow**:
+- **Simple Mode**: Manager → Task Agents → Integration Agent (3-5 agents)
+- **Complex Mode**: Manager → IT Specialist → Task Agents → Senior Engineer (5+ agents)
+
+**See**: [prompts/manager-task-delegation.md](prompts/manager-task-delegation.md) for complete guide
 
 ---
 
@@ -527,35 +638,49 @@ orchestrator.assign_task("TASK-002", frontend_agent)
 
 ### Quick Comparison
 
-| Aspect | Human-Coordinated | Fully Automated |
-|--------|-------------------|-----------------|
-| **Setup** | ✅ Simple (use any LLM tool) | ⚠️ Complex (custom code required) |
-| **Control** | ✅ Full visibility and control | ⚠️ Less direct control |
-| **Speed** | ⚠️ Sequential execution | ✅ True parallel execution |
-| **Communication** | Manual relay via shared file | Automatic via message queue |
-| **Best for** | Most users (90%) | Advanced automation |
-| **Learning curve** | Low - start immediately | High - requires programming |
-| **Cost** | Lower (one agent at a time) | Higher (multiple API calls) |
+| Aspect | Human-Coordinated | Task Tool Delegation ✨ | Fully Automated |
+|--------|-------------------|------------------------|-----------------|
+| **Setup** | ✅ Simple (any LLM tool) | ✅ Simple (Claude Code) | ⚠️ Complex (custom code) |
+| **Control** | ✅ Full visibility | ✅ Full visibility | ⚠️ Less direct control |
+| **Speed** | ⚠️ Sequential | ⚠️ Sequential (per manager) | ✅ True parallel |
+| **Context Isolation** | ❌ No isolation | ✅ Fresh context per agent | ✅ Fresh context per agent |
+| **Manager Context** | ⚠️ Can overflow | ✅ Stays lean (15-25%) | N/A |
+| **Communication** | Manual relay | Automatic (Task tool) | Automatic (message queue) |
+| **Best for** | Learning, simple projects | **Most users** | Advanced automation |
+| **Learning curve** | Low | Low | High (programming required) |
+| **Cost** | Lower (one at a time) | **No API costs** | Higher (API calls) |
 
 ---
 
 ### Which Should You Use?
 
-**Start with Human-Coordinated** if you're:
-- New to multi-agent systems
-- Using Claude Code or similar interactive tools
-- Want to understand how agents work together
-- Working on small to medium projects
-- Prefer control over speed
+**🔧 Task Tool Delegation (Recommended for Most)** if you:
+- ✅ Use Claude Code
+- ✅ Have complex projects (5+ agents)
+- ✅ Want Manager to stay lean (no context overflow)
+- ✅ Need infrastructure validation and code review
+- ✅ Want **zero API costs** with fresh context isolation
+- ✅ Prefer Simple vs Complex mode flexibility
 
-**Move to Automated** when you:
-- Have 5+ agents that need true parallelization
+**🤝 Human-Coordinated** if you:
+- Learning multi-agent systems for the first time
+- Using tools other than Claude Code (ChatGPT, etc.)
+- Have 1-3 agents total
+- Want to manually control every step
+
+**🤖 Fully Automated** when you:
+- Have 5+ agents needing true parallelization
 - Built custom orchestration tooling
 - Need CI/CD integration
 - Have budget for parallel API calls
-- Understand the coordination patterns well
+- Understand coordination patterns deeply
 
-**Most users should use Human-Coordinated workflows** - it's practical, cost-effective, and gives you full control. The library supports both models equally well.
+**Recommended Path**:
+1. **Start**: Human-Coordinated (learn the patterns)
+2. **Move to**: Task Tool Delegation (most projects - best balance)
+3. **Advanced**: Fully Automated (only if you need true parallel execution)
+
+The library supports all three models equally well.
 
 ---
 
