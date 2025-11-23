@@ -17,6 +17,7 @@ This library provides reusable, composable AI agent prompts and infrastructure f
 🚀 **Starter Templates**: Quick-start templates for existing projects
 🤝 **Dual-Mode Workflows**: Simple Mode (default) + Complex Mode (with infrastructure validation & code review)
 ⚙️ **Specialized Agents**: IT Specialist for infrastructure, Senior Engineer for code review
+📊 **Optional Project Tracking**: Scrum Master agent for visibility, sprint metrics, and AppFlowy integration
 🧠 **Advanced Context Management**: Ultra-lean Manager context (15-25%)
 🌲 **Git-Based Workflow**: Branch isolation prevents conflicts
 📡 **Structured Communication**: JSON-based inter-agent messaging
@@ -309,7 +310,8 @@ AI_agents/
 │   ├── software-developer.md
 │   ├── manager.md
 │   ├── qa-tester.md
-│   └── architect.md
+│   ├── architect.md
+│   └── scrum-master.md      # Optional: Project tracking & visibility
 │
 ├── prompts/                 # Manager & specialized agent prompts ✨ NEW
 │   ├── manager-task-delegation.md      # Comprehensive Manager guide (dual-mode)
@@ -331,6 +333,7 @@ AI_agents/
 │   ├── INTEGRATION.md       # Technical guide
 │   ├── anthropic/           # Anthropic skills (submodule)
 │   └── custom/              # Project-specific skills
+│       └── appflowy-integration/  # AppFlowy task tracking (for Scrum Master)
 │
 ├── starter-templates/       # Project templates 🚀 NEW
 │   ├── generate-template.py # Template generator
@@ -451,6 +454,45 @@ User → Manager → Task Agents → Integration Agent
 ```
 User → Manager → IT Specialist → Task Agents → Senior Engineer
 ```
+
+### Optional: Project Tracking with Scrum Master
+
+For projects requiring visibility and reporting, add the **Scrum Master** agent:
+
+**With Scrum Master** (Simple Mode):
+```
+User → Manager → [Scrum Master Setup] → Task Agents → Integration Agent
+                  ↓
+          [AppFlowy Tracking]
+```
+
+**With Scrum Master** (Complex Mode):
+```
+User → Manager → [Scrum Master Setup] → IT Specialist → Task Agents → Senior Engineer
+                  ↓
+          [AppFlowy Tracking + Daily Summaries]
+```
+
+**When to Enable Scrum Master:**
+- ✅ External stakeholders need visibility (clients, executives)
+- ✅ Sprint velocity tracking required
+- ✅ Daily standup summaries needed
+- ✅ You have AppFlowy server (self-hosted or cloud)
+
+**What Scrum Master Does:**
+- Tracks all tasks in AppFlowy workspace
+- Generates daily standup summaries
+- Calculates sprint velocity metrics
+- Reports blockers to Manager
+- Creates stakeholder presentations
+
+**What Scrum Master Does NOT Do:**
+- ❌ Create or assign tasks (Manager's job)
+- ❌ Make technical decisions
+- ❌ Review code or approve merges
+
+See `examples/web-app-team/config-with-scrum-master.yml` for configuration and
+`skills/custom/appflowy-integration/README.md` for setup guide.
 
 ### Example: User Authentication Feature
 

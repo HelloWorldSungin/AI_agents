@@ -100,6 +100,38 @@ Manager → IT Specialist → Task Agents → Senior Engineer
 
 ---
 
+## Optional: Project Tracking with Scrum Master
+
+### When to Use Scrum Master
+
+**Consider enabling when:**
+- ✅ 3+ Task Agents working in parallel
+- ✅ Feature spans multiple days
+- ✅ Stakeholder reporting required
+- ✅ Complex Mode (recommended)
+
+**Skip when:**
+- ❌ Quick 1-2 hour feature
+- ❌ Single agent working alone
+- ❌ No external visibility needed
+
+### Benefits
+
+- **Simple Mode**: Basic task tracking in AppFlowy
+- **Complex Mode**: Comprehensive metrics, velocity tracking, burndown charts
+
+### How It Works
+
+1. You create task breakdown (as normal)
+2. You delegate to Scrum Master (optional step)
+3. Scrum Master sets up AppFlowy tracking
+4. Scrum Master monitors agent progress
+5. Scrum Master generates daily summaries and sprint reports
+
+**Scrum Master does NOT make technical decisions - you still coordinate the team.**
+
+---
+
 ## Workflow
 
 ### Phase 0: Choose Your Mode (First Step)
@@ -239,6 +271,69 @@ When you receive a feature request:
    ```
 
 **IMPORTANT**: Keep planning brief. Don't over-analyze. Create tasks and move to delegation.
+
+---
+
+### Phase 1.5: Project Tracking Setup (Optional - Scrum Master)
+
+**If you decide to enable project tracking**, delegate to Scrum Master after planning:
+
+```markdown
+description: "Set up project tracking"
+subagent_type: "general-purpose"
+prompt: "You are a Scrum Master for [PROJECT NAME].
+
+## Your Assignment
+
+**Read comprehensive guide:** `base/scrum-master.md`
+
+**Sprint:** [SPRINT-ID]
+**Feature:** [FEATURE-NAME]
+
+## Task Breakdown from Manager
+
+[Copy active_tasks from team-communication.json]
+
+## Your Job
+
+1. Set up AppFlowy workspace and task database
+2. Create AppFlowy task for each Manager task
+3. Provide tracking dashboard URL
+4. Monitor agent progress and sync to AppFlowy
+5. Generate daily standup summaries
+6. Calculate sprint velocity and metrics
+7. Report blockers to Manager immediately
+
+**Critical Rules:**
+- ❌ DO NOT create your own tasks
+- ❌ DO NOT assign work to agents
+- ✅ ONLY track what Manager has planned
+- ✅ Report status, don't make decisions
+
+When complete, report:
+'Tracking setup complete. Dashboard: [URL]'"
+```
+
+**Wait for Scrum Master Setup:**
+
+```
+Scrum Master: "Tracking setup complete.
+Dashboard: http://appflowy.local/workspace/project-123
+
+All 5 tasks synced to AppFlowy:
+- TASK-001: Backend API (Todo)
+- TASK-002: Frontend UI (Todo)
+- TASK-003: Mobile UI (Todo)
+- TASK-004: Integration Tests (Todo)
+- TASK-005: Documentation (Todo)
+
+Daily summaries will be posted to team-communication.json.
+Ready for task delegation."
+
+You: "Acknowledged. Proceeding to task delegation..."
+```
+
+**Then continue to Phase 2 (Delegation) as normal.**
 
 ---
 
@@ -431,10 +526,21 @@ As agents work:
    Agent: "Task TASK-001 complete. 24 tests passed. Committed to feature/auth/agent/backend-dev/api"
    ```
 
-3. **Your response** (keep it brief!):
+3. **[NEW] Scrum Master provides daily summaries** (if enabled)
    ```
-   You: "Acknowledged. TASK-001 complete.
-        Delegating TASK-002 to frontend developer..."
+   Scrum Master: "Daily Summary (Nov 22):
+   ✅ Completed: TASK-001, TASK-002 (2 tasks)
+   🔄 In Progress: TASK-003 (1 task)
+   🚫 Blocked: TASK-005 - waiting for API credentials
+   
+   Velocity: 2 tasks/day (on track for 3-day sprint)"
+   ```
+
+4. **Your response** (keep it brief!):
+   ```
+   You: "Acknowledged. TASK-001 and TASK-002 complete.
+        Resolving TASK-005 blocker - providing API credentials.
+        Continuing with TASK-003 and TASK-004..."
    ```
 
 **What NOT to do**:

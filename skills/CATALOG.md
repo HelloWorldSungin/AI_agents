@@ -543,9 +543,9 @@ Project-specific skills created for your organization.
 - Generating project reports and dashboards
 
 **Recommended For**:
-- All agents (for task tracking)
-- Project Manager (PRIMARY)
-- Software Developer (SECONDARY)
+- Scrum Master (PRIMARY) - project tracking and visibility
+- Manager (SECONDARY) - understanding project status
+- Software Developer (TERTIARY) - direct task logging
 
 **Dependencies**:
 - Python 3.7+
@@ -644,6 +644,53 @@ team_manager:
     - "skills/communication/internal-comms"
     - "skills/documents/xlsx"
     - "skills/documents/docx"
+```
+
+---
+
+### Scrum Master (Optional)
+
+**Core Skills**:
+- `appflowy-integration` (PRIMARY) - task tracking and project visibility
+- `xlsx` (SECONDARY) - sprint reports and metrics
+- `pptx` (SECONDARY) - stakeholder presentations
+
+**Optional Skills**:
+- `pdf` (TERTIARY) - report deliverables
+- `docx` (TERTIARY) - documentation
+
+**Token Budget**: 10,000-14,000 (base + 2-3 core skills)
+
+**Role Description**:
+The Scrum Master provides project tracking and visibility WITHOUT making technical decisions or assigning work. Strictly monitors and reports status, generates metrics, and maintains AppFlowy workspace synchronization.
+
+**Key Responsibilities**:
+- Track tasks in AppFlowy (not create or assign)
+- Generate daily standup summaries
+- Calculate sprint velocity and completion metrics
+- Report blockers to Manager
+- Provide stakeholder visibility
+
+**When to Use**:
+- External stakeholders need visibility
+- Sprint velocity tracking required
+- Daily standup summaries needed
+- Project has AppFlowy infrastructure
+
+**Important Constraints**:
+- ❌ Does NOT create tasks or assign work (Manager's job)
+- ❌ Does NOT make technical decisions
+- ✅ ONLY tracks status and reports metrics
+- ✅ Collaborates with Manager, monitors other agents
+
+```yaml
+scrum_master:
+  enabled: false  # Optional - enable for project tracking
+  base: "base/scrum-master.md"
+  skills:
+    - "skills/custom/appflowy-integration"
+    - "skills/documents/xlsx"
+    - "skills/documents/pptx"
 ```
 
 ---
@@ -796,6 +843,51 @@ agents:
 
 ---
 
+### Full-Stack Web Development Team with Project Tracking
+
+```yaml
+agents:
+  team_manager:
+    skills:
+      - "skills/communication/internal-comms"
+      - "skills/documents/xlsx"
+
+  scrum_master:
+    enabled: true  # Enable project tracking
+    skills:
+      - "skills/custom/appflowy-integration"  # PRIMARY
+      - "skills/documents/xlsx"
+      - "skills/documents/pptx"
+
+  frontend_developer:
+    skills:
+      - "skills/core/artifacts-builder"
+      - "skills/design/theme-factory"
+
+  backend_developer:
+    skills:
+      - "skills/core/mcp-builder"
+
+  qa_tester:
+    skills:
+      - "skills/core/webapp-testing"
+```
+
+**Total Team Token Budget**: ~35,000-49,000 tokens (includes Scrum Master)
+
+**Use When**:
+- External stakeholders need visibility (clients, executives)
+- Sprint velocity tracking required
+- Self-hosted AppFlowy infrastructure available
+
+**Setup Required**:
+- AppFlowy server deployment (Docker, Synology NAS, or cloud)
+- Workspace and database configuration
+- Environment variables for API access
+- See `skills/custom/appflowy-integration/README.md` for setup guide
+
+---
+
 ### Enterprise Documentation Team
 
 ```yaml
@@ -934,6 +1026,7 @@ For questions about:
 
 ---
 
-**Last Updated**: 2025-11-20
-**Catalog Version**: 1.0.0
-**Total Skills**: 14 (from Anthropic) + custom template
+**Last Updated**: 2025-11-22
+**Catalog Version**: 1.1.0
+**Total Skills**: 14 (from Anthropic) + 2 custom (appflowy-integration, template)
+**Total Agent Types**: 9 (including optional Scrum Master)

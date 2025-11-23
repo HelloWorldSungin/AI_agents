@@ -1,5 +1,6 @@
 # AI Agents Configuration for Web Application Project
-# This is an example configuration showing how to use the AI agents library
+# Example configuration WITH Scrum Master enabled for project tracking
+# This demonstrates how to enable AppFlowy integration for visibility
 
 project_id: "ecommerce-web-app"
 project_name: "E-Commerce Web Application"
@@ -34,6 +35,8 @@ agents:
         - "frontend_developer"
         - "backend_developer"
         - "qa_tester"
+      # Note: Manager delegates to Scrum Master for tracking, not direct management
+      delegates_tracking_to: "scrum_master"
     model:
       provider: "anthropic"
       model_name: "claude-sonnet-4-5"
@@ -124,9 +127,9 @@ agents:
       model_name: "claude-sonnet-4-5"
       temperature: 0.3
 
-  # Scrum Master (Optional - for project tracking and visibility)
+  # Scrum Master - Project tracking and visibility
   scrum_master:
-    enabled: false  # Set to true to enable project tracking
+    enabled: true  # ✅ ENABLED for project tracking
     base: "base/scrum-master.md"
     project_context:
       - ".ai-agents/context/requirements.md"
@@ -142,7 +145,7 @@ agents:
       retention_policy: "high_priority"
     coordination:
       collaborates_with:
-        - "team_manager"
+        - "team_manager"  # Receives task breakdown, reports status
       monitors:
         - "frontend_developer"
         - "backend_developer"
@@ -151,6 +154,12 @@ agents:
       provider: "anthropic"
       model_name: "claude-sonnet-4-5"
       temperature: 0.4
+    # AppFlowy-specific configuration
+    appflowy:
+      auto_sync: true
+      daily_summary_time: "17:00"  # Generate daily summary at 5 PM
+      sprint_length_days: 7
+      velocity_tracking: true
 
 # Project-Specific Configuration
 project:
@@ -216,6 +225,8 @@ state_management:
   state_file: ".ai-agents/state/project-state.json"
   checkpoint_dir: ".ai-agents/checkpoints"
   memory_dir: ".ai-agents/memory"
+  # Additional state for Scrum Master
+  team_communication_file: ".ai-agents/state/team-communication.json"
 
 # Notifications (optional)
 notifications:
@@ -226,12 +237,29 @@ notifications:
       - "blocker"
       - "error"
       - "deployment"
+      - "sprint_complete"  # Additional notification for sprint completion
 
 # Feature Flags
 features:
-  # Enable Scrum Master for project tracking (requires AppFlowy setup)
+  # ✅ Scrum Master tracking ENABLED
   scrum_master_tracking:
-    enabled: false  # Set to true and configure scrum_master agent above
-    appflowy_url: "${APPFLOWY_API_URL}"  # e.g., http://localhost:8080
-    appflowy_workspace_id: "${APPFLOWY_WORKSPACE_ID}"
-    sync_interval: "daily"  # How often to sync with AppFlowy (daily, hourly, on_task_complete)
+    enabled: true
+    # AppFlowy connection (set these environment variables)
+    appflowy_url: "${APPFLOWY_API_URL}"  # Example: http://192.168.1.100:8080
+    appflowy_workspace_id: "${APPFLOWY_WORKSPACE_ID}"  # From workspace setup
+    appflowy_database_id: "${APPFLOWY_TASKS_DB_ID}"  # Tasks database ID
+    # Sync configuration
+    sync_interval: "on_task_complete"  # Options: daily, hourly, on_task_complete
+    auto_create_tasks: true  # Automatically create AppFlowy tasks from Manager's plan
+    daily_summary: true  # Generate daily standup summaries
+    sprint_reports: true  # Generate sprint velocity and completion reports
+
+# Environment Variables Required for Scrum Master:
+# export APPFLOWY_API_URL="http://your-appflowy-server:8080"
+# export APPFLOWY_API_TOKEN="your-jwt-token"
+# export APPFLOWY_WORKSPACE_ID="workspace-123"
+# export APPFLOWY_TASKS_DB_ID="database-456"
+#
+# To get these values, run:
+# cd skills/custom/appflowy-integration/scripts
+# python workspace_setup.py --project "E-Commerce Web Application"

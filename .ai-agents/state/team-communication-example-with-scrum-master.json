@@ -1,0 +1,100 @@
+{
+  "manager_instructions": {
+    "current_focus": "User Profile Feature with Avatar Upload",
+    "active_tasks": [
+      {
+        "task_id": "TASK-001",
+        "assigned_to": "backend-dev",
+        "description": "Create user profile API endpoints (GET/PUT /api/profile)",
+        "priority": "high",
+        "branch": "feature/profile-api",
+        "depends_on": [],
+        "blocks": ["TASK-002"],
+        "appflowy_task_id": "af-100"
+      },
+      {
+        "task_id": "TASK-002",
+        "assigned_to": "frontend-dev",
+        "description": "Build user profile UI with avatar upload component",
+        "priority": "high",
+        "branch": "feature/profile-ui",
+        "depends_on": ["TASK-001"],
+        "blocks": [],
+        "appflowy_task_id": "af-101"
+      },
+      {
+        "task_id": "TASK-003",
+        "assigned_to": "qa-tester",
+        "description": "Create integration tests for profile feature",
+        "priority": "medium",
+        "branch": "feature/profile-tests",
+        "depends_on": ["TASK-001", "TASK-002"],
+        "blocks": [],
+        "appflowy_task_id": "af-102"
+      }
+    ],
+    "scrum_master_enabled": true,
+    "appflowy_workspace_url": "http://appflowy.local/workspace/profile-feature"
+  },
+  
+  "agent_updates": [
+    {
+      "agent_id": "backend-dev",
+      "task_id": "TASK-001",
+      "status": "completed",
+      "timestamp": "2025-11-22T14:30:00Z",
+      "test_summary": "18 unit tests passed, API endpoints functional",
+      "branch": "feature/profile-api",
+      "commits": ["abc123", "def456"]
+    },
+    {
+      "agent_id": "frontend-dev",
+      "task_id": "TASK-002",
+      "status": "in_progress",
+      "timestamp": "2025-11-22T15:00:00Z",
+      "progress": "Avatar upload component complete, working on profile form",
+      "branch": "feature/profile-ui",
+      "estimated_completion": "2025-11-22T17:00:00Z"
+    }
+  ],
+  
+  "scrum_master_updates": {
+    "tracking_status": "active",
+    "appflowy_workspace_url": "http://appflowy.local/workspace/profile-feature",
+    "appflowy_database_id": "db-profile-789",
+    "last_sync": "2025-11-22T15:30:00Z",
+    
+    "daily_summary": {
+      "date": "2025-11-22",
+      "completed_today": ["TASK-001"],
+      "in_progress": ["TASK-002"],
+      "blocked": [],
+      "velocity": 1.0,
+      "notes": "Good progress. TASK-001 unblocked TASK-002. On track for completion."
+    },
+    
+    "sprint_metrics": {
+      "sprint_id": "PROFILE-SPRINT-001",
+      "start_date": "2025-11-20",
+      "end_date": "2025-11-25",
+      "total_tasks": 3,
+      "completed": 1,
+      "in_progress": 1,
+      "blocked": 0,
+      "todo": 1,
+      "average_velocity": 0.5,
+      "projected_completion": "2025-11-24",
+      "on_track": true
+    },
+    
+    "blocker_escalations": []
+  },
+  
+  "infrastructure_status": {
+    "validated": true,
+    "backend_running": true,
+    "tests_available": true
+  },
+  
+  "integration_requests": []
+}
