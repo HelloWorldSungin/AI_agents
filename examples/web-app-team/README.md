@@ -2,12 +2,42 @@
 
 This example demonstrates how to configure a multi-agent team for a full-stack web application project.
 
+## Configuration Options
+
+This example provides **two configuration files**:
+
+### 1. `config.yml` - Standard Configuration (Default)
+For most projects (90%+). Includes 4 core agents without additional tracking overhead.
+
+### 2. `config-with-scrum-master.yml` - With Project Tracking
+For projects requiring visibility and reporting to external stakeholders. Adds AppFlowy integration for task tracking, sprint metrics, and daily summaries.
+
+**When to use Scrum Master:**
+- ✅ External stakeholders need visibility (clients, executives)
+- ✅ Project requires sprint velocity tracking
+- ✅ Team needs daily standup summaries
+- ✅ You have AppFlowy server running (self-hosted or cloud)
+
+**When NOT to use Scrum Master:**
+- ❌ Small internal projects
+- ❌ No external reporting requirements
+- ❌ Context budget is critical
+- ❌ No AppFlowy infrastructure
+
 ## Team Composition
 
+### Standard Configuration (config.yml)
 - **Team Manager**: Coordinates all agents, manages tasks, resolves conflicts
 - **Frontend Developer**: React + TypeScript development
 - **Backend Developer**: Node.js + Express API development
 - **QA Tester**: Testing and quality assurance
+
+### With Scrum Master (config-with-scrum-master.yml)
+- **Team Manager**: Technical coordination and decision-making
+- **Frontend Developer**: React + TypeScript development
+- **Backend Developer**: Node.js + Express API development
+- **QA Tester**: Testing and quality assurance
+- **Scrum Master**: Project tracking, visibility, and reporting (AppFlowy integration)
 
 ## Skills Integration
 
@@ -83,12 +113,43 @@ QA Tester: Uses webapp-testing to automate E2E test
            Uses pdf to generate test report
 ```
 
+### Scrum Master Skills (Optional)
+
+**Skills**: `custom/appflowy-integration`, `documents/xlsx`, `documents/pptx`
+**Token Budget**: ~10,000 tokens (6,000 base + ~4,000 skills)
+
+The Scrum Master uses skills to:
+- Track all tasks in self-hosted AppFlowy workspace
+- Generate daily standup summaries
+- Calculate sprint velocity and completion metrics
+- Create stakeholder presentations and reports
+
+**Example Usage**:
+```
+Manager: "Set up tracking for Sprint 2025-11-01"
+Scrum Master: Uses appflowy-integration to create workspace
+              Creates AppFlowy tasks for each work item
+              Generates daily summary at 5 PM
+              Provides sprint velocity report at completion
+```
+
+**Important Notes**:
+- Scrum Master does NOT create tasks or assign work (Manager's job)
+- Scrum Master does NOT make technical decisions
+- Scrum Master ONLY tracks status and reports metrics
+- Role separation: Manager = Technical Lead, Scrum Master = Visibility
+
 ### Total Team Token Budget
 
-**Without Skills**: ~12,000 tokens (4 agents x 3,000 base)
-**With Skills**: ~47,000 tokens (base + platforms + skills)
+**Standard Configuration (No Scrum Master)**:
+- **Without Skills**: ~12,000 tokens (4 agents x 3,000 base)
+- **With Skills**: ~47,000 tokens (base + platforms + skills)
 
-This represents a ~4x increase in context usage, providing significantly enhanced capabilities.
+**With Scrum Master Configuration**:
+- **Without Skills**: ~18,000 tokens (5 agents)
+- **With Skills**: ~57,000 tokens (base + platforms + skills)
+
+The Scrum Master adds ~10,000 tokens but runs in separate context (minimal Manager overhead).
 
 ## Project Setup
 
@@ -196,6 +257,90 @@ python .ai-agents/library/scripts/compose-agent.py \
 # 3. Project context files
 # 4. Tool definitions
 ```
+
+### 5. Enable Scrum Master (Optional)
+
+If you want project tracking and visibility, follow these steps to enable the Scrum Master.
+
+#### Step 1: Deploy AppFlowy Server
+
+**Option A: Docker (Recommended)**
+```bash
+docker run -d \
+  --name appflowy \
+  -p 8080:80 \
+  -v ./appflowy-data:/data \
+  appflowy/appflowy-cloud:latest
+```
+
+**Option B: Synology NAS (DS 923+)**
+1. Open Container Manager
+2. Search for "appflowy"
+3. Download and run with port mapping 8080:80
+4. Access via `http://your-nas-ip:8080`
+
+**Option C: Docker Compose**
+```bash
+cd skills/custom/appflowy-integration/references/
+docker-compose up -d
+```
+
+#### Step 2: Set Up AppFlowy Workspace
+
+```bash
+# Run the workspace setup script
+cd skills/custom/appflowy-integration/scripts/
+python workspace_setup.py --project "E-Commerce Web Application"
+
+# This will:
+# 1. Guide you through workspace selection
+# 2. Verify the Tasks database exists
+# 3. Create initial project setup task
+# 4. Generate environment variables for you
+```
+
+#### Step 3: Configure Environment Variables
+
+Add these to your `.env` file (values provided by workspace setup script):
+
+```bash
+export APPFLOWY_API_URL="http://localhost:8080"
+export APPFLOWY_API_TOKEN="your-jwt-token-here"
+export APPFLOWY_WORKSPACE_ID="workspace-123"
+export APPFLOWY_TASKS_DB_ID="database-456"
+```
+
+To get your API token:
+```bash
+curl -X POST "http://localhost:8080/gotrue/token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "your-email@example.com",
+    "password": "your-password",
+    "grant_type": "password"
+  }'
+```
+
+#### Step 4: Use Scrum Master Configuration
+
+```bash
+# Copy the Scrum Master config instead of the standard config
+cp AI_agents/examples/web-app-team/config-with-scrum-master.yml \
+   .ai-agents/config.yml
+
+# Or manually enable in existing config.yml:
+# 1. Set scrum_master.enabled = true
+# 2. Set features.scrum_master_tracking.enabled = true
+```
+
+#### Step 5: Verify AppFlowy Connection
+
+```bash
+cd skills/custom/appflowy-integration/scripts/
+python appflowy_client.py  # Should connect successfully
+```
+
+Now your team will have automatic task tracking, daily summaries, and sprint metrics!
 
 ## Usage
 

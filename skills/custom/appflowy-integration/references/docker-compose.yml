@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # AppFlowy Cloud application
+  appflowy:
+    image: appflowy/appflowy-cloud:latest
+    container_name: appflowy
+    ports:
+      - "8080:80"
+    volumes:
+      - appflowy-data:/data
+    environment:
+      # Database connection
+      - DATABASE_URL=postgresql://appflowy_user:${DB_PASSWORD:-secure_password}@postgres:5432/appflowy
+
+      # Application settings
+      - APP_ENV=production
+      - LOG_LEVEL=info
+
+      # Authentication (GoTrue)
+      - GOTRUE_JWT_SECRET=${JWT_SECRET:-change_this_secret_in_production}
+      - GOTRUE_JWT_EXP=3600
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - appflowy-network
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: appflowy-db
+    environment:
+      - POSTGRES_DB=appflowy
+      - POSTGRES_USER=appflowy_user
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-secure_password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appflowy_user -d appflowy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - appflowy-network
+    ports:
+      - "5432:5432"  # Expose for debugging (remove in production)
+
+  # Redis for caching (optional but recommended)
+  redis:
+    image: redis:7-alpine
+    container_name: appflowy-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - appflowy-network
+
+volumes:
+  appflowy-data:
+    driver: local
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  appflowy-network:
+    driver: bridge

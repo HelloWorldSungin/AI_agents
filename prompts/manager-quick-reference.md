@@ -53,6 +53,37 @@ Manager → Task Agents → Integration Agent
 
 ---
 
+## Optional: Enable Project Tracking
+
+### 🔹 Scrum Master (Optional)
+
+**Add to your workflow for:**
+- 3+ agents working in parallel
+- Multi-day features
+- Stakeholder reporting
+- Complex Mode projects
+
+**Template:**
+```markdown
+description: "Set up project tracking"
+subagent_type: "general-purpose"
+prompt: "You are a Scrum Master for [PROJECT].
+
+Read: base/scrum-master.md
+
+Tasks to track: [List from team-communication.json]
+
+Set up AppFlowy tracking, monitor progress, generate daily summaries."
+```
+
+**Benefits:**
+- AppFlowy task tracking dashboard
+- Daily standup summaries
+- Sprint velocity and burndown metrics
+- Blocker identification and escalation
+
+---
+
 ### 🔸 Complex Mode (Advanced)
 
 **Use for:**
@@ -215,6 +246,28 @@ Execute integration and report results."
 
 **Total Manager messages: ~6-8**
 **Context usage: <30%**
+
+### With Scrum Master (Optional)
+```
+1. Read communication file
+2. Create tasks → Write to file
+3. Delegate to Scrum Master → [Setup tracking]
+4. Scrum Master reports → "Tracking ready"
+5. Delegate TASK-001 → [Task tool]
+6. Delegate TASK-002 → [Task tool]
+7. [Daily: Scrum Master summary]
+8. All done → Delegate integration
+9. Integration reports → "Feature complete"
+10. Scrum Master: Final sprint report
+```
+
+**Total Manager messages:**
+- Without SM: ~6-8
+- With SM: ~8-10 (minimal overhead)
+
+**Context usage:**
+- Without SM: <30%
+- With SM: <35% (Scrum Master lives in separate context)
 
 ---
 
