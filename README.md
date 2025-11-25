@@ -27,18 +27,29 @@ This library provides reusable, composable AI agent prompts and infrastructure f
 
 ## Quick Start
 
-### For Existing Projects (Recommended - 5 Minutes)
+### For Existing Projects
 
-Use our **starter templates** to quickly set up AI agents in your existing project:
+Choose the approach that fits your needs:
+
+| Approach | Best For | Setup Time |
+|----------|----------|------------|
+| **Option A: Starter Templates** | Quick setup with pre-configured files | ~5 minutes |
+| **Option B: Git Submodule** | Stay synced with library updates | ~10 minutes |
+| **Option C: Direct Copy** | Full control, no external dependencies | ~10 minutes |
+
+---
+
+#### Option A: Starter Templates (Fastest)
+
+Use pre-configured templates for instant setup:
 
 ```bash
-# Navigate to your project
 cd your-project
 
-# Run the template generator
+# Interactive mode (recommended)
 python3 path/to/AI_agents/starter-templates/generate-template.py --interactive
 
-# Or use command line directly
+# Or direct command
 python3 path/to/AI_agents/starter-templates/generate-template.py \
   --type web-app \
   --name "YourProject" \
@@ -49,71 +60,102 @@ python3 path/to/AI_agents/starter-templates/generate-template.py \
 - ✅ Complete `.ai-agents/` directory structure
 - ✅ Pre-configured context files (architecture, API contracts, coding standards)
 - ✅ Ready-to-use agent configurations
-- ✅ Comprehensive documentation
 
-**Available templates:**
-- `web-app` - Full-stack web applications (React + Node.js)
-- `mobile-app` - Mobile applications (React Native, Flutter, native)
-- `full-stack` - Complex multi-service systems
-- `api-service` - Backend API services
-- `data-pipeline` - Data processing pipelines
+**Available templates:** `web-app`, `mobile-app`, `full-stack`, `api-service`, `data-pipeline`
 
 See [starter-templates/README.md](starter-templates/README.md) for complete guide.
 
 ---
 
-### For New Projects (Manual Setup)
+#### Option B: Git Submodule (Recommended - Stays Updated)
 
-### 1. Use This Library in Your Project
+Add the library as a submodule to receive updates:
 
 ```bash
-# Add as git submodule (recommended)
 cd your-project
-git submodule add https://github.com/your-org/AI_agents.git .ai-agents/library
 
-# Or clone directly
-git clone https://github.com/your-org/AI_agents.git .ai-agents/library
-```
+# 1. Add library as submodule
+git submodule add https://github.com/HelloWorldSungin/AI_agents.git .ai-agents/library
 
-### 2. Create Project Structure
+# 2. Create project structure
+mkdir -p .ai-agents/{context,state,skills,composed}
 
-```bash
-mkdir -p .ai-agents/{context,state,checkpoints,memory,workflows,composed}
-```
-
-### 3. Create Configuration
-
-Copy an example configuration:
-
-```bash
+# 3. Copy example config
 cp .ai-agents/library/examples/web-app-team/config.yml .ai-agents/config.yml
+
+# 4. Create your context files
+touch .ai-agents/context/{architecture,coding-standards,api-contracts}.md
 ```
 
-Edit `.ai-agents/config.yml` to match your project.
+**Your structure:**
+```
+your-project/
+├── .ai-agents/
+│   ├── library/           # Git submodule (this repo)
+│   ├── config.yml         # Your agent configuration
+│   ├── context/           # Your project documentation
+│   │   ├── architecture.md
+│   │   ├── coding-standards.md
+│   │   └── api-contracts.md
+│   ├── skills/            # Your custom skills (optional)
+│   └── composed/          # Generated agent prompts
+└── src/                   # Your project code
+```
 
-### 4. Create Context Files
+**Updating the library:**
+```bash
+cd .ai-agents/library && git pull origin main && cd ../..
+git add .ai-agents/library && git commit -m "Update AI Agents library"
+```
 
-Create these in `.ai-agents/context/`:
+See [skills/PROJECT_INTEGRATION.md](skills/PROJECT_INTEGRATION.md) for detailed guide.
 
-- `architecture.md` - Your system architecture
-- `coding-standards.md` - Your team conventions
-- `api-contracts.md` - Your API specifications
-- `current-features.md` - Feature roadmap
+---
 
-See [examples/](examples/) for templates or use [starter-templates/](starter-templates/) for ready-made templates.
+#### Option C: Direct Copy (Full Control)
 
-### 5. Compose Your Agents
+Copy the library directly for complete ownership:
 
 ```bash
-cd .ai-agents/library
-python scripts/compose-agent.py --config ../../config.yml --all
+cd your-project
+
+# Copy library
+cp -r path/to/AI_agents .ai-agents/
+
+# Remove git history to make it part of your repo
+rm -rf .ai-agents/.git
+
+# Create your context files
+mkdir -p .ai-agents/context
+touch .ai-agents/context/{architecture,coding-standards,api-contracts}.md
+```
+
+**Trade-offs:**
+- ✅ Full control over all files
+- ✅ No submodule complexity
+- ❌ Manual process to sync updates from library
+
+---
+
+### After Setup: Create Context Files
+
+Regardless of which option you chose, populate your context files:
+
+1. **`architecture.md`** - Your system architecture, tech stack, key components
+2. **`coding-standards.md`** - Your team conventions, style guides
+3. **`api-contracts.md`** - Your API specifications, endpoints
+4. **`current-features.md`** - Feature roadmap, priorities (optional)
+
+See [examples/](examples/) for reference templates.
+
+### Compose Your Agents
+
+```bash
+cd .ai-agents/library  # or .ai-agents if using direct copy
+python scripts/compose-agent.py --config ../config.yml --all
 ```
 
 This generates complete agent prompts in `.ai-agents/composed/`.
-
-### 6. Deploy
-
-Use the composed prompts to initialize your AI agents with your LLM provider.
 
 ---
 
