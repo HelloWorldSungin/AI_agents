@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple Multi-Agent Orchestrator
+Simple Multi-Agent Orchestrator (v2.0 - with Prompt Caching)
 
 A basic example of automated multi-agent coordination using LLM APIs.
 This script demonstrates:
@@ -8,13 +8,17 @@ This script demonstrates:
 - Task agents executing work
 - Basic blocker handling
 - Sequential coordination
+- **NEW: Prompt caching for cost reduction (up to 90%)**
 
 Usage:
     python simple_orchestrator.py --feature "user authentication" --project-dir /path/to/project
+    python simple_orchestrator.py --feature "user authentication" --project-dir /path/to/project --enable-cache
 
 Requirements:
     - ANTHROPIC_API_KEY environment variable
     - Or OPENAI_API_KEY environment variable
+
+Based on: https://www.anthropic.com/engineering/advanced-tool-use
 """
 
 import argparse
@@ -38,6 +42,13 @@ try:
     HAS_OPENAI = True
 except ImportError:
     HAS_OPENAI = False
+
+# Try to import prompt caching utility
+try:
+    from prompt_cache import CachedAnthropicClient, AgentPromptConfig
+    HAS_PROMPT_CACHE = True
+except ImportError:
+    HAS_PROMPT_CACHE = False
 
 if not HAS_ANTHROPIC and not HAS_OPENAI:
     print("Error: Please install either 'anthropic' or 'openai' package")
@@ -73,27 +84,46 @@ class SimpleOrchestrator:
 
     This is a basic implementation that demonstrates the core concepts
     without requiring complex infrastructure.
+
+    v2.0: Added prompt caching support for cost reduction.
     """
 
-    def __init__(self, project_dir: str, api_provider: str = "anthropic"):
+    def __init__(
+        self,
+        project_dir: str,
+        api_provider: str = "anthropic",
+        enable_cache: bool = False
+    ):
         self.project_dir = Path(project_dir)
         self.api_provider = api_provider
+        self.enable_cache = enable_cache and HAS_PROMPT_CACHE and api_provider == "anthropic"
 
         # Initialize API client
         if api_provider == "anthropic":
             api_key = os.environ.get("ANTHROPIC_API_KEY")
             if not api_key:
                 raise ValueError("ANTHROPIC_API_KEY environment variable not set")
-            self.client = anthropic.Anthropic(api_key=api_key)
+
+            if self.enable_cache:
+                # Use cached client for prompt caching
+                self.cached_client = CachedAnthropicClient(api_key)
+                self.client = self.cached_client.client
+                print("  ✓ Prompt caching enabled (up to 90% cost reduction)")
+            else:
+                self.client = anthropic.Anthropic(api_key=api_key)
+                self.cached_client = None
+
         elif api_provider == "openai":
             api_key = os.environ.get("OPENAI_API_KEY")
             if not api_key:
                 raise ValueError("OPENAI_API_KEY environment variable not set")
             self.client = openai.OpenAI(api_key=api_key)
+            self.cached_client = None
 
         # State
         self.tasks: List[Task] = []
         self.conversation_history: Dict[str, List] = {}
+        self._registered_agents: Dict[str, AgentPromptConfig] = {}
 
     def load_agent_prompt(self, prompt_file: str) -> str:
         """Load agent prompt from library"""
@@ -168,8 +198,23 @@ When testing:
         else:
             return f"You are a {role} agent. Help accomplish the assigned task."
 
+    def _register_agent_for_cache(self, agent: Agent, system_prompt: str):
+        """Register an agent for prompt caching"""
+        if not self.enable_cache or not self.cached_client:
+            return
+
+        if agent.agent_id in self._registered_agents:
+            return
+
+        config = AgentPromptConfig(
+            agent_id=agent.agent_id,
+            stable_system_prompt=system_prompt
+        )
+        self.cached_client.register_agent(config)
+        self._registered_agents[agent.agent_id] = config
+
     def call_agent(self, agent: Agent, prompt: str, system_prompt: Optional[str] = None) -> str:
-        """Call an agent via LLM API"""
+        """Call an agent via LLM API (with optional prompt caching)"""
 
         # Initialize conversation history if needed
         if agent.agent_id not in self.conversation_history:
@@ -181,18 +226,35 @@ When testing:
             "content": prompt
         })
 
-        # Call API
+        resolved_system_prompt = system_prompt or self.load_agent_prompt(agent.prompt_file)
+
+        # Call API with or without caching
         if self.api_provider == "anthropic":
-            message = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=8000,
-                system=system_prompt or self.load_agent_prompt(agent.prompt_file),
-                messages=self.conversation_history[agent.agent_id]
-            )
-            response = message.content[0].text
+            if self.enable_cache and self.cached_client:
+                # Use cached client for prompt caching
+                self._register_agent_for_cache(agent, resolved_system_prompt)
+                response, cache_info = self.cached_client.call_with_cache(
+                    agent_id=agent.agent_id,
+                    messages=self.conversation_history[agent.agent_id],
+                    model="claude-sonnet-4-20250514",
+                    max_tokens=8000
+                )
+
+                # Log cache hit info
+                if cache_info.get("cache_read_input_tokens", 0) > 0:
+                    print(f"    [Cache] Hit! Saved {cache_info['cache_read_input_tokens']} tokens")
+            else:
+                # Standard API call
+                message = self.client.messages.create(
+                    model="claude-sonnet-4-20250514",
+                    max_tokens=8000,
+                    system=resolved_system_prompt,
+                    messages=self.conversation_history[agent.agent_id]
+                )
+                response = message.content[0].text
 
         elif self.api_provider == "openai":
-            messages = [{"role": "system", "content": system_prompt or self.load_agent_prompt(agent.prompt_file)}]
+            messages = [{"role": "system", "content": resolved_system_prompt}]
             messages.extend(self.conversation_history[agent.agent_id])
 
             completion = self.client.chat.completions.create(
@@ -397,9 +459,21 @@ Be specific and actionable."""
         print(f"Total tasks: {len(self.tasks)}")
         print(f"Completed: {completed}")
         print(f"Blocked: {blocked}")
+
+        # Show cache statistics if enabled
+        if self.enable_cache and self.cached_client:
+            print("\n" + "-" * 35)
+            print("PROMPT CACHE STATISTICS")
+            print("-" * 35)
+            stats = self.cached_client.get_stats()
+            print(f"Total API calls: {stats['total_calls']}")
+            print(f"Cache hit rate: {stats['hit_rate']}")
+            print(f"Tokens saved: {stats['tokens_saved']:,}")
+            print(f"Est. cost savings: {stats['cost_savings_estimate']}")
+
         print("=" * 70)
 
-        return {
+        result = {
             "success": completed == len(self.tasks),
             "total_tasks": len(self.tasks),
             "completed": completed,
@@ -415,13 +489,21 @@ Be specific and actionable."""
             ]
         }
 
+        # Add cache stats to result if enabled
+        if self.enable_cache and self.cached_client:
+            result["cache_stats"] = self.cached_client.get_stats()
+
+        return result
+
 
 def main():
-    parser = argparse.ArgumentParser(description="Simple Multi-Agent Orchestrator")
+    parser = argparse.ArgumentParser(description="Simple Multi-Agent Orchestrator (v2.0 with Prompt Caching)")
     parser.add_argument("--feature", required=True, help="Feature description")
     parser.add_argument("--project-dir", required=True, help="Project directory path")
     parser.add_argument("--api-provider", default="anthropic", choices=["anthropic", "openai"],
                         help="API provider to use")
+    parser.add_argument("--enable-cache", action="store_true",
+                        help="Enable prompt caching for cost reduction (Anthropic only)")
 
     args = parser.parse_args()
 
@@ -431,10 +513,19 @@ def main():
         print(f"Error: Project directory does not exist: {project_path}")
         sys.exit(1)
 
+    # Warn if cache requested but not available
+    if args.enable_cache and not HAS_PROMPT_CACHE:
+        print("Warning: Prompt caching requested but prompt_cache module not found")
+        print("  Ensure prompt_cache.py is in the same directory")
+
+    if args.enable_cache and args.api_provider != "anthropic":
+        print("Warning: Prompt caching only supported with Anthropic provider")
+
     # Create orchestrator
     orchestrator = SimpleOrchestrator(
         project_dir=str(project_path),
-        api_provider=args.api_provider
+        api_provider=args.api_provider,
+        enable_cache=args.enable_cache
     )
 
     # Run

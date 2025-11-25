@@ -1,0 +1,414 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Communication Protocol Tool Use Examples",
+  "description": "Concrete example invocations for each message type to improve parameter accuracy (72% → 90%)",
+  "version": "1.0.0",
+  "based_on": "https://www.anthropic.com/engineering/advanced-tool-use",
+
+  "examples": {
+    "status_update": {
+      "description": "Report progress on assigned tasks",
+      "input_examples": [
+        {
+          "description": "Minimal progress update - just started",
+          "input": {
+            "type": "status_update",
+            "agent_id": "frontend-dev-001",
+            "task_id": "TASK-001",
+            "status": "in_progress",
+            "progress": 10,
+            "timestamp": "2025-11-20T10:00:00Z"
+          }
+        },
+        {
+          "description": "Mid-progress update with completed items",
+          "input": {
+            "type": "status_update",
+            "agent_id": "frontend-dev-001",
+            "task_id": "TASK-001",
+            "status": "in_progress",
+            "progress": 50,
+            "completed_items": [
+              "Created component skeleton",
+              "Added TypeScript interfaces",
+              "Implemented basic styling"
+            ],
+            "next_items": [
+              "Add form validation",
+              "Connect to API endpoint",
+              "Write unit tests"
+            ],
+            "timestamp": "2025-11-20T14:30:00Z"
+          }
+        },
+        {
+          "description": "Blocked status with workaround available",
+          "input": {
+            "type": "status_update",
+            "agent_id": "backend-dev-001",
+            "task_id": "TASK-002",
+            "status": "blocked",
+            "progress": 35,
+            "completed_items": [
+              "Database schema design",
+              "Model definitions"
+            ],
+            "blockers": [
+              "Waiting for API contract from frontend team"
+            ],
+            "notes": "Can proceed with mock data while waiting for contract",
+            "timestamp": "2025-11-20T15:00:00Z"
+          }
+        },
+        {
+          "description": "Near-completion update with estimate",
+          "input": {
+            "type": "status_update",
+            "agent_id": "frontend-dev-001",
+            "task_id": "TASK-001",
+            "status": "in_progress",
+            "progress": 90,
+            "completed_items": [
+              "All components implemented",
+              "API integration complete",
+              "Unit tests passing"
+            ],
+            "next_items": [
+              "Final code review fixes"
+            ],
+            "estimated_completion": "2025-11-20T17:00:00Z",
+            "timestamp": "2025-11-20T16:00:00Z"
+          }
+        }
+      ]
+    },
+
+    "task_assignment": {
+      "description": "Assign new tasks to agents",
+      "input_examples": [
+        {
+          "description": "Simple task with minimal context",
+          "input": {
+            "type": "task_assignment",
+            "task_id": "TASK-101",
+            "assigned_to": "frontend-dev-001",
+            "title": "Fix button alignment on login page",
+            "priority": "medium",
+            "timestamp": "2025-11-20T09:00:00Z"
+          }
+        },
+        {
+          "description": "Feature task with full context",
+          "input": {
+            "type": "task_assignment",
+            "task_id": "TASK-102",
+            "assigned_to": "frontend-dev-001",
+            "title": "Implement user profile settings page",
+            "description": "Create a settings page where users can update their profile information including avatar, display name, and notification preferences.",
+            "priority": "high",
+            "estimated_effort": "4 hours",
+            "branch": "feature/user-settings",
+            "context": {
+              "related_files": [
+                "src/pages/Settings.tsx",
+                "src/components/UserProfile.tsx",
+                "src/api/user.ts"
+              ],
+              "requirements": [
+                "docs/requirements/user-settings.md"
+              ],
+              "api_contracts": [
+                "docs/api/user-endpoints.yaml"
+              ]
+            },
+            "acceptance_criteria": [
+              "User can update display name",
+              "User can upload and crop avatar image",
+              "User can toggle notification preferences",
+              "Form validates input before submission",
+              "Success/error states displayed appropriately"
+            ],
+            "timestamp": "2025-11-20T09:00:00Z"
+          }
+        },
+        {
+          "description": "Task with dependencies",
+          "input": {
+            "type": "task_assignment",
+            "task_id": "TASK-103",
+            "assigned_to": "frontend-dev-001",
+            "title": "Integrate payment form with Stripe",
+            "description": "Connect the checkout form to Stripe payment processing using the new API endpoints.",
+            "priority": "critical",
+            "dependencies": ["TASK-099", "TASK-100"],
+            "deadline": "2025-11-21T17:00:00Z",
+            "timestamp": "2025-11-20T09:00:00Z"
+          }
+        }
+      ]
+    },
+
+    "blocker": {
+      "description": "Report blocking issues that prevent progress",
+      "input_examples": [
+        {
+          "description": "Technical blocker with workaround",
+          "input": {
+            "type": "blocker",
+            "agent_id": "frontend-dev-001",
+            "task_id": "TASK-001",
+            "blocker_description": "Third-party date picker library has a critical bug with timezone handling",
+            "severity": "high",
+            "can_proceed_with_workaround": true,
+            "workaround": "Using native date input temporarily until library fix is released",
+            "timestamp": "2025-11-20T11:30:00Z"
+          }
+        },
+        {
+          "description": "Dependency blocker requiring coordination",
+          "input": {
+            "type": "blocker",
+            "agent_id": "frontend-dev-001",
+            "task_id": "TASK-001",
+            "blocker_description": "Need finalized API response schema for user preferences endpoint",
+            "severity": "critical",
+            "blocking_agent": "backend-dev-001",
+            "blocking_task": "TASK-050",
+            "can_proceed_with_workaround": false,
+            "needs_resolution_by": "2025-11-20T15:00:00Z",
+            "timestamp": "2025-11-20T11:30:00Z"
+          }
+        },
+        {
+          "description": "Environment/infrastructure blocker",
+          "input": {
+            "type": "blocker",
+            "agent_id": "backend-dev-001",
+            "task_id": "TASK-002",
+            "blocker_description": "Staging database connection pool exhausted, cannot run integration tests",
+            "severity": "high",
+            "can_proceed_with_workaround": true,
+            "workaround": "Running tests against local Docker database instance",
+            "timestamp": "2025-11-20T14:00:00Z"
+          }
+        }
+      ]
+    },
+
+    "dependency_request": {
+      "description": "Request resources or deliverables from other agents",
+      "input_examples": [
+        {
+          "description": "API contract request",
+          "input": {
+            "type": "dependency_request",
+            "requesting_agent": "frontend-dev-001",
+            "requires_from": "backend-dev-001",
+            "requirement": "OpenAPI specification for /api/v1/users/* endpoints",
+            "justification": "Need to implement type-safe API client and form validation",
+            "priority": "high",
+            "needed_by": "2025-11-20T14:00:00Z",
+            "timestamp": "2025-11-20T10:00:00Z"
+          }
+        },
+        {
+          "description": "Design asset request",
+          "input": {
+            "type": "dependency_request",
+            "requesting_agent": "frontend-dev-001",
+            "requires_from": "designer-001",
+            "requirement": "Finalized icon set for navigation menu (SVG format)",
+            "justification": "Cannot complete navigation component without final icons",
+            "priority": "medium",
+            "needed_by": "2025-11-21T12:00:00Z",
+            "timestamp": "2025-11-20T10:00:00Z"
+          }
+        }
+      ]
+    },
+
+    "conflict_detected": {
+      "description": "Report conflicts that require coordination",
+      "input_examples": [
+        {
+          "description": "Git merge conflict",
+          "input": {
+            "type": "conflict_detected",
+            "agent_id": "frontend-dev-001",
+            "conflicting_with": "frontend-dev-002",
+            "conflict_type": "merge_conflict",
+            "details": "Both branches modified the Button component styling. My changes add hover states, their changes add disabled states.",
+            "affected_files": [
+              "src/components/Button.tsx",
+              "src/components/Button.module.css"
+            ],
+            "needs_coordination": true,
+            "proposed_resolution": "Merge their disabled state changes first, then rebase my hover state changes on top",
+            "timestamp": "2025-11-20T13:00:00Z"
+          }
+        },
+        {
+          "description": "Interface definition conflict",
+          "input": {
+            "type": "conflict_detected",
+            "agent_id": "frontend-dev-001",
+            "conflicting_with": "backend-dev-001",
+            "conflict_type": "interface_definition",
+            "details": "Backend returns user.createdAt as Unix timestamp, frontend expects ISO 8601 string format",
+            "needs_coordination": true,
+            "proposed_resolution": "Backend adds ISO format to response, frontend accepts both during transition",
+            "timestamp": "2025-11-20T13:30:00Z"
+          }
+        }
+      ]
+    },
+
+    "task_complete": {
+      "description": "Report task completion with deliverables",
+      "input_examples": [
+        {
+          "description": "Simple task completion",
+          "input": {
+            "type": "task_complete",
+            "agent_id": "frontend-dev-001",
+            "task_id": "TASK-001",
+            "deliverables": {
+              "branch": "feature/login-form",
+              "commits": ["abc1234", "def5678"]
+            },
+            "ready_for_review": true,
+            "timestamp": "2025-11-20T17:00:00Z"
+          }
+        },
+        {
+          "description": "Full completion with all deliverables",
+          "input": {
+            "type": "task_complete",
+            "agent_id": "frontend-dev-001",
+            "task_id": "TASK-001",
+            "deliverables": {
+              "files": [
+                "src/pages/Login.tsx",
+                "src/components/LoginForm.tsx",
+                "src/hooks/useAuth.ts",
+                "src/__tests__/LoginForm.test.tsx"
+              ],
+              "branch": "feature/login-form",
+              "commits": [
+                "abc1234 - feat: add login page layout",
+                "def5678 - feat: implement login form validation",
+                "ghi9012 - test: add unit tests for login form"
+              ],
+              "tests": "15 tests passing, 92% coverage",
+              "documentation": [
+                "docs/components/LoginForm.md"
+              ]
+            },
+            "ready_for_review": true,
+            "notes": "Used React Hook Form for validation as discussed in architecture review",
+            "timestamp": "2025-11-20T17:00:00Z"
+          }
+        }
+      ]
+    },
+
+    "coordination_required": {
+      "description": "Request coordination meeting between agents",
+      "input_examples": [
+        {
+          "description": "API contract coordination",
+          "input": {
+            "type": "coordination_required",
+            "participants": ["frontend-dev-001", "backend-dev-001"],
+            "topic": "Finalize REST API contract for user management",
+            "action_required": "Review and agree on endpoint signatures, request/response schemas",
+            "deliverable": "Signed-off OpenAPI specification document",
+            "deadline": "2025-11-20T16:00:00Z",
+            "timestamp": "2025-11-20T10:00:00Z"
+          }
+        },
+        {
+          "description": "Multi-team feature coordination",
+          "input": {
+            "type": "coordination_required",
+            "participants": ["frontend-dev-001", "backend-dev-001", "designer-001"],
+            "topic": "Checkout flow redesign implementation plan",
+            "action_required": "Align on component breakdown, API needs, and design handoff timeline",
+            "deliverable": "Implementation plan with task assignments and dependencies",
+            "timestamp": "2025-11-20T09:00:00Z"
+          }
+        }
+      ]
+    },
+
+    "feedback": {
+      "description": "Provide code review or quality feedback",
+      "input_examples": [
+        {
+          "description": "Approved with minor suggestions",
+          "input": {
+            "type": "feedback",
+            "agent_id": "architect-001",
+            "task_id": "TASK-001",
+            "feedback_type": "code_review",
+            "status": "approved",
+            "comments": [
+              {
+                "file": "src/components/LoginForm.tsx",
+                "line": 45,
+                "comment": "Consider extracting validation rules to a constants file for reusability",
+                "severity": "info"
+              }
+            ],
+            "action_required": "Optional improvements, can merge as-is",
+            "timestamp": "2025-11-20T18:00:00Z"
+          }
+        },
+        {
+          "description": "Changes requested",
+          "input": {
+            "type": "feedback",
+            "agent_id": "architect-001",
+            "task_id": "TASK-001",
+            "feedback_type": "security_review",
+            "status": "changes_requested",
+            "comments": [
+              {
+                "file": "src/api/auth.ts",
+                "line": 23,
+                "comment": "Password is being logged in development mode - security risk",
+                "severity": "critical",
+                "suggested_fix": "Remove console.log statement or mask sensitive data"
+              },
+              {
+                "file": "src/api/auth.ts",
+                "line": 56,
+                "comment": "Missing rate limiting on login attempts",
+                "severity": "high",
+                "suggested_fix": "Add exponential backoff after 3 failed attempts"
+              }
+            ],
+            "action_required": "Address critical and high severity issues before merge",
+            "timestamp": "2025-11-20T18:30:00Z"
+          }
+        }
+      ]
+    }
+  },
+
+  "usage_notes": {
+    "when_to_use_examples": [
+      "Complex nested structures with many optional fields",
+      "Fields with implicit format conventions (timestamps, IDs)",
+      "Similar message types that need differentiation",
+      "Domain-specific patterns (git branch naming, test result formats)"
+    ],
+    "best_practices": [
+      "Provide 2-5 examples per message type",
+      "Include both minimal and comprehensive examples",
+      "Show common variations (with/without optional fields)",
+      "Demonstrate edge cases (blocked status, conflicts)"
+    ],
+    "expected_improvement": "Parameter accuracy improves from ~72% to ~90% with good examples"
+  }
+}

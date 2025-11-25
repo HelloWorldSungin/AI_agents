@@ -1,17 +1,18 @@
-# Skills Showcase Configuration
-# Demonstrates different skill combinations and their impacts on agent capabilities
+# Skills Showcase Configuration (v2.0 - Advanced Tool Use)
+# Demonstrates different skill configurations including deferred loading
+# Based on: https://www.anthropic.com/engineering/advanced-tool-use
 
 project_id: "skills-showcase"
 project_name: "Skills Showcase Examples"
-description: "Comparative examples showing agents with different skill configurations"
+description: "Comparative examples showing agents with different skill configurations, including deferred loading patterns"
 
 # Agent Library Configuration
 agent_library:
   repo: "git@github.com:org/AI_agents.git"
-  version: "1.0.0"
+  version: "2.0.0"  # Updated for deferred loading support
   update_strategy: "auto_patch"
 
-# Agent Definitions - Progressive Complexity
+# Agent Definitions - Progressive Complexity with Advanced Tool Use
 
 agents:
   # =============================================================================
@@ -30,7 +31,7 @@ agents:
       temperature: 0.5
 
   # =============================================================================
-  # LIGHT: Single Skill Addition
+  # LIGHT: Single Skill Addition (Legacy Format - Backward Compatible)
   # =============================================================================
   # Purpose: Show impact of adding one specialized skill
   # Use Case: When you need one specific capability enhancement
@@ -46,30 +47,54 @@ agents:
       temperature: 0.3
 
   # =============================================================================
-  # STANDARD: Frontend Specialist (Multiple Related Skills)
+  # STANDARD: Frontend Specialist (NEW: Deferred Loading)
   # =============================================================================
-  # Purpose: Demonstrate cohesive skill combination for frontend work
-  # Use Case: Production frontend development with testing
+  # Purpose: Demonstrate deferred loading for token optimization
+  # Use Case: Production frontend development - loads primary skill immediately,
+  #           defers testing and theming skills until needed
+  #
+  # TOKEN SAVINGS: ~40% reduction (13K -> 8K initial load)
 
   frontend_specialist:
     base: "base/software-developer.md"
     platforms:
       - "platforms/web/frontend-developer.md"
     skills:
-      - "core/web-artifacts-builder"  # PRIMARY: React + Tailwind
-      - "design/theme-factory"        # Professional styling
-      - "core/webapp-testing"         # Component testing
-    # Token Budget: ~13,000 tokens (3,000 base + 3,000 platform + 7,000 skills)
+      # PRIMARY: Always loaded - core development capability
+      always_loaded:
+        - "core/web-artifacts-builder"  # React + Tailwind (essential)
+
+      # SECONDARY: Loaded on-demand when task requires it
+      deferred:
+        - path: "design/theme-factory"
+          description: "Create professional UI themes with dark mode support"
+          triggers:
+            - "theme"
+            - "dark mode"
+            - "color scheme"
+            - "styling"
+            - "design system"
+        - path: "core/webapp-testing"
+          description: "Component and E2E testing with Playwright"
+          triggers:
+            - "test"
+            - "testing"
+            - "playwright"
+            - "unit test"
+            - "e2e"
+
+    # Token Budget: ~8,000 tokens initial (vs ~13,000 without deferred loading)
+    # Deferred skills: ~5,000 tokens (loaded on demand)
     model:
       provider: "anthropic"
       model_name: "claude-sonnet-4-5"
       temperature: 0.5
 
   # =============================================================================
-  # ADVANCED: Full-Stack Developer (Cross-Domain Skills)
+  # ADVANCED: Full-Stack Developer (NEW: Deferred + Cache Control)
   # =============================================================================
-  # Purpose: Show how to combine frontend and backend capabilities
-  # Use Case: Full-stack development with end-to-end ownership
+  # Purpose: Show combined deferred loading and prompt caching
+  # Use Case: Full-stack development with optimal token management
 
   fullstack_developer:
     base: "base/software-developer.md"
@@ -77,121 +102,226 @@ agents:
       - "platforms/web/frontend-developer.md"
       - "platforms/web/backend-developer.md"
     skills:
-      - "core/web-artifacts-builder"  # Frontend: React components
-      - "core/mcp-builder"            # Backend: API integrations
-      - "core/webapp-testing"         # Testing: Full stack
-    # Token Budget: ~16,000 tokens (3,000 base + 6,000 platforms + 7,000 skills)
+      always_loaded:
+        - "core/web-artifacts-builder"  # PRIMARY: Most used
+
+      deferred:
+        - path: "core/mcp-builder"
+          description: "Build MCP servers and API integrations"
+          triggers:
+            - "mcp"
+            - "api"
+            - "integration"
+            - "server"
+            - "backend"
+        - path: "core/webapp-testing"
+          description: "Full-stack testing capabilities"
+          triggers:
+            - "test"
+            - "testing"
+            - "qa"
+
+    # NEW: Cache control for repeated sessions
+    cache_control:
+      enabled: true
+      stable_context:
+        - "base/software-developer.md"
+        - "platforms/web/frontend-developer.md"
+        - "platforms/web/backend-developer.md"
+      dynamic_context:
+        - ".ai-agents/context/current-sprint.md"
+      cache_ttl_seconds: 300
+
+    # Token Budget: ~9,000 tokens initial (vs ~16,000 without optimization)
     model:
       provider: "anthropic"
       model_name: "claude-sonnet-4-5"
       temperature: 0.5
 
   # =============================================================================
-  # SPECIALIZED: QA Engineer (Testing + Documentation)
+  # SPECIALIZED: QA Engineer (Mixed: Primary Loaded, Reports Deferred)
   # =============================================================================
-  # Purpose: Demonstrate skill combination for quality assurance role
-  # Use Case: Comprehensive testing with professional reporting
+  # Purpose: Testing-focused with reporting capabilities on-demand
+  # Use Case: Core testing always ready, documentation when needed
 
   qa_engineer:
     base: "base/qa-tester.md"
     skills:
-      - "core/webapp-testing"  # PRIMARY: Automated testing
-      - "documents/xlsx"       # Test data and results
-      - "documents/pdf"        # Test reports
-      - "documents/docx"       # Test documentation
-    # Token Budget: ~14,000 tokens (3,000 base + 11,000 skills)
+      always_loaded:
+        - "core/webapp-testing"  # PRIMARY: Always needed
+
+      deferred:
+        - path: "documents/xlsx"
+          description: "Create test data spreadsheets and results tracking"
+          triggers:
+            - "spreadsheet"
+            - "excel"
+            - "test data"
+            - "metrics"
+            - "report"
+        - path: "documents/pdf"
+          description: "Generate formal test reports"
+          triggers:
+            - "pdf"
+            - "report"
+            - "deliverable"
+            - "sign-off"
+        - path: "documents/docx"
+          description: "Test documentation and procedures"
+          triggers:
+            - "documentation"
+            - "procedure"
+            - "test plan"
+
+    # Token Budget: ~7,000 tokens initial (vs ~14,000 without deferred)
     model:
       provider: "anthropic"
       model_name: "claude-sonnet-4-5"
       temperature: 0.3
 
   # =============================================================================
-  # LEADERSHIP: Engineering Manager (Communication + Documentation)
+  # LEADERSHIP: Engineering Manager (Deferred + Tools with Examples)
   # =============================================================================
-  # Purpose: Show skill combination for management and coordination
-  # Use Case: Team leadership, reporting, stakeholder communication
+  # Purpose: Management-focused with comprehensive communication options
+  # Use Case: Primary coordination, reporting tools loaded as needed
 
   engineering_manager:
     base: "base/manager.md"
     skills:
-      - "communication/internal-comms"  # PRIMARY: Team communication
-      - "documents/pptx"                # Presentations
-      - "documents/xlsx"                # Metrics and tracking
-      - "core/skill-creator"            # Understanding team capabilities
-    # Token Budget: ~14,000 tokens (3,000 base + 11,000 skills)
+      always_loaded:
+        - "communication/internal-comms"  # PRIMARY: Team communication
+
+      deferred:
+        - path: "documents/pptx"
+          description: "Create stakeholder presentations and slides"
+          triggers:
+            - "presentation"
+            - "slides"
+            - "pptx"
+            - "stakeholder"
+            - "demo"
+        - path: "documents/xlsx"
+          description: "Metrics tracking and team analytics"
+          triggers:
+            - "metrics"
+            - "spreadsheet"
+            - "tracking"
+            - "velocity"
+        - path: "core/skill-creator"
+          description: "Understand and create team capability patterns"
+          triggers:
+            - "skill"
+            - "capability"
+            - "pattern"
+            - "training"
+
+    # Token Budget: ~6,000 tokens initial (vs ~14,000 without deferred)
     model:
       provider: "anthropic"
       model_name: "claude-sonnet-4-5"
       temperature: 0.7
 
   # =============================================================================
-  # ARCHITECT: System Design (Strategic Skills)
+  # ARCHITECT: System Design (Strategic - Most Skills Deferred)
   # =============================================================================
-  # Purpose: Demonstrate skills for architectural and strategic work
-  # Use Case: System design, pattern creation, technical leadership
+  # Purpose: Highly flexible architect that loads capabilities as needed
+  # Use Case: Different skills for different architecture phases
 
   system_architect:
     base: "base/architect.md"
     platforms:
-      - "platforms/web/frontend-developer.md"  # Understanding frontend
-      - "platforms/web/backend-developer.md"   # Understanding backend
+      - "platforms/web/frontend-developer.md"
+      - "platforms/web/backend-developer.md"
     skills:
-      - "core/skill-creator"            # PRIMARY: Creating team patterns
-      - "core/mcp-builder"              # Integration architecture
-      - "documents/pptx"                # Architecture presentations
-      - "communication/internal-comms"  # Technical communication
-    # Token Budget: ~17,000 tokens (3,000 base + 6,000 platforms + 8,000 skills)
+      always_loaded:
+        - "core/skill-creator"  # PRIMARY: Pattern creation
+
+      deferred:
+        - path: "core/mcp-builder"
+          description: "Design API and integration architecture"
+          triggers:
+            - "integration"
+            - "api design"
+            - "mcp"
+            - "service"
+        - path: "documents/pptx"
+          description: "Architecture presentations and diagrams"
+          triggers:
+            - "presentation"
+            - "diagram"
+            - "architecture review"
+        - path: "communication/internal-comms"
+          description: "Technical decision communication"
+          triggers:
+            - "rfc"
+            - "decision"
+            - "announce"
+            - "proposal"
+
+    cache_control:
+      enabled: true
+      stable_context:
+        - "base/architect.md"
+        - "platforms/web/frontend-developer.md"
+        - "platforms/web/backend-developer.md"
+      dynamic_context:
+        - ".ai-agents/context/architecture-decisions.md"
+
+    # Token Budget: ~10,000 tokens initial (vs ~17,000 without deferred)
     model:
       provider: "anthropic"
       model_name: "claude-sonnet-4-5"
       temperature: 0.7
 
   # =============================================================================
-  # CREATIVE: UI/UX Developer (Design-Focused Skills)
+  # CREATIVE: UI/UX Developer (Design Primary, Others Deferred)
   # =============================================================================
-  # Purpose: Show design and creative skill combination
-  # Use Case: UI/UX development with visual design capabilities
+  # Purpose: Design-focused with component creation on-demand
+  # Use Case: Visual design work with code generation when needed
 
   ui_ux_developer:
     base: "base/software-developer.md"
     platforms:
       - "platforms/web/frontend-developer.md"
     skills:
-      - "core/web-artifacts-builder"  # React component creation
-      - "design/theme-factory"        # PRIMARY: Professional themes
-      - "design/algorithmic-art"      # Generative visualizations
-      - "design/canvas-design"        # Visual assets
-    # Token Budget: ~14,000 tokens (3,000 base + 3,000 platform + 8,000 skills)
+      always_loaded:
+        - "design/theme-factory"  # PRIMARY: Theme and styling
+
+      deferred:
+        - path: "core/web-artifacts-builder"
+          description: "React component implementation"
+          triggers:
+            - "component"
+            - "react"
+            - "implement"
+            - "code"
+        - path: "design/algorithmic-art"
+          description: "Generative and algorithmic visualizations"
+          triggers:
+            - "generative"
+            - "algorithm"
+            - "visualization"
+            - "animation"
+        - path: "design/canvas-design"
+          description: "Visual asset creation"
+          triggers:
+            - "canvas"
+            - "graphic"
+            - "asset"
+            - "image"
+
+    # Token Budget: ~7,000 tokens initial (vs ~14,000 without deferred)
     model:
       provider: "anthropic"
       model_name: "claude-sonnet-4-5"
       temperature: 0.6
 
   # =============================================================================
-  # DOCUMENTATION: Technical Writer (Document-Focused Skills)
+  # MAXIMUM: Polyglot Developer (OPTIMIZED with Deferred Loading)
   # =============================================================================
-  # Purpose: Demonstrate documentation-focused skill combination
-  # Use Case: Technical documentation, user guides, API docs
-
-  technical_writer:
-    base: "base/software-developer.md"  # Technical understanding
-    skills:
-      - "documents/docx"                # PRIMARY: Technical documentation
-      - "documents/pdf"                 # Published documentation
-      - "documents/pptx"                # Training materials
-      - "communication/internal-comms"  # Communication guidelines
-    # Token Budget: ~13,000 tokens (3,000 base + 10,000 skills)
-    model:
-      provider: "anthropic"
-      model_name: "claude-sonnet-4-5"
-      temperature: 0.5
-
-  # =============================================================================
-  # MAXIMUM: Polyglot Developer (Maximum Skill Load)
-  # =============================================================================
-  # Purpose: Test maximum practical skill combination
-  # Use Case: Understanding upper limits (NOT recommended for production)
-  # WARNING: High token budget - use sparingly
+  # Purpose: Maximum capabilities with smart loading
+  # Use Case: Understanding how deferred loading scales with many skills
+  # NOTE: Previously ~20,000 tokens, now ~9,000 initial!
 
   polyglot_developer:
     base: "base/software-developer.md"
@@ -199,39 +329,89 @@ agents:
       - "platforms/web/frontend-developer.md"
       - "platforms/web/backend-developer.md"
     skills:
-      - "core/web-artifacts-builder"
-      - "core/mcp-builder"
-      - "core/webapp-testing"
-      - "design/theme-factory"
-      - "documents/xlsx"
-      - "communication/internal-comms"
-    # Token Budget: ~20,000 tokens (3,000 base + 6,000 platforms + 11,000 skills)
-    # WARNING: This configuration is for testing limits only
+      always_loaded:
+        - "core/web-artifacts-builder"  # Most frequently used
+
+      deferred:
+        - path: "core/mcp-builder"
+          description: "API and integration development"
+          triggers: ["api", "mcp", "integration", "backend"]
+        - path: "core/webapp-testing"
+          description: "Automated testing"
+          triggers: ["test", "testing", "qa", "playwright"]
+        - path: "design/theme-factory"
+          description: "UI theming and styling"
+          triggers: ["theme", "style", "dark mode", "design"]
+        - path: "documents/xlsx"
+          description: "Data and spreadsheets"
+          triggers: ["spreadsheet", "excel", "data", "export"]
+        - path: "communication/internal-comms"
+          description: "Team communication"
+          triggers: ["communicate", "update", "status", "report"]
+
+    cache_control:
+      enabled: true
+      stable_context:
+        - "base/software-developer.md"
+        - "platforms/web/frontend-developer.md"
+        - "platforms/web/backend-developer.md"
+
+    # Token Budget: ~9,000 tokens initial (vs ~20,000 without optimization!)
+    # This is a 55% reduction while maintaining ALL capabilities on-demand
     model:
       provider: "anthropic"
       model_name: "claude-sonnet-4-5"
       temperature: 0.5
 
-# Configuration Notes
-# ===================
+# =============================================================================
+# Configuration Notes - Advanced Tool Use Edition
+# =============================================================================
 #
-# Token Budget Guidelines:
-# - Minimal (no skills):     ~3,000 tokens
-# - Light (1 skill):         ~7,000 tokens
-# - Standard (2-3 skills):   ~10,000-13,000 tokens
-# - Advanced (3-4 skills):   ~13,000-17,000 tokens
-# - Maximum (5+ skills):     ~17,000-25,000 tokens
+# Token Budget Comparison (Before vs After Deferred Loading):
+# ----------------------------------------------------------
+# | Agent                | Legacy Format | Deferred Loading | Savings |
+# |---------------------|---------------|------------------|---------|
+# | minimal_developer   | 3,000         | 3,000            | 0%      |
+# | testing_specialist  | 7,000         | 7,000            | 0%      |
+# | frontend_specialist | 13,000        | 8,000            | 38%     |
+# | fullstack_developer | 16,000        | 9,000            | 44%     |
+# | qa_engineer         | 14,000        | 7,000            | 50%     |
+# | engineering_manager | 14,000        | 6,000            | 57%     |
+# | system_architect    | 17,000        | 10,000           | 41%     |
+# | ui_ux_developer     | 14,000        | 7,000            | 50%     |
+# | polyglot_developer  | 20,000        | 9,000            | 55%     |
 #
-# Recommendations:
-# - Start with minimal configuration
-# - Add skills incrementally based on actual needs
-# - Monitor context usage in production
-# - Remove unused skills after 5+ sessions
-# - Aim for 2-4 skills per agent in production
+# Migration Guide (Legacy -> Deferred Loading):
+# ---------------------------------------------
+# Before:
+#   skills:
+#     - "core/web-artifacts-builder"
+#     - "core/webapp-testing"
+#     - "design/theme-factory"
 #
-# Skill Selection Strategy:
-# 1. Identify primary agent function
-# 2. Add PRIMARY skill for core capability
-# 3. Add SECONDARY skills for common tasks
-# 4. Test and measure actual skill usage
-# 5. Remove skills with < 10% usage rate
+# After:
+#   skills:
+#     always_loaded:
+#       - "core/web-artifacts-builder"
+#     deferred:
+#       - path: "core/webapp-testing"
+#         description: "Testing capabilities"
+#         triggers: ["test", "testing"]
+#       - path: "design/theme-factory"
+#         description: "UI theming"
+#         triggers: ["theme", "style"]
+#
+# Best Practices for Deferred Loading:
+# ------------------------------------
+# 1. Keep 1-2 PRIMARY skills in always_loaded
+# 2. Add good descriptions for agent to understand when to request
+# 3. Use trigger keywords that match common task language
+# 4. Monitor which deferred skills are actually loaded in production
+# 5. Move frequently-loaded deferred skills to always_loaded
+#
+# Cache Control Benefits:
+# -----------------------
+# - Up to 90% cost reduction on repeated API calls
+# - stable_context: Base prompts, platforms (rarely change)
+# - dynamic_context: Current sprint, task context (changes often)
+# - Recommended TTL: 300 seconds (5 minutes) for active sessions

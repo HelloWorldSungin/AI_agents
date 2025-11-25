@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Agent Definition Schema",
-  "description": "Schema for defining and composing AI agents",
-  "version": "1.0.0",
+  "description": "Schema for defining and composing AI agents with advanced tool use features",
+  "version": "2.0.0",
   "type": "object",
   "required": ["agent_id", "version", "type", "base"],
   "properties": {
@@ -42,20 +42,125 @@
     "tools": {
       "type": "array",
       "items": {
-        "type": "string"
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "Simple tool path reference"
+          },
+          {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Path to tool definition (e.g., 'tools/git-tools.md')"
+              },
+              "defer_loading": {
+                "type": "boolean",
+                "default": false,
+                "description": "If true, tool is discoverable on-demand rather than loaded upfront (reduces initial token usage)"
+              },
+              "allowed_callers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Restrict which callers can invoke this tool (e.g., ['code_execution_20250825'] for programmatic tool calling)"
+              },
+              "input_examples": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["description", "input"],
+                  "properties": {
+                    "description": {
+                      "type": "string",
+                      "description": "Description of what this example demonstrates"
+                    },
+                    "input": {
+                      "type": "object",
+                      "description": "Example input parameters for the tool"
+                    }
+                  }
+                },
+                "description": "1-5 concrete example invocations to improve parameter accuracy"
+              }
+            }
+          }
+        ]
       },
-      "description": "Available tools (e.g., ['tools/git-tools.md'])"
+      "description": "Available tools with optional advanced configuration"
     },
     "skills": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "List of Anthropic Skills to load for this agent",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Simple list of skills (all loaded upfront) - backward compatible"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "always_loaded": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Skills always included in context (primary capabilities)"
+            },
+            "deferred": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "description": "Simple skill path"
+                  },
+                  {
+                    "type": "object",
+                    "required": ["path"],
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Skill path (e.g., 'core/web-artifacts-builder')"
+                      },
+                      "description": {
+                        "type": "string",
+                        "description": "Brief description for skill search discovery"
+                      },
+                      "triggers": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "description": "Keywords/phrases that should trigger this skill to load"
+                      }
+                    }
+                  }
+                ]
+              },
+              "description": "Skills discoverable on-demand via skill search (reduces initial token usage by 40-60%)"
+            }
+          },
+          "description": "Advanced skill configuration with deferred loading support"
+        }
+      ],
+      "description": "Skills configuration - supports both simple array and advanced deferred loading",
       "examples": [
-        "core/web-artifacts-builder",
-        "communication/internal-comms",
-        "documents/pdf"
+        ["core/web-artifacts-builder", "communication/internal-comms"],
+        {
+          "always_loaded": ["core/web-artifacts-builder"],
+          "deferred": [
+            "documents/pdf",
+            {
+              "path": "design/theme-factory",
+              "description": "Create and manage UI themes",
+              "triggers": ["theme", "dark mode", "styling", "colors"]
+            }
+          ]
+        }
       ]
     },
     "memory": {
@@ -195,6 +300,36 @@
         "max_tokens": {
           "type": "integer",
           "description": "Maximum tokens per response"
+        }
+      }
+    },
+    "cache_control": {
+      "type": "object",
+      "description": "Prompt caching configuration for cost reduction (up to 90% on repeated calls)",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable prompt caching with Anthropic API"
+        },
+        "stable_context": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Context that rarely changes and should be cached (base prompts, core skills)"
+        },
+        "dynamic_context": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Context that changes frequently (current task, recent conversation)"
+        },
+        "cache_ttl_seconds": {
+          "type": "integer",
+          "default": 300,
+          "description": "Time-to-live for cached prompts in seconds"
         }
       }
     },
