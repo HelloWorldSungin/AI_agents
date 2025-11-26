@@ -378,14 +378,13 @@ AI_agents/
 │       ├── slash-command-auditor.md # Reviews slash commands
 │       └── subagent-auditor.md      # Reviews agent configurations
 │
-├── base/                    # Base agent prompts
-│   ├── software-developer.md
-│   ├── manager.md
-│   ├── qa-tester.md
-│   ├── architect.md
-│   └── scrum-master.md      # Optional: Project tracking & visibility
-│
-├── prompts/                 # Manager & specialized agent prompts ✨ NEW
+├── prompts/                 # All agent prompts
+│   ├── roles/               # Base agent prompts
+│   │   ├── software-developer.md
+│   │   ├── manager.md
+│   │   ├── qa-tester.md
+│   │   ├── architect.md
+│   │   └── scrum-master.md      # Optional: Project tracking & visibility
 │   ├── manager-task-delegation.md      # Comprehensive Manager guide (dual-mode)
 │   ├── manager-quick-reference.md      # Quick-start Manager template
 │   ├── it-specialist-agent.md          # Infrastructure validation specialist
@@ -482,10 +481,10 @@ See [starter-templates/README.md](starter-templates/README.md) for complete guid
 # .ai-agents/config.yml
 agents:
   team_manager:
-    base: "base/manager.md"
+    base: "prompts/roles/manager.md"
 
   frontend_developer:
-    base: "base/software-developer.md"
+    base: "prompts/roles/software-developer.md"
     platforms:
       - "platforms/web/frontend-developer.md"
     skills:
@@ -496,7 +495,7 @@ agents:
       - ".ai-agents/context/api-contracts.md"
 
   backend_developer:
-    base: "base/software-developer.md"
+    base: "prompts/roles/software-developer.md"
     platforms:
       - "platforms/web/backend-developer.md"
     skills:
@@ -1167,7 +1166,7 @@ All prompts in `.claude/` and `skills/taches-cc/` use XML format:
 
 ### Compatibility
 
-- **Legacy Prompts**: Existing markdown prompts in `base/`, `platforms/`, and `prompts/` continue to work
+- **Legacy Prompts**: Existing markdown prompts in `prompts/roles/`, `platforms/`, and `prompts/` continue to work
 - **New Features**: All new slash commands, auditors, and taches-cc skills use XML
 - **Migration Tool**: Coming in v1.3.0 - automatic markdown-to-XML converter
 
