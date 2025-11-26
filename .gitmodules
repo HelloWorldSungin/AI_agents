@@ -1,6 +1,6 @@
-[submodule "skills/anthropic"]
-	path = skills/anthropic
+[submodule "external/anthropic-skills"]
+	path = external/anthropic-skills
 	url = https://github.com/anthropics/skills.git
-[submodule "taches-cc-resources"]
-	path = taches-cc-resources
+[submodule "external/taches-cc-resources"]
+	path = external/taches-cc-resources
 	url = https://github.com/glittercowboy/taches-cc-resources.git

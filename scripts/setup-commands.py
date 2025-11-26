@@ -22,9 +22,9 @@ from typing import Dict, List, Optional
 SCRIPT_DIR = Path(__file__).parent.resolve()
 REPO_ROOT = SCRIPT_DIR.parent
 
-# Source locations
-TACHES_COMMANDS = REPO_ROOT / "taches-cc-resources" / "commands"
-TACHES_SKILLS = REPO_ROOT / "taches-cc-resources" / "skills"
+# Source locations (external/ contains git submodules)
+TACHES_COMMANDS = REPO_ROOT / "external" / "taches-cc-resources" / "commands"
+TACHES_SKILLS = REPO_ROOT / "external" / "taches-cc-resources" / "skills"
 LOCAL_COMMANDS = REPO_ROOT / ".claude" / "commands"
 LOCAL_SKILLS = REPO_ROOT / "skills"
 
