@@ -237,6 +237,39 @@ To update or customize, edit the source files directly.
 """
 
 
+def install_skills(target_dir: Path, tools: Dict[str, Dict], repo_path: Path) -> List[str]:
+    """Install skills by creating symlinks to .claude/skills/."""
+    installed = []
+
+    # Skills directory is sibling to commands
+    skills_dir = target_dir.parent / "skills"
+    skills_dir.mkdir(parents=True, exist_ok=True)
+
+    for name, tool in tools.items():
+        if not name.startswith("skill:"):
+            continue
+
+        skill_name = tool["name"]
+        source_path = Path(tool["source"]).parent  # Get directory containing SKILL.md
+        target_path = skills_dir / skill_name
+
+        # Remove existing symlink or directory if it exists
+        if target_path.is_symlink():
+            target_path.unlink()
+        elif target_path.exists():
+            print(f"  Warning: {target_path} exists and is not a symlink, skipping")
+            continue
+
+        # Create symlink
+        try:
+            target_path.symlink_to(source_path)
+            installed.append(str(target_path))
+        except OSError as e:
+            print(f"  Warning: Could not create symlink for {skill_name}: {e}")
+
+    return installed
+
+
 def install_wrappers(target_dir: Path, tools: Dict[str, Dict], repo_path: Path) -> List[str]:
     """Install wrapper commands to the target directory."""
     installed = []
@@ -254,7 +287,7 @@ def install_wrappers(target_dir: Path, tools: Dict[str, Dict], repo_path: Path) 
             subname = name.split(":", 1)[1]
             output_path = consider_dir / f"{subname}.md"
         elif name.startswith("skill:"):
-            # Skip skills - they're invoked via Skill() tool directly
+            # Skills are installed separately via install_skills()
             continue
         else:
             output_path = target_dir / f"{name}.md"
@@ -324,14 +357,23 @@ def main():
     print(f"Found {len(tools)} tools")
 
     # Install wrappers
-    print(f"\nInstalling wrappers to {target_dir}...")
-    installed = install_wrappers(target_dir, tools, REPO_ROOT)
+    print(f"\nInstalling command wrappers to {target_dir}...")
+    installed_commands = install_wrappers(target_dir, tools, REPO_ROOT)
 
-    print(f"\nInstalled {len(installed)} command wrappers:")
-    for path in installed[:10]:
+    # Install skills
+    print(f"\nInstalling skill symlinks to {target_dir.parent / 'skills'}...")
+    installed_skills = install_skills(target_dir, tools, REPO_ROOT)
+
+    print(f"\nInstalled {len(installed_commands)} command wrappers:")
+    for path in installed_commands[:10]:
         print(f"  - {path}")
-    if len(installed) > 10:
-        print(f"  ... and {len(installed) - 10} more")
+    if len(installed_commands) > 10:
+        print(f"  ... and {len(installed_commands) - 10} more")
+
+    if installed_skills:
+        print(f"\nInstalled {len(installed_skills)} skill symlinks:")
+        for path in installed_skills:
+            print(f"  - {path}")
 
     print(f"\nDone! Use /ai-tools to discover available commands.")
 
