@@ -2,7 +2,7 @@
 
 Quick reference for all features, commands, skills, and agents in this repository.
 
-**Version:** 1.2.0
+**Version:** 1.3.0
 **Last Updated:** 2025-11-25
 
 ---
@@ -289,6 +289,40 @@ python3 path/to/AI_agents/starter-templates/generate-template.py \
 |--------|---------|----------|
 | `compose-agent.py` | Compose agents from components (base + platform + context + skills) | `scripts/compose-agent.py` |
 | `generate-template.py` | Generate starter templates for existing projects | `starter-templates/generate-template.py` |
+| `setup-commands.py` | Install tool selector wrappers to other projects | `scripts/setup-commands.py` |
+
+### Tool Selector (NEW v1.3.0)
+
+Enable `/command` style access to AI_agents tools from other projects:
+
+```bash
+# List available tools
+python scripts/setup-commands.py --list
+
+# Install to current project
+cd /path/to/your/project
+python /path/to/AI_agents/scripts/setup-commands.py
+
+# Install globally (all projects)
+python /path/to/AI_agents/scripts/setup-commands.py --global
+```
+
+**What gets installed:**
+- 30 wrapper commands (~200-300 bytes each)
+- `/ai-tools` discovery command
+- All `/consider:*` thinking models
+
+**Token impact:**
+- At-rest: ~50 tokens (command names only)
+- Per invocation: +60 tokens (~1.5% overhead)
+
+**Usage in target project:**
+```bash
+/ai-tools                    # Discover available tools
+/create-prompt [description] # Create optimized prompts
+/debug [issue]               # Apply debugging methodology
+/consider:first-principles   # Break down to fundamentals
+```
 
 ### Orchestration Scripts (Advanced Tool Use - NEW v1.1.0)
 
@@ -607,13 +641,14 @@ JSON schemas for structured communication:
 - **Base Agents:** 5 (software-developer, manager, qa-tester, architect, scrum-master)
 - **Manager Prompts:** 4 (task-delegation, quick-reference, it-specialist, senior-engineer)
 - **Platform Augments:** 2 (web/frontend, mobile) + 3 planned (desktop, data, devops)
-- **Slash Commands:** 16 total (12 thinking models + 4 workflow commands)
+- **Slash Commands:** 17 total (12 thinking models + 4 workflow commands + 1 discovery)
 - **Quality Auditors:** 3 (skill-auditor, slash-command-auditor, subagent-auditor)
 - **Anthropic Skills:** 13 official skills (~3-4.5K tokens each)
 - **Taches-CC Skills:** 3 advanced workflow skills
 - **Custom Skills:** 1 (appflowy-integration) + template
 - **Starter Templates:** 5 (web-app, mobile-app, full-stack, api-service, data-pipeline)
-- **Orchestration Scripts:** 6 Python scripts
+- **Orchestration Scripts:** 7 Python scripts (includes setup-commands.py)
+- **Tool Selector:** 30 wrapper commands for cross-project usage
 - **Documentation:** 20+ markdown guides (45,000+ words)
 - **Examples:** 3 complete examples (web-app-team, mobile-app-team, skills-showcase)
 
@@ -663,7 +698,8 @@ JSON schemas for structured communication:
 
 ## Version History
 
-- **v1.2.0** (Current): Advanced Tool Use features (deferred loading, prompt caching, programmatic tools)
+- **v1.3.0** (Current): Tool Selector system for cross-project tool access, `/ai-tools` discovery command
+- **v1.2.0**: Advanced Tool Use features (deferred loading, prompt caching, programmatic tools)
 - **v1.1.0**: Manager workflow dual-mode, IT Specialist, Senior Engineer, Starter Templates
 - **v1.0.0**: Skills integration, base agents, platform augments, orchestration
 

@@ -2,7 +2,7 @@
 
 A comprehensive, modular library for building multi-agent software development systems based on advanced context engineering principles.
 
-**Version:** 1.2.0
+**Version:** 1.3.0
 
 ---
 
@@ -26,6 +26,7 @@ This library provides reusable, composable AI agent prompts and infrastructure f
 💭 **Slash Commands**: 12 thinking model commands, debugging workflows, task management
 🔍 **Quality Auditors**: Agent-based review for skills, slash commands, and subagents
 📐 **XML Architecture**: Pure XML prompt structure with 25% token efficiency improvement
+🔌 **Tool Selector**: Cross-project tool access via `/command` style wrappers
 
 ---
 
@@ -352,8 +353,9 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed documentation.
 
 ```
 AI_agents/
-├── .claude/                 # Claude Code extensions ✨ NEW
+├── .claude/                 # Claude Code extensions
 │   ├── commands/            # Slash commands
+│   │   ├── ai-tools.md      # Tool discovery router 🔌 NEW
 │   │   ├── consider/        # 12 thinking model commands
 │   │   │   ├── first-principles.md
 │   │   │   ├── 5-whys.md
@@ -431,7 +433,8 @@ AI_agents/
 │
 ├── scripts/                 # Automation tools
 │   ├── compose-agent.py     # Agent composition with deferred loading
-│   └── orchestration/       # Advanced orchestration ⚡ NEW
+│   ├── setup-commands.py    # Tool selector installer 🔌 NEW
+│   └── orchestration/       # Advanced orchestration
 │       ├── simple_orchestrator.py      # Basic multi-agent orchestration
 │       ├── prompt_cache.py             # Prompt caching for cost reduction
 │       ├── sandbox_executor.py         # Secure code execution sandbox
@@ -573,6 +576,37 @@ claude-code agent:.claude/agents/slash-command-auditor.md --input .claude/comman
 # Audit an agent configuration
 claude-code agent:.claude/agents/subagent-auditor.md --input .ai-agents/composed/backend-developer.md
 ```
+
+### Tool Selector (Cross-Project Access)
+
+Use AI_agents tools from any project via `/command` style wrappers:
+
+```bash
+# Install tools to your project
+cd /path/to/your/project
+python /path/to/AI_agents/scripts/setup-commands.py
+
+# Or install globally
+python /path/to/AI_agents/scripts/setup-commands.py --global
+
+# List available tools
+python /path/to/AI_agents/scripts/setup-commands.py --list
+```
+
+**What gets installed:**
+- 30 wrapper commands (~60 tokens overhead per invocation)
+- `/ai-tools` discovery command
+- All `/consider:*` thinking models
+
+**Usage in target project:**
+```bash
+/ai-tools                    # Discover available tools
+/create-prompt [description] # Create optimized prompts
+/debug [issue]               # Apply debugging methodology
+/consider:first-principles   # Break down to fundamentals
+```
+
+**Token impact:** Negligible (~50 tokens at-rest, +60 tokens per invocation)
 
 ---
 
@@ -1217,6 +1251,16 @@ Integration of [taches-cc-resources](https://github.com/Tachesmkp/taches-cc-reso
 - [x] **taches-cc Skills** - create-agent-skills, create-plans, debug-like-expert
 - [x] **Thinking Frameworks** - First-principles, 5-whys, SWOT, cost-benefit, and 8 more
 
+### ✅ Phase 1.7: Tool Selector (COMPLETE)
+
+Cross-project tool access system:
+
+- [x] **setup-commands.py** - Auto-generate wrapper commands for target projects
+- [x] **/ai-tools router** - Discovery command for available tools
+- [x] **Minimal wrappers** - ~200-300 bytes each, +60 tokens per invocation
+- [x] **Token efficiency** - Negligible at-rest cost (~50 tokens for 30 commands)
+- [x] **Global install** - Option to install tools globally for all projects
+
 ### 🚀 Phase 2: Platform Expansion (Near-term: 3-6 months)
 
 #### Platform Augmentations
@@ -1313,6 +1357,12 @@ Integration of [taches-cc-resources](https://github.com/Tachesmkp/taches-cc-reso
 ### 🎯 Current Focus
 
 **Q4 2024 - Q1 2025**: Platform augmentations (Desktop, Data, DevOps) and migration tooling
+
+**What's New in v1.3.0:**
+- Tool Selector system for cross-project tool access via `/command` style
+- `/ai-tools` discovery command for exploring available tools
+- `setup-commands.py` script for installing wrappers to other projects
+- Minimal token overhead (~50 tokens at-rest, +60 per invocation)
 
 **What's New in v1.2.0:**
 - 12 thinking model slash commands for structured decision-making
