@@ -7,14 +7,11 @@ category: custom
 token_estimate: ~3500
 ---
 
-# Incident Response Skill
-
-## Purpose
-
+<objective>
 This skill provides a structured approach to handling production incidents efficiently and effectively. It ensures consistent response, clear communication, proper escalation, and thorough documentation for learning and prevention.
+</objective>
 
-## When to Use This Skill
-
+<when_to_use>
 Use this skill when:
 
 - Production outage or severe degradation detected
@@ -30,20 +27,19 @@ Do NOT use this skill when:
 - Planned maintenance (use deployment workflow)
 - Development environment issues
 - User support questions (use support workflow)
+</when_to_use>
 
-## Prerequisites
-
+<prerequisites>
 - Access to monitoring dashboards
 - Communication channels set up (Slack, PagerDuty, etc.)
 - Incident tracking system (Jira, GitHub Issues, etc.)
 - On-call rotation defined
 - Rollback procedures documented
 - Status page access (if applicable)
+</prerequisites>
 
-## Instructions
-
-### Step 1: Detect and Acknowledge
-
+<workflow>
+<step name="Detect and Acknowledge">
 Recognize incident and take ownership:
 
 **Detection Sources:**
@@ -105,9 +101,9 @@ Time: $(date)"
 - **Response Time:** Best effort
 - **Communication:** At resolution
 - **Escalation:** Not needed
+</step>
 
-### Step 2: Initial Communication
-
+<step name="Initial Communication">
 Inform stakeholders and establish communication rhythm:
 
 **Internal Communication (Slack):**
@@ -152,9 +148,9 @@ Status: Investigating
 - [ ] Status page updated (if external impact)
 - [ ] Leadership notified (P0/P1)
 - [ ] Update cadence established
+</step>
 
-### Step 3: Investigate and Diagnose
-
+<step name="Investigate and Diagnose">
 Identify root cause systematically:
 
 **Gather Information:**
@@ -233,9 +229,9 @@ exhausting database connection limit when combined with other services.
 
 Mitigation Plan: Rollback auth service to previous version.
 ```
+</step>
 
-### Step 4: Mitigate and Resolve
-
+<step name="Mitigate and Resolve">
 Stop the impact and restore service:
 
 **Mitigation Strategies (choose based on situation):**
@@ -321,9 +317,9 @@ misconfigured connection limits in new deployment.
 
 Thanks to @john, @sarah for help investigating!
 ```
+</step>
 
-### Step 5: Post-Incident Review
-
+<step name="Post-Incident Review">
 Learn from incident and prevent recurrence:
 
 **Schedule Review (within 48 hours):**
@@ -412,74 +408,74 @@ scaled up during peak traffic, connection pool was exhausted.
 - Update runbooks with lessons learned
 - Share incident report with team
 - Celebrate what went well, learn from what didn't
+</step>
+</workflow>
 
-## Best Practices
-
-### 1. Communicate Early and Often
-
+<best_practices>
+<practice name="Communicate Early and Often">
 **Rationale:** Reduces uncertainty and enables help from others.
 
 **Implementation:** Post updates even if no new information ("Still investigating, checking X next").
+</practice>
 
-### 2. Focus on Mitigation First, Root Cause Second
-
+<practice name="Focus on Mitigation First, Root Cause Second">
 **Rationale:** Stopping user impact is priority; understanding why can wait.
 
 **Implementation:** Once incident is contained, you can thoroughly investigate.
+</practice>
 
-### 3. Document Everything in Real-Time
-
+<practice name="Document Everything in Real-Time">
 **Rationale:** Memory fades; contemporaneous notes are accurate.
 
 **Implementation:** Timestamp all actions, findings, and decisions during incident.
+</practice>
 
-### 4. Blameless Post-Mortems
-
+<practice name="Blameless Post-Mortems">
 **Rationale:** Focus on system improvements, not individual blame.
 
 **Implementation:** Use "we" not "they"; focus on process gaps, not people.
+</practice>
 
-### 5. Degree of Freedom
-
+<practice name="Degree of Freedom">
 **Low Freedom**: Incident response requires following established procedures for consistency and efficiency. Communication cadence, severity classification, and post-incident review are critical.
+</practice>
 
-### 6. Token Efficiency
-
+<practice name="Token Efficiency">
 This skill uses approximately **3,500 tokens** when fully loaded.
+</practice>
+</best_practices>
 
-## Common Pitfalls
-
-### Pitfall 1: Jumping to Solutions Without Understanding
-
+<common_pitfalls>
+<pitfall name="Jumping to Solutions Without Understanding">
 **What Happens:** Apply fixes that don't address root cause, potentially making things worse.
 
 **How to Avoid:**
 - Gather information before acting
 - Verify hypothesis before implementing fix
 - For P0, quick mitigation (rollback) then investigate
+</pitfall>
 
-### Pitfall 2: Poor Communication
-
+<pitfall name="Poor Communication">
 **What Happens:** Stakeholders unaware of status, multiple people investigating same thing, confusion.
 
 **How to Avoid:**
 - Establish single source of truth (incident channel)
 - Regular updates even if no progress
 - Clear ownership (incident commander)
+</pitfall>
 
-### Pitfall 3: Skipping Post-Incident Review
-
+<pitfall name="Skipping Post-Incident Review">
 **What Happens:** Same incident repeats; lessons not learned.
 
 **How to Avoid:**
 - Schedule review immediately after resolution
 - Track action items to completion
 - Share learnings with broader team
+</pitfall>
+</common_pitfalls>
 
-## Examples
-
-### Example 1: Database Deadlock Incident
-
+<examples>
+<example name="Database Deadlock Incident">
 **Detection (14:30):**
 ```markdown
 🚨 INCIDENT - API timeouts
@@ -520,11 +516,9 @@ Fix: Killed query, added statement timeout for reports
 ```
 
 **Outcome:** Quick resolution. Follow-up: separate read-replica for reports.
+</example>
 
----
-
-### Example 2: Service Outage Due to Configuration
-
+<example name="Service Outage Due to Configuration">
 **Detection (09:15):**
 ```markdown
 🚨 INCIDENT - Complete service outage
@@ -591,19 +585,17 @@ Action Items:
 ```
 
 **Outcome:** Fast resolution due to good logging and quick config fix. CI improved to prevent similar issues.
+</example>
+</examples>
 
----
-
-## Related Skills
-
+<related_skills>
 - **deployment-workflow**: Coordinate with deployment procedures
 - **database-migration**: Handle database-related incidents
 - **monitoring-setup**: Effective monitoring prevents/detects incidents
+</related_skills>
 
-## Communication Templates
-
-### Initial Incident Declaration
-
+<communication_templates>
+<template name="Initial Incident Declaration">
 ```markdown
 🚨 **INCIDENT [INC-YYYY-MMDD-NNN]**
 
@@ -620,9 +612,9 @@ Action Items:
 
 **Next Update:** [Timestamp]
 ```
+</template>
 
-### Status Update
-
+<template name="Status Update">
 ```markdown
 **UPDATE [HH:MM UTC] - [INC-YYYY-MMDD-NNN]**
 
@@ -637,9 +629,9 @@ Action Items:
 
 **Next Update:** [Timestamp]
 ```
+</template>
 
-### Resolution Message
-
+<template name="Resolution Message">
 ```markdown
 ✅ **INCIDENT RESOLVED [INC-YYYY-MMDD-NNN]**
 
@@ -656,18 +648,20 @@ Action Items:
 
 Thanks to [@names] for help resolving!
 ```
+</template>
+</communication_templates>
 
-## Version History
-
-### Version 1.0.0 (2025-01-20)
+<version_history>
+**Version 1.0.0 (2025-01-20)**
 - Initial creation
 - Structured incident response workflow
 - Communication templates
 - Post-incident review process
+</version_history>
 
-## Additional Resources
-
+<additional_resources>
 - [Google SRE Book - Incident Management](https://sre.google/sre-book/managing-incidents/)
 - [PagerDuty Incident Response Guide](https://response.pagerduty.com/)
 - Internal: Incident Response Runbook at [internal wiki]
 - Internal: On-Call Rotation at [internal wiki]
+</additional_resources>

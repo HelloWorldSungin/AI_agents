@@ -7,14 +7,11 @@ category: custom
 token_estimate: ~3000
 ---
 
-# Database Migration Skill
-
-## Purpose
-
+<objective>
 This skill provides procedures for safely executing database schema changes with minimal downtime and reliable rollback capability. It ensures migrations are tested, backward compatible, and can be safely applied to production databases.
+</objective>
 
-## When to Use This Skill
-
+<when_to_use>
 Use this skill when:
 
 - Adding/modifying/removing database tables or columns
@@ -28,19 +25,18 @@ Do NOT use this skill when:
 - Making simple data updates (use database query skills)
 - One-time data fixes (use admin scripts)
 - Schema-less database changes (document/key-value stores)
+</when_to_use>
 
-## Prerequisites
-
+<prerequisites>
 - Migration tool installed (Alembic, Flyway, Django migrations, etc.)
 - Database backup capability available
 - Staging environment that mirrors production
 - Database admin access for production
 - Rollback window defined
+</prerequisites>
 
-## Instructions
-
-### Step 1: Create Migration
-
+<workflow>
+<step name="Create Migration">
 Generate migration file with descriptive name:
 
 **Using Alembic (Python):**
@@ -93,9 +89,9 @@ def downgrade():
 - Descriptive migration message
 - Include indexes for performance
 - Foreign keys properly defined
+</step>
 
-### Step 2: Ensure Backward Compatibility
-
+<step name="Ensure Backward Compatibility">
 Make migrations safe for zero-downtime deployments:
 
 **Backward Compatible Patterns:**
@@ -144,9 +140,9 @@ op.execute('UPDATE users SET age_int = CAST(age_string AS INTEGER)')
 # Step 3 (separate migration): Remove old column
 op.drop_column('users', 'age_string')
 ```
+</step>
 
-### Step 3: Test Migration in Staging
-
+<step name="Test Migration in Staging">
 Validate migration before production:
 
 **Create Staging Database Snapshot:**
@@ -199,9 +195,9 @@ alembic upgrade head
 - [ ] Rollback works correctly
 - [ ] Performance is acceptable (check query times)
 - [ ] Indexes are effective (check query plans)
+</step>
 
-### Step 4: Backup Production Database
-
+<step name="Backup Production Database">
 Always backup before migration:
 
 **PostgreSQL Backup:**
@@ -237,9 +233,9 @@ echo "Database: production_db" >> migration_backup_info.txt
 echo "Time: $(date)" >> migration_backup_info.txt
 echo "Size: $(du -h backup_before_migration_20250120_103000.dump)" >> migration_backup_info.txt
 ```
+</step>
 
-### Step 5: Execute Migration in Production
-
+<step name="Execute Migration in Production">
 Apply migration with monitoring:
 
 **Pre-Migration Checks:**
@@ -300,9 +296,9 @@ pytest tests/smoke/ --env=production
 # Verify indexes being used
 psql $DATABASE_URL -c "EXPLAIN ANALYZE SELECT * FROM user_preferences WHERE user_id = 123;"
 ```
+</step>
 
-### Step 6: Rollback if Needed
-
+<step name="Rollback if Needed">
 Rollback procedure if issues arise:
 
 **When to Rollback:**
@@ -345,51 +341,51 @@ psql $DATABASE_URL -c "SELECT COUNT(*) FROM users;"
 # Restart application
 kubectl rollout restart deployment/app -n production
 ```
+</step>
+</workflow>
 
-## Best Practices
-
-### 1. Always Test in Staging First
-
+<best_practices>
+<practice name="Always Test in Staging First">
 Never apply untested migrations to production.
+</practice>
 
-### 2. Backward Compatible Migrations
-
+<practice name="Backward Compatible Migrations">
 Structure changes to work with both old and new code.
+</practice>
 
-### 3. Small, Focused Migrations
-
+<practice name="Small, Focused Migrations">
 One logical change per migration for easier rollback.
+</practice>
 
-### 4. Degree of Freedom
-
+<practice name="Degree of Freedom">
 **Low Freedom**: Database migrations require following exact procedures for safety. Core steps (backup, test, apply, verify) must not be skipped.
+</practice>
 
-### 5. Token Efficiency
-
+<practice name="Token Efficiency">
 This skill uses approximately **3,000 tokens** when fully loaded.
+</practice>
+</best_practices>
 
-## Common Pitfalls
-
-### Pitfall 1: No Backward Compatibility
-
+<common_pitfalls>
+<pitfall name="No Backward Compatibility">
 **What Happens:** Deployment fails because old code can't work with new schema.
 
 **How to Avoid:**
 - Add columns as nullable or with defaults
 - Use multi-step migrations for breaking changes
 - Test with old and new code versions
+</pitfall>
 
-### Pitfall 2: Skipping Staging Validation
-
+<pitfall name="Skipping Staging Validation">
 **What Happens:** Migration fails in production due to data issues not present in testing.
 
 **How to Avoid:**
 - Use production snapshot for staging
 - Test with realistic data volumes
 - Verify migration and rollback both work
+</pitfall>
 
-### Pitfall 3: No Backup
-
+<pitfall name="No Backup">
 **What Happens:** Migration causes data loss with no recovery option.
 
 **How to Avoid:**
@@ -397,11 +393,11 @@ This skill uses approximately **3,000 tokens** when fully loaded.
 - Verify backup is restorable
 - Store backup securely
 - Test restore process periodically
+</pitfall>
+</common_pitfalls>
 
-## Examples
-
-### Example 1: Adding Index for Performance
-
+<examples>
+<example name="Adding Index for Performance">
 **Context:** Users table queries are slow; need index on email column.
 
 **Migration:**
@@ -451,11 +447,9 @@ psql production_db -c "\d+ users"
 ```
 
 **Outcome:** Index created without downtime. Query performance improved from 2s to 50ms.
+</example>
 
----
-
-### Example 2: Multi-Step Schema Change
-
+<example name="Multi-Step Schema Change">
 **Context:** Need to rename `username` column to `display_name` in users table.
 
 **Step 1 Migration: Add New Column**
@@ -529,25 +523,25 @@ alembic upgrade head
 ```
 
 **Outcome:** Zero-downtime rename completed over two deployments. Old and new code worked throughout.
+</example>
+</examples>
 
----
-
-## Related Skills
-
+<related_skills>
 - **deployment-workflow**: Coordinate migrations with application deployments
 - **database-design**: Schema design best practices
 - **monitoring-setup**: Monitor database performance during migrations
+</related_skills>
 
-## Version History
-
-### Version 1.0.0 (2025-01-20)
+<version_history>
+**Version 1.0.0 (2025-01-20)**
 - Initial creation
 - Safe migration procedures
 - Backward compatibility patterns
 - Multi-step migration examples
+</version_history>
 
-## Additional Resources
-
+<additional_resources>
 - [Alembic Documentation](https://alembic.sqlalchemy.org/)
 - [Zero-Downtime Database Migrations](https://spring.io/blog/2016/05/31/zero-downtime-deployment-with-a-database)
 - Internal: Database Migration Runbook at [internal wiki]
+</additional_resources>

@@ -7,14 +7,11 @@ category: custom
 token_estimate: ~500
 ---
 
-# [Skill Name] Skill
-
-## Purpose
-
+<objective>
 [Clear, concise explanation of what problem this skill solves and what capabilities it provides. Keep this to 2-3 sentences maximum.]
+</objective>
 
-## When to Use This Skill
-
+<when_to_use>
 Use this skill when:
 
 - [Specific use case 1 with concrete scenario]
@@ -26,9 +23,9 @@ Do NOT use this skill when:
 
 - [Anti-pattern or inappropriate scenario 1]
 - [Anti-pattern or inappropriate scenario 2]
+</when_to_use>
 
-## Prerequisites
-
+<prerequisites>
 Before using this skill, ensure:
 
 - [Required tool, library, or environment setup]
@@ -37,11 +34,10 @@ Before using this skill, ensure:
 - [Other skills that should be loaded alongside this one]
 
 *If there are no prerequisites, remove this section.*
+</prerequisites>
 
-## Instructions
-
-### Step 1: [Preparation/Initial Setup]
-
+<workflow>
+<step name="Preparation/Initial Setup">
 [Detailed instructions for the first step. Use imperative form (commands).]
 
 - Check that [prerequisite] is available
@@ -56,9 +52,9 @@ tool --version
 # Command to check prerequisites
 tool check --all
 ```
+</step>
 
-### Step 2: [Main Process/Core Action]
-
+<step name="Main Process/Core Action">
 [Instructions for the primary workflow.]
 
 1. Execute [specific action]
@@ -80,9 +76,9 @@ def main_process():
     validate(result)
     return result
 ```
+</step>
 
-### Step 3: [Validation/Verification]
-
+<step name="Validation/Verification">
 [Instructions for confirming success.]
 
 Verify the process completed successfully by:
@@ -101,9 +97,9 @@ Verify the process completed successfully by:
 tool verify --output
 tool status --check-all
 ```
+</step>
 
-### Step 4: [Follow-up/Cleanup] (Optional)
-
+<step name="Follow-up/Cleanup">
 [Any additional steps needed after main process.]
 
 - Clean up [temporary resources]
@@ -111,49 +107,51 @@ tool status --check-all
 - Notify [stakeholders or systems]
 - Update [tracking or monitoring systems]
 
-## Best Practices
+*Optional: Remove this step if not applicable.*
+</step>
+</workflow>
 
-### 1. [First Best Practice Name]
-
+<best_practices>
+<practice name="First Best Practice Name">
 [Explanation of why this is important and how to apply it.]
 
 **Example:**
 ```language
 // Code demonstrating this best practice
 ```
+</practice>
 
-### 2. [Second Best Practice Name]
-
+<practice name="Second Best Practice Name">
 [Another key principle with clear guidance.]
 
 **Rationale:** [Why this matters]
 **Implementation:** [How to do it]
+</practice>
 
-### 3. [Third Best Practice Name]
-
+<practice name="Third Best Practice Name">
 [Additional recommendation with context.]
+</practice>
 
-### 4. Degree of Freedom
-
+<practice name="Degree of Freedom">
 **[High/Medium/Low]**: [Explanation of how much flexibility agents have]
 
 - **High Freedom**: Multiple valid approaches; adapt based on context and project needs
 - **Medium Freedom**: Preferred patterns exist; some variation acceptable for good reasons
 - **Low Freedom**: Follow specific procedures exactly; consistency is critical for safety/compliance
+</practice>
 
-### 5. Token Efficiency
-
+<practice name="Token Efficiency">
 This skill uses approximately **X,XXX tokens** when fully loaded.
 
 **Optimization Strategy:**
 - Core instructions: Always loaded (~X,XXX tokens)
 - Examples: Load for reference (~XXX tokens)
 - Supporting resources: Load on-demand only (variable)
+</practice>
+</best_practices>
 
-## Common Pitfalls
-
-### Pitfall 1: [Common Mistake]
-
+<common_pitfalls>
+<pitfall name="Common Mistake">
 **What Happens:** [Description of the problem]
 
 **Why It Happens:** [Root cause]
@@ -163,19 +161,19 @@ This skill uses approximately **X,XXX tokens** when fully loaded.
 2. [Prevention step 2]
 
 **Recovery:** [How to fix if it happens]
+</pitfall>
 
-### Pitfall 2: [Another Common Issue]
-
+<pitfall name="Another Common Issue">
 **What Happens:** [Description]
 
 **How to Avoid:** [Prevention strategy]
 
 **Warning Signs:** [Early indicators to watch for]
+</pitfall>
+</common_pitfalls>
 
-## Examples
-
-### Example 1: [Basic/Common Scenario Name]
-
+<examples>
+<example name="Basic/Common Scenario Name">
 **Context:** [When you'd use this approach]
 
 **Situation:** [Specific setup or starting conditions]
@@ -208,11 +206,9 @@ def example_basic():
 ```
 
 **Outcome:** [What was accomplished and why it matters]
+</example>
 
----
-
-### Example 2: [Advanced/Complex Scenario Name]
-
+<example name="Advanced/Complex Scenario Name">
 **Context:** [More sophisticated use case]
 
 **Situation:** [Specific setup with additional complexity]
@@ -277,11 +273,9 @@ class AdvancedExample:
 ```
 
 **Outcome:** [What was accomplished, including handling of complexity]
+</example>
 
----
-
-### Example 3: [Edge Case/Special Scenario Name]
-
+<example name="Edge Case/Special Scenario Name">
 **Context:** [Unusual but important situation]
 
 **Special Considerations:**
@@ -298,11 +292,11 @@ def handle_edge_case():
 ```
 
 **Outcome:** [Result and lessons learned]
+</example>
+</examples>
 
-## Common Patterns
-
-### Pattern 1: [Pattern Name]
-
+<common_patterns>
+<pattern name="Pattern Name">
 **When to Use:** [Triggering conditions for this pattern]
 
 **Approach:**
@@ -317,9 +311,9 @@ def pattern_one():
     """Implementation of common pattern 1."""
     pass
 ```
+</pattern>
 
-### Pattern 2: [Another Pattern Name]
-
+<pattern name="Another Pattern Name">
 **When to Use:** [Triggering conditions]
 
 **Key Characteristics:**
@@ -330,11 +324,11 @@ def pattern_one():
 ```language
 // Code demonstrating this pattern
 ```
+</pattern>
+</common_patterns>
 
-## Troubleshooting
-
-### Issue 1: [Common Problem]
-
+<troubleshooting>
+<issue name="Common Problem">
 **Symptoms:** [How to recognize this problem]
 - [Observable indicator 1]
 - [Observable indicator 2]
@@ -347,9 +341,9 @@ def pattern_one():
 3. [Verification step]
 
 **Prevention:** [How to avoid this in future]
+</issue>
 
-### Issue 2: [Another Problem]
-
+<issue name="Another Problem">
 **Symptoms:** [Observable indicators]
 
 **Diagnostic Steps:**
@@ -359,17 +353,18 @@ def pattern_one():
 **Solution:** [Clear resolution steps]
 
 **Alternative Approaches:** [If primary solution doesn't work]
+</issue>
 
-### Issue 3: [Third Problem]
-
+<issue name="Third Problem">
 **Symptoms:** [How it manifests]
 
 **Quick Fix:** [Immediate solution]
 
 **Root Cause Resolution:** [Permanent fix]
+</issue>
+</troubleshooting>
 
-## Related Skills
-
+<related_skills>
 This skill works well with:
 
 - **[Skill Name 1]**: [How these skills complement each other]
@@ -379,70 +374,67 @@ This skill works well with:
 This skill may conflict with:
 
 - **[Conflicting Skill]**: [Why they shouldn't be used together and when to choose each]
+</related_skills>
 
-## Integration Notes
-
-### Working with Other Tools
-
+<integration_notes>
+<subsection name="Working with Other Tools">
 [How this skill integrates with common tools or workflows]
+</subsection>
 
-### Skill Composition
-
+<subsection name="Skill Composition">
 [How to combine this skill with others effectively]
+</subsection>
 
-### Context Loading Strategy
-
+<subsection name="Context Loading Strategy">
 **Always Load:**
 - [Essential context that should always be present]
 
 **Load When Needed:**
 - [Supporting resources to load on-demand]
 - [Detailed references for specific scenarios]
+</subsection>
+</integration_notes>
 
-## Notes
-
-### Limitations
-
+<notes>
+<subsection name="Limitations">
 - [Known limitation 1]
 - [Known limitation 2]
+</subsection>
 
-### Future Enhancements
-
+<subsection name="Future Enhancements">
 - [Planned improvement 1]
 - [Planned improvement 2]
+</subsection>
 
-### Assumptions
-
+<subsection name="Assumptions">
 - [Assumption about environment or setup]
 - [Assumption about user knowledge]
+</subsection>
+</notes>
 
-## Version History
-
-### Version 1.0.0 (YYYY-MM-DD)
+<version_history>
+**Version 1.0.0 (YYYY-MM-DD)**
 - Initial creation
 - Core functionality established
 - Basic examples provided
 
-### Version 1.1.0 (YYYY-MM-DD)
+**Version 1.1.0 (YYYY-MM-DD)**
 - [Enhancement or fix]
 - [Additional feature]
+</version_history>
 
-## Additional Resources
-
+<additional_resources>
 External documentation and references:
 
 - [Relevant external documentation](https://example.com/docs)
 - [Related tool documentation](https://example.com/tools)
 - [Team wiki or internal resources](https://internal.example.com/wiki)
+</additional_resources>
 
----
-
-## Notes for Skill Creators
-
+<template_usage_notes>
 **REMOVE THIS SECTION** when creating your actual skill. This guidance is only for template users.
 
-### Key Principles
-
+<subsection name="Key Principles">
 1. **Concise and Actionable**: Every sentence should provide value. Remove fluff.
 
 2. **Imperative Form**: Write as commands ("Do this", "Check that") not descriptions.
@@ -460,24 +452,24 @@ External documentation and references:
    - **Low freedom**: Give exact procedures with safety checks
 
 6. **Test with Real Tasks**: Validate effectiveness with actual agent workflows.
+</subsection>
 
-### Template Customization
-
+<subsection name="Template Customization">
 **Required Sections:**
-- Purpose
-- When to Use This Skill
-- Instructions (with clear steps)
-- Examples (at least 2)
-- Best Practices
+- objective
+- when_to_use
+- workflow (with clear steps)
+- examples (at least 2)
+- best_practices
 
 **Optional Sections** (remove if not applicable):
-- Prerequisites
-- Common Pitfalls
-- Common Patterns
-- Troubleshooting
-- Related Skills
-- Integration Notes
-- Notes (limitations, assumptions)
+- prerequisites
+- common_pitfalls
+- common_patterns
+- troubleshooting
+- related_skills
+- integration_notes
+- notes (limitations, assumptions)
 
 **Customize Based on Skill Type:**
 
@@ -498,22 +490,22 @@ External documentation and references:
 - Include reference materials
 - Document domain-specific patterns
 - Provide terminology glossary
+</subsection>
 
-### Testing Checklist
-
+<subsection name="Testing Checklist">
 - [ ] Frontmatter complete and accurate
 - [ ] Clear triggering keywords in description
-- [ ] Purpose section explains "why" not just "what"
+- [ ] Objective section explains "why" not just "what"
 - [ ] "When to Use" section has specific scenarios
 - [ ] Instructions in imperative form
 - [ ] At least 2 concrete, runnable examples
 - [ ] Token estimate provided
 - [ ] Tested with real agent tasks
 - [ ] Agent successfully uses skill when appropriate
-- [ ] "Notes for Skill Creators" section removed
+- [ ] "Template Usage Notes" section removed
+</subsection>
 
-### File Organization
-
+<subsection name="File Organization">
 ```
 your-skill-name/
 ├── SKILL.md              # This file (required)
@@ -527,27 +519,27 @@ your-skill-name/
     ├── template.json
     └── example_output.txt
 ```
+</subsection>
 
-### Common Mistakes
-
+<subsection name="Common Mistakes">
 - **Too verbose**: Including information agents already have
 - **Too vague**: Not providing specific, actionable guidance
 - **Missing examples**: Only explaining conceptually
 - **Poor triggering**: Description doesn't clearly indicate when to use
 - **Resource bloat**: Including everything instead of loading on-demand
 - **No testing**: Creating without validating with real agents
+</subsection>
 
----
-
-**Ready to create your skill?**
-
+<subsection name="Ready to Create Your Skill?">
 1. Copy this template: `cp -r skills/custom/template skills/custom/your-skill-name`
 2. Update frontmatter with your skill's details
 3. Replace template content with your skill's content
 4. Add supporting resources if needed
 5. Test with target agents
 6. Iterate based on usage
-7. Remove "Notes for Skill Creators" section
+7. Remove "Template Usage Notes" section
 8. Add to your project's skill catalog
 
 Good luck!
+</subsection>
+</template_usage_notes>

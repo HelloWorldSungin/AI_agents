@@ -1,20 +1,17 @@
 ---
 name: code-review-checklist
-description: Comprehensive code review checklist following team standards. Use when reviewing pull requests or preparing code for review. Covers code quality, security, performance, testing, and documentation requirements.
+description: Provides comprehensive code review checklist following team standards. Use when reviewing pull requests or preparing code for review.
 version: 1.0.0
 author: Engineering Team
 category: custom
 token_estimate: ~2800
 ---
 
-# Code Review Checklist Skill
+<objective>
+Provide a systematic checklist for conducting thorough code reviews that maintain high code quality, security, and maintainability standards. Ensure consistency across reviewers and help catch common issues before code reaches production.
+</objective>
 
-## Purpose
-
-This skill provides a systematic checklist for conducting thorough code reviews that maintain high code quality, security, and maintainability standards. It ensures consistency across reviewers and helps catch common issues before code reaches production.
-
-## When to Use This Skill
-
+<when_to_use>
 Use this skill when:
 
 - Reviewing a pull request
@@ -28,9 +25,9 @@ Do NOT use this skill when:
 - Doing high-level architecture review (use architecture review skill)
 - Reviewing configuration-only changes (use simpler config review)
 - Emergency hotfixes (use abbreviated critical-path review)
+</when_to_use>
 
-## Prerequisites
-
+<prerequisites>
 Before using this skill, ensure:
 
 - Pull request is created with clear description
@@ -38,10 +35,11 @@ Before using this skill, ensure:
 - Code changes are reasonably sized (< 500 lines preferred)
 - Sufficient context is provided in PR description
 - Related issues or tickets are linked
+</prerequisites>
 
-## Instructions
-
-### Step 1: Understand the Context
+<workflow>
+<step>
+<name>Understand the Context</name>
 
 Before diving into code, understand what and why:
 
@@ -69,8 +67,10 @@ gh pr checks <pr-number>
 # Review test results
 # All checks should be passing before detailed review
 ```
+</step>
 
-### Step 2: Code Quality Review
+<step>
+<name>Code Quality Review</name>
 
 Review code for readability, maintainability, and best practices:
 
@@ -126,8 +126,10 @@ def fetch_user_profile(user_id: str) -> dict:
             raise UserNotFoundError(f"User {user_id} not found")
         raise APIError(f"Failed to fetch user profile: {e}")
 ```
+</step>
 
-### Step 3: Security Review
+<step>
+<name>Security Review</name>
 
 Check for common security vulnerabilities:
 
@@ -178,8 +180,10 @@ logger.info(f"User logged in: {user.email}, password: {user.password}")
 # Good: No sensitive data in logs
 logger.info(f"User logged in: user_id={user.id}")
 ```
+</step>
 
-### Step 4: Performance Review
+<step>
+<name>Performance Review</name>
 
 Assess performance implications:
 
@@ -234,8 +238,10 @@ def process_all_records():
             process(record)
         offset += batch_size
 ```
+</step>
 
-### Step 5: Testing Review
+<step>
+<name>Testing Review</name>
 
 Verify adequate test coverage and quality:
 
@@ -299,8 +305,10 @@ def test_user_registration_with_duplicate_email_returns_error():
     assert result.success is False
     assert "already exists" in result.error_message.lower()
 ```
+</step>
 
-### Step 6: Documentation Review
+<step>
+<name>Documentation Review</name>
 
 Ensure code is properly documented:
 
@@ -355,8 +363,10 @@ def calculate_user_score(
     weights = weights or DEFAULT_WEIGHTS
     # ... implementation
 ```
+</step>
 
-### Step 7: Final Checklist and Feedback
+<step>
+<name>Final Checklist and Feedback</name>
 
 Complete final checks and provide constructive feedback:
 
@@ -415,10 +425,12 @@ Request changes if:
 - Critical functionality missing tests
 - Performance issues that will impact users
 - Code quality issues that harm maintainability
+</step>
+</workflow>
 
-## Best Practices
-
-### 1. Review in Small Batches
+<best_practices>
+<practice>
+<title>Review in Small Batches</title>
 
 **Rationale:** Review effectiveness drops significantly for PRs over 400 lines. Cognitive load makes it hard to catch issues in large reviews.
 
@@ -426,8 +438,10 @@ Request changes if:
 - Encourage smaller, focused PRs
 - For large PRs, review in multiple sessions
 - Request breaking large PRs into smaller ones when feasible
+</practice>
 
-### 2. Use a Checklist Mindset
+<practice>
+<title>Use a Checklist Mindset</title>
 
 **Rationale:** Systematic checklists catch more issues than ad-hoc reviews.
 
@@ -435,8 +449,10 @@ Request changes if:
 - Work through each section methodically
 - Don't skip sections even if code looks simple
 - Use GitHub review features to track progress
+</practice>
 
-### 3. Balance Speed with Thoroughness
+<practice>
+<title>Balance Speed with Thoroughness</title>
 
 **Rationale:** Fast feedback enables team velocity, but thoroughness prevents bugs.
 
@@ -444,16 +460,20 @@ Request changes if:
 - Aim for review within 24 hours
 - For urgent fixes, focus on critical path
 - For major features, take time for thorough review
+</practice>
 
-### 4. Degree of Freedom
+<practice>
+<title>Degree of Freedom</title>
 
 **Medium Freedom**: Core quality and security checks must be performed, but:
 - Review depth can vary based on change risk/complexity
 - Feedback style can match team culture
 - Tools and techniques can be adapted
 - Order of checklist items is flexible
+</practice>
 
-### 5. Token Efficiency
+<practice>
+<title>Token Efficiency</title>
 
 This skill uses approximately **2,800 tokens** when fully loaded.
 
@@ -461,10 +481,12 @@ This skill uses approximately **2,800 tokens** when fully loaded.
 - Core checklist: Always loaded (~1,800 tokens)
 - Examples: Load for reference (~800 tokens)
 - Detailed security guidelines: Load if security-sensitive code (~200 tokens on-demand)
+</practice>
+</best_practices>
 
-## Common Pitfalls
-
-### Pitfall 1: Focusing Only on Style
+<common_pitfalls>
+<pitfall>
+<name>Focusing Only on Style</name>
 
 **What Happens:** Review catches formatting issues but misses logic bugs, security flaws, or performance problems.
 
@@ -477,8 +499,10 @@ This skill uses approximately **2,800 tokens** when fully loaded.
 4. Don't let style issues distract from critical issues
 
 **Recovery:** If approved with issues, create follow-up tickets for missed concerns.
+</pitfall>
 
-### Pitfall 2: Rubber-Stamp Approval
+<pitfall>
+<name>Rubber-Stamp Approval</name>
 
 **What Happens:** Approve PR without thorough review, trusting tests will catch issues.
 
@@ -495,8 +519,10 @@ This skill uses approximately **2,800 tokens** when fully loaded.
 - Not asking any questions
 - Not running/testing code locally
 - Skipping sections of checklist
+</pitfall>
 
-### Pitfall 3: Overly Critical or Nitpicky
+<pitfall>
+<name>Overly Critical or Nitpicky</name>
 
 **What Happens:** Review focuses on minor preferences, blocking PRs for subjective style choices.
 
@@ -509,10 +535,12 @@ This skill uses approximately **2,800 tokens** when fully loaded.
 4. Praise good decisions, not just critique
 
 **Recovery:** If feedback was too harsh, follow up with positive message acknowledging good aspects.
+</pitfall>
+</common_pitfalls>
 
-## Examples
-
-### Example 1: Reviewing a Simple Bug Fix
+<examples>
+<example>
+<title>Reviewing a Simple Bug Fix</title>
 
 **Context:** Small PR fixing a null pointer exception in user profile page.
 
@@ -572,10 +600,10 @@ DEFAULT_AVATAR_URL is returned, for future maintainers.
 ```
 
 **Outcome:** Approved. Simple, well-tested fix. Review took 5 minutes.
+</example>
 
----
-
-### Example 2: Reviewing a New API Endpoint
+<example>
+<title>Reviewing a New API Endpoint</title>
 
 **Context:** PR adds new REST API endpoint for creating user posts.
 
@@ -748,10 +776,10 @@ have questions!
 ```
 
 **Outcome:** Requested changes. Issues found before they reached production. Author addressed concerns and PR was approved on second review.
+</example>
 
----
-
-### Example 3: Reviewing Database Migration
+<example>
+<title>Reviewing Database Migration</title>
 
 **Context:** PR adds database migration for new feature.
 
@@ -847,10 +875,12 @@ def test_notification_model():
 ```
 
 **Outcome:** Suggested improvements. Migration is safe but could be optimized. After addressing performance suggestion and adding tests, approved.
+</example>
+</examples>
 
-## Troubleshooting
-
-### Issue 1: Unsure If Security Issue Is Serious
+<troubleshooting>
+<issue>
+<name>Unsure If Security Issue Is Serious</name>
 
 **Symptoms:**
 - Code looks potentially vulnerable but you're not certain
@@ -863,8 +893,10 @@ def test_notification_model():
 4. When in doubt, flag it and discuss
 
 **Better safe than sorry** - flag potential security issues even if uncertain.
+</issue>
 
-### Issue 2: PR Too Large to Review Effectively
+<issue>
+<name>PR Too Large to Review Effectively</name>
 
 **Symptoms:**
 - PR has 500+ lines changed
@@ -876,8 +908,10 @@ def test_notification_model():
 2. Review in multiple sessions if splitting not feasible
 3. Focus on critical paths and security issues first
 4. Consider pair reviewing with another engineer
+</issue>
 
-### Issue 3: Tests Pass But Code Seems Wrong
+<issue>
+<name>Tests Pass But Code Seems Wrong</name>
 
 **Symptoms:**
 - All tests green but logic looks suspicious
@@ -890,41 +924,92 @@ def test_notification_model():
 4. Discuss your concerns with author
 
 **Trust your instincts** - if something feels wrong, investigate further.
+</issue>
+</troubleshooting>
 
-## Related Skills
-
+<related_skills>
 This skill works well with:
 
 - **security-audit**: For deep security review of sensitive changes
 - **api-design**: When reviewing new API endpoints
 - **database-design**: When reviewing database schema changes
 - **testing-strategy**: For evaluating test coverage approach
+</related_skills>
 
-## Notes
-
-### Limitations
-
+<notes>
+<limitations>
 - Checklist focuses on web application code; adapt for other domains
 - Security section covers common issues but not comprehensive security audit
 - Performance section provides general guidance; may need profiling for specific concerns
+</limitations>
 
-### Assumptions
-
+<assumptions>
 - Code is in a pull request or branch
 - CI/CD pipeline is set up and running
 - Team has agreed-upon coding standards
 - Author has provided adequate context in PR description
+</assumptions>
 
-## Version History
-
+<version_history>
 ### Version 1.0.0 (2025-01-20)
 - Initial creation
 - Comprehensive checklist covering quality, security, performance, testing, documentation
 - Examples for different PR types
 - Troubleshooting guide
+</version_history>
 
-## Additional Resources
-
+<additional_resources>
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/) - Common security vulnerabilities
 - [Code Review Best Practices](https://google.github.io/eng-practices/review/)
 - Internal: Team coding standards at [internal wiki]
+</additional_resources>
+</notes>
+
+<success_criteria>
+Code review is considered complete and successful when:
+
+1. **Context Understanding Achieved**
+   - PR description reviewed and understood
+   - Linked issues examined
+   - CI/CD checks verified passing
+   - Change rationale is clear
+
+2. **Quality Standards Met**
+   - Code is readable and maintainable
+   - Follows team style guide
+   - Error handling is appropriate
+   - No code smells or anti-patterns
+
+3. **Security Verified**
+   - Authentication/authorization properly implemented
+   - Input validation present
+   - No injection vulnerabilities
+   - Sensitive data properly handled
+   - Dependencies have no known CVEs
+
+4. **Performance Acceptable**
+   - No obvious performance issues (N+1 queries, memory leaks)
+   - Scalability considerations addressed
+   - Resource usage is reasonable
+
+5. **Testing Adequate**
+   - Test coverage meets team threshold
+   - Critical paths tested
+   - Edge cases covered
+   - Tests are well-written and independent
+
+6. **Documentation Complete**
+   - Code is appropriately documented
+   - Public APIs have docstrings
+   - External documentation updated if needed
+
+7. **Feedback Provided**
+   - Constructive, specific feedback given
+   - Critical issues clearly identified
+   - Suggestions for improvements offered
+   - Positive aspects acknowledged
+
+8. **Decision Made**
+   - Clear approval or request for changes
+   - No blocking issues remain for approved PRs
+</success_criteria>

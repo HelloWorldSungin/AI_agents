@@ -1,20 +1,17 @@
 ---
 name: api-endpoint-creator
-description: Standardized REST API endpoint creation following team conventions. Use when creating new API endpoints. Covers URL structure, request/response format, authentication, validation, testing, and OpenAPI documentation.
+description: Guides standardized REST API endpoint creation following team conventions. Use when creating new API endpoints.
 version: 1.0.0
 author: Backend Team
 category: custom
 token_estimate: ~3200
 ---
 
-# API Endpoint Creator Skill
+<objective>
+Codify REST API design conventions and best practices for creating consistent, well-documented, and tested API endpoints. Ensure all endpoints follow the same patterns for authentication, error handling, validation, and documentation.
+</objective>
 
-## Purpose
-
-This skill codifies our team's REST API design conventions and best practices for creating consistent, well-documented, and tested API endpoints. It ensures all endpoints follow the same patterns for authentication, error handling, validation, and documentation.
-
-## When to Use This Skill
-
+<when_to_use>
 Use this skill when:
 
 - Creating a new REST API endpoint
@@ -28,9 +25,9 @@ Do NOT use this skill when:
 - Building GraphQL APIs (use graphql-design skill)
 - Creating internal-only functions (not exposed via API)
 - Working on non-REST protocols (WebSocket, gRPC)
+</when_to_use>
 
-## Prerequisites
-
+<prerequisites>
 Before using this skill, ensure:
 
 - API framework is set up (Flask, FastAPI, Express, etc.)
@@ -38,10 +35,11 @@ Before using this skill, ensure:
 - Database models are defined
 - OpenAPI/Swagger documentation structure exists
 - Testing framework is configured
+</prerequisites>
 
-## Instructions
-
-### Step 1: Define Endpoint Specification
+<workflow>
+<step>
+<name>Define Endpoint Specification</name>
 
 Plan the endpoint before implementation:
 
@@ -78,8 +76,10 @@ Follow REST principles:
 - `PUT` - Replace entire resource
 - `PATCH` - Update partial resource
 - `DELETE` - Remove resource
+</step>
 
-### Step 2: Implement Request Handling
+<step>
+<name>Implement Request Handling</name>
 
 Create the endpoint with proper structure:
 
@@ -224,8 +224,10 @@ router.post('/api/v1/resources',
 4. **Business logic** - Check business rules (uniqueness, relationships)
 5. **Error handling** - Catch and handle errors appropriately
 6. **Response** - Return appropriate status code and data
+</step>
 
-### Step 3: Implement Error Responses
+<step>
+<name>Implement Error Responses</name>
 
 Use consistent error response format:
 
@@ -276,8 +278,10 @@ return handle_api_error(
     code='RESOURCE_NOT_FOUND'
 )
 ```
+</step>
 
-### Step 4: Add Pagination (for Collection Endpoints)
+<step>
+<name>Add Pagination (for Collection Endpoints)</name>
 
 Implement pagination for list endpoints:
 
@@ -349,8 +353,10 @@ def list_resources():
     }
 }
 ```
+</step>
 
-### Step 5: Create Tests
+<step>
+<name>Create Tests</name>
 
 Write comprehensive tests for the endpoint:
 
@@ -474,8 +480,10 @@ def test_list_resources_returns_paginated_results(client, auth_headers):
 - Business logic (duplicates, conflicts)
 - Error handling (database errors, etc.)
 - Pagination (if applicable)
+</step>
 
-### Step 6: Document with OpenAPI
+<step>
+<name>Document with OpenAPI</name>
 
 Create OpenAPI documentation:
 
@@ -665,36 +673,50 @@ def create_resource():
     # Implementation
     pass
 ```
+</step>
+</workflow>
 
-## Best Practices
-
-### 1. Use Consistent URL Patterns
+<best_practices>
+<practice>
+<title>Use Consistent URL Patterns</title>
 
 Follow REST conventions for predictability.
+</practice>
 
-### 2. Version Your API
+<practice>
+<title>Version Your API</title>
 
 Use `/api/v1/` prefix to allow future breaking changes without affecting existing clients.
+</practice>
 
-### 3. Return Appropriate Status Codes
+<practice>
+<title>Return Appropriate Status Codes</title>
 
 Status codes provide semantic meaning; use them correctly.
+</practice>
 
-### 4. Validate Early
+<practice>
+<title>Validate Early</title>
 
 Validate input as early as possible to fail fast and provide clear errors.
+</practice>
 
-### 5. Degree of Freedom
+<practice>
+<title>Degree of Freedom</title>
 
 **Medium Freedom**: Core patterns (auth, validation, error format, documentation) must be followed, but implementation details can vary based on framework and requirements.
+</practice>
 
-### 6. Token Efficiency
+<practice>
+<title>Token Efficiency</title>
 
 This skill uses approximately **3,200 tokens** when fully loaded.
+</practice>
+</best_practices>
 
-## Common Pitfalls
-
-### Pitfall 1: Insufficient Validation
+<common_pitfalls>
+<pitfall>
+<name>Insufficient Validation</name>
 
 **What Happens:** Invalid data reaches database or business logic, causing errors or security issues.
 
@@ -702,8 +724,10 @@ This skill uses approximately **3,200 tokens** when fully loaded.
 - Validate all input at the API boundary
 - Use schema validation libraries
 - Validate types, formats, lengths, and business rules
+</pitfall>
 
-### Pitfall 2: Inconsistent Error Responses
+<pitfall>
+<name>Inconsistent Error Responses</name>
 
 **What Happens:** Different endpoints return errors in different formats, making client integration difficult.
 
@@ -711,8 +735,10 @@ This skill uses approximately **3,200 tokens** when fully loaded.
 - Use standard error response format across all endpoints
 - Create helper functions for error responses
 - Document error format in API spec
+</pitfall>
 
-### Pitfall 3: Missing Authentication/Authorization
+<pitfall>
+<name>Missing Authentication/Authorization</name>
 
 **What Happens:** Security vulnerability allowing unauthorized access.
 
@@ -720,10 +746,12 @@ This skill uses approximately **3,200 tokens** when fully loaded.
 - Always add authentication to non-public endpoints
 - Check authorization (not just authentication)
 - Test with and without auth credentials
+</pitfall>
+</common_pitfalls>
 
-## Examples
-
-### Example 1: Simple CRUD Endpoint
+<examples>
+<example>
+<title>Simple CRUD Endpoint</title>
 
 **Context:** Create endpoints for managing user profiles.
 
@@ -776,23 +804,77 @@ def delete_profile(profile_id):
 ```
 
 **Outcome:** Complete CRUD operations following team conventions.
+</example>
+</examples>
 
-## Related Skills
-
+<related_skills>
 - **api-design**: General REST API design principles
 - **authentication-patterns**: Detailed auth implementation
 - **database-design**: Database schema for API resources
 - **integration-testing**: Testing API endpoints end-to-end
+</related_skills>
 
-## Version History
-
+<notes>
+<version_history>
 ### Version 1.0.0 (2025-01-20)
 - Initial creation
 - Standard patterns for REST API endpoints
 - Comprehensive examples and testing guidance
+</version_history>
 
-## Additional Resources
-
+<additional_resources>
 - [REST API Design Best Practices](https://restfulapi.net/)
 - [OpenAPI Specification](https://swagger.io/specification/)
 - Internal: API Style Guide at [internal wiki]
+</additional_resources>
+</notes>
+
+<success_criteria>
+API endpoint creation is considered successful when:
+
+1. **Specification Defined**
+   - Clear HTTP method and path
+   - Request/response schema documented
+   - Authentication/authorization requirements specified
+   - Rate limiting defined if applicable
+
+2. **Implementation Complete**
+   - Request parsing and validation implemented
+   - Authentication/authorization checks in place
+   - Business logic properly handled
+   - Error handling comprehensive
+   - Appropriate status codes returned
+
+3. **Error Handling Consistent**
+   - Standard error format used
+   - All error cases covered
+   - Appropriate HTTP status codes
+   - Helpful error messages
+
+4. **Pagination Added (if collection endpoint)**
+   - Page and per_page parameters supported
+   - Sorting options available
+   - Pagination metadata in response
+   - SQL injection protection for sort fields
+
+5. **Tests Written and Passing**
+   - Happy path tested
+   - Authentication/authorization tested
+   - Validation tested (all edge cases)
+   - Business logic tested
+   - Error cases tested
+   - Test coverage meets threshold
+
+6. **Documentation Complete**
+   - OpenAPI specification created
+   - Request/response examples provided
+   - Authentication requirements documented
+   - Error responses documented
+   - Code has appropriate docstrings
+
+7. **Review Passed**
+   - Code review completed
+   - Security review passed
+   - Performance acceptable
+   - Team conventions followed
+</success_criteria>

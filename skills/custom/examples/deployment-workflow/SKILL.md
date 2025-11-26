@@ -1,20 +1,17 @@
 ---
 name: deployment-workflow
-description: Production deployment workflow with safety checks and rollback procedures. Use when deploying applications to staging or production environments. Covers pre-deployment verification, staged rollout, monitoring, and rollback procedures.
+description: Guides production deployment workflow with safety checks and rollback procedures. Use when deploying applications to staging or production environments.
 version: 1.0.0
 author: Platform Team
 category: custom
 token_estimate: ~3500
 ---
 
-# Production Deployment Workflow Skill
+<objective>
+Provide step-by-step guidance for safely deploying applications to production environments, ensuring all safety checks are performed, proper monitoring is in place, and rollback procedures are ready before deploying code that affects users.
+</objective>
 
-## Purpose
-
-This skill provides step-by-step guidance for safely deploying applications to production environments. It ensures all safety checks are performed, proper monitoring is in place, and rollback procedures are ready before deploying code that affects users.
-
-## When to Use This Skill
-
+<when_to_use>
 Use this skill when:
 
 - Deploying a service update to production
@@ -28,9 +25,9 @@ Do NOT use this skill when:
 - Deploying to local development environment
 - Running tests in CI/CD (use testing skills instead)
 - Making changes to non-production environments without risk
+</when_to_use>
 
-## Prerequisites
-
+<prerequisites>
 Before using this skill, ensure:
 
 - Code has been reviewed and approved
@@ -39,10 +36,11 @@ Before using this skill, ensure:
 - Rollback plan is documented
 - On-call engineer is available
 - Change has been communicated to team
+</prerequisites>
 
-## Instructions
-
-### Step 1: Pre-Deployment Verification
+<workflow>
+<step>
+<name>Pre-Deployment Verification</name>
 
 Verify all prerequisites are met before starting deployment:
 
@@ -81,8 +79,10 @@ kubectl top nodes
 - [ ] Database migrations (if any) tested in staging
 - [ ] Feature flags configured (if applicable)
 - [ ] Monitoring alerts configured
+</step>
 
-### Step 2: Prepare for Deployment
+<step>
+<name>Prepare for Deployment</name>
 
 Set up monitoring and prepare rollback resources:
 
@@ -117,8 +117,10 @@ docker pull your-registry/service-name:previous-version
 # Verify database backups are recent
 # Check that rollback procedures are accessible
 ```
+</step>
 
-### Step 3: Execute Deployment
+<step>
+<name>Execute Deployment</name>
 
 Deploy using your deployment method (examples provided for common scenarios):
 
@@ -174,8 +176,10 @@ kubectl scale deployment service-name-canary \
 - Watch for error spikes or latency increases
 - Check logs for unexpected errors
 - Verify database connections are healthy
+</step>
 
-### Step 4: Post-Deployment Validation
+<step>
+<name>Post-Deployment Validation</name>
 
 Verify the deployment succeeded and system is healthy:
 
@@ -228,8 +232,10 @@ kubectl logs -n production -l app=service-name \
 - [ ] No unexpected errors in logs
 - [ ] Database connections healthy
 - [ ] Dependent services responding normally
+</step>
 
-### Step 5: Complete Deployment
+<step>
+<name>Complete Deployment</name>
 
 Finalize deployment and communicate results:
 
@@ -262,10 +268,12 @@ kubectl delete deployment service-name-canary -n production
 - Monitor metrics for next 24 hours
 - Review performance in next team standup
 - Document lessons learned if issues occurred
+</step>
+</workflow>
 
-## Best Practices
-
-### 1. Deploy During Low-Traffic Periods
+<best_practices>
+<practice>
+<title>Deploy During Low-Traffic Periods</title>
 
 **Rationale:** Reduces impact if issues occur and makes anomaly detection easier.
 
@@ -273,8 +281,10 @@ kubectl delete deployment service-name-canary -n production
 - Schedule non-urgent deployments during off-peak hours
 - For 24/7 services, deploy during lowest traffic period
 - Emergency fixes can be deployed anytime with extra caution
+</practice>
 
-### 2. Use Feature Flags for Risky Changes
+<practice>
+<title>Use Feature Flags for Risky Changes</title>
 
 **Rationale:** Allows instant rollback of feature behavior without code deployment.
 
@@ -288,8 +298,10 @@ else:
 ```
 
 Disable flag instantly if issues arise, no deployment needed.
+</practice>
 
-### 3. Gradual Rollout Strategy
+<practice>
+<title>Gradual Rollout Strategy</title>
 
 **Rationale:** Limits blast radius if issues occur.
 
@@ -299,16 +311,20 @@ Disable flag instantly if issues arise, no deployment needed.
 - Increase to 50% if healthy
 - Monitor for another 15-30 minutes
 - Complete rollout to 100%
+</practice>
 
-### 4. Degree of Freedom
+<practice>
+<title>Degree of Freedom</title>
 
 **Medium Freedom**: Core safety steps must be followed (pre-deployment checks, monitoring, validation), but deployment method can be adapted based on:
 - Service architecture (stateless vs. stateful)
 - Risk level (hot-fix vs. major feature)
 - Time constraints (emergency vs. planned)
 - Team preferences (rolling vs. blue-green)
+</practice>
 
-### 5. Token Efficiency
+<practice>
+<title>Token Efficiency</title>
 
 This skill uses approximately **3,500 tokens** when fully loaded.
 
@@ -316,10 +332,12 @@ This skill uses approximately **3,500 tokens** when fully loaded.
 - Core workflow: Always loaded (~2,500 tokens)
 - Examples: Load for reference (~800 tokens)
 - Detailed troubleshooting: Load if deployment issues occur (~200 tokens on-demand)
+</practice>
+</best_practices>
 
-## Common Pitfalls
-
-### Pitfall 1: Skipping Pre-Deployment Checks
+<common_pitfalls>
+<pitfall>
+<name>Skipping Pre-Deployment Checks</name>
 
 **What Happens:** Deployment proceeds with failing tests or unhealthy staging environment, leading to production incidents.
 
@@ -332,8 +350,10 @@ This skill uses approximately **3,500 tokens** when fully loaded.
 4. Don't skip checks even for "simple" changes
 
 **Recovery:** If deployed without checks and issues arise, immediately roll back and perform full verification before re-deploying.
+</pitfall>
 
-### Pitfall 2: Insufficient Monitoring During Deployment
+<pitfall>
+<name>Insufficient Monitoring During Deployment</name>
 
 **What Happens:** Issues go undetected until users report problems, making diagnosis harder and recovery slower.
 
@@ -350,8 +370,10 @@ This skill uses approximately **3,500 tokens** when fully loaded.
 - Latency creeping up over time
 - Increased database query times
 - Growing request queue length
+</pitfall>
 
-### Pitfall 3: No Rollback Plan
+<pitfall>
+<name>No Rollback Plan</name>
 
 **What Happens:** When issues occur, team scrambles to figure out how to recover, prolonging the incident.
 
@@ -368,10 +390,12 @@ This skill uses approximately **3,500 tokens** when fully loaded.
 2. Redeploy previous version using same deployment method
 3. Verify in staging first if time permits
 4. Communicate timeline to stakeholders
+</pitfall>
+</common_pitfalls>
 
-## Examples
-
-### Example 1: Standard Kubernetes Rolling Update
+<examples>
+<example>
+<title>Standard Kubernetes Rolling Update</title>
 
 **Context:** Deploying a new version of a stateless API service to production with low-risk changes (bug fixes, minor improvements).
 
@@ -451,10 +475,10 @@ Deployment successful
 ```
 
 **Outcome:** Deployment completed smoothly, performance improved as expected, no issues reported.
+</example>
 
----
-
-### Example 2: Blue-Green Deployment with Database Migration
+<example>
+<title>Blue-Green Deployment with Database Migration</title>
 
 **Context:** Deploying a major feature that requires database schema changes, using blue-green strategy to minimize downtime and enable fast rollback.
 
@@ -577,10 +601,10 @@ Blue-Green Deployment Success
 ```
 
 **Outcome:** Complex deployment with database changes completed successfully. New payment methods working. Zero downtime. Blue kept around for 30 minutes as safety net, then cleaned up.
+</example>
 
----
-
-### Example 3: Emergency Rollback During Canary
+<example>
+<title>Emergency Rollback During Canary</title>
 
 **Context:** Canary deployment detects issues; immediate rollback required.
 
@@ -650,10 +674,12 @@ Rollback Successful
 ```
 
 **Outcome:** Quick detection and rollback prevented widespread issues. Root cause identified. Proper fix deployed after thorough testing. Canary deployment pattern prevented full-scale incident.
+</example>
+</examples>
 
-## Troubleshooting
-
-### Issue 1: Deployment Stuck (Pods Not Coming Up)
+<troubleshooting>
+<issue>
+<name>Deployment Stuck (Pods Not Coming Up)</name>
 
 **Symptoms:**
 - `kubectl rollout status` shows "Waiting for deployment rollout to finish"
@@ -721,8 +747,10 @@ kubectl scale deployment low-priority-service --replicas=2
 - Test deployments in staging with production-like resources
 - Monitor cluster capacity
 - Set appropriate resource requests/limits
+</issue>
 
-### Issue 2: Elevated Error Rate After Deployment
+<issue>
+<name>Elevated Error Rate After Deployment</name>
 
 **Symptoms:**
 - Error rate increases from baseline (e.g., 0.5% → 3%)
@@ -762,8 +790,10 @@ kubectl logs -n production -l app=service-name \
 - If only specific endpoint affected, consider feature flag to disable
 - If dependency issue, temporarily use fallback/cache
 - If minor increase acceptable, monitor and investigate without rollback
+</issue>
 
-### Issue 3: Database Migration Failure
+<issue>
+<name>Database Migration Failure</name>
 
 **Symptoms:**
 - Migration job fails or times out
@@ -818,9 +848,10 @@ kubectl exec -it db-pod -n production -- \
 - Use migration tools with rollback support (Alembic, Flyway)
 - Keep migrations backward compatible
 - Run migrations before deploying code when possible
+</issue>
+</troubleshooting>
 
-## Related Skills
-
+<related_skills>
 This skill works well with:
 
 - **database-migration**: Detailed database migration procedures and rollback strategies
@@ -830,10 +861,11 @@ This skill works well with:
 This skill may conflict with:
 
 - **rapid-prototyping**: Prototyping emphasizes speed over safety; don't use both simultaneously
+</related_skills>
 
-## Integration Notes
-
-### Working with Other Tools
+<integration_notes>
+<subsection>
+<title>Working with Other Tools</title>
 
 **CI/CD Integration:**
 This skill assumes CI/CD has already run tests. For CI/CD setup, reference your platform documentation.
@@ -849,8 +881,10 @@ Examples use kubectl. Adapt for your deployment method:
 - Helm: `helm upgrade --install`
 - ArgoCD: Update manifests, let ArgoCD sync
 - Custom: Follow your deployment scripts
+</subsection>
 
-### Skill Composition
+<subsection>
+<title>Skill Composition</title>
 
 **Typical workflow combining multiple skills:**
 
@@ -859,35 +893,70 @@ Examples use kubectl. Adapt for your deployment method:
 3. **deployment-workflow** (this skill): Deploy to production
 4. **monitoring-setup**: Configure alerts for new features
 5. **incident-response**: If issues arise during deployment
+</subsection>
+</integration_notes>
 
-## Notes
-
-### Limitations
-
+<notes>
+<limitations>
 - Examples focus on Kubernetes; adapt for other platforms (VMs, serverless, etc.)
 - Assumes you have monitoring infrastructure set up
 - Database migration details are brief; use database-migration skill for complex scenarios
 - Rollback procedures assume stateless services; stateful services require additional considerations
+</limitations>
 
-### Assumptions
-
+<assumptions>
 - You have access to production environment
 - Monitoring dashboards are configured
 - Staging environment mirrors production
 - Team has agreed-upon deployment windows
 - Rollback artifacts are retained for reasonable time
+</assumptions>
 
-## Version History
-
+<version_history>
 ### Version 1.0.0 (2025-01-20)
 - Initial creation
 - Core deployment workflow established
 - Examples for rolling update, blue-green, and canary deployments
 - Comprehensive troubleshooting guide
+</version_history>
 
-## Additional Resources
-
+<additional_resources>
 - [Kubernetes Deployments Documentation](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
 - [Blue-Green Deployment Pattern](https://martinfowler.com/bliki/BlueGreenDeployment.html)
 - [Canary Deployment Pattern](https://martinfowler.com/bliki/CanaryRelease.html)
 - Internal: Company deployment runbooks at [internal wiki]
+</additional_resources>
+</notes>
+
+<success_criteria>
+Deployment is considered successful when:
+
+1. **Pre-Deployment Validation Complete**
+   - All CI/CD tests passed
+   - Staging deployment validated
+   - No active production incidents
+   - Rollback plan documented
+
+2. **Deployment Execution Success**
+   - All new pods running and ready
+   - No deployment errors
+   - Rollout completed within expected timeframe
+
+3. **Post-Deployment Validation Pass**
+   - Health checks returning success
+   - Smoke tests passed
+   - Error rate at or below baseline
+   - Latency metrics stable or improved
+   - No unexpected errors in logs
+
+4. **Monitoring Confirms Stability**
+   - Metrics monitored for 15+ minutes post-deployment
+   - All KPIs within acceptable ranges
+   - No alerts triggered
+
+5. **Documentation and Communication Complete**
+   - Team notified of successful deployment
+   - Deployment tracking updated
+   - Any issues documented
+   - Follow-up monitoring scheduled
+</success_criteria>
