@@ -2,6 +2,20 @@
 
 Complete guide for deploying AppFlowy on various platforms.
 
+## Current ArkNode-AI Deployment
+
+**Production Configuration:**
+- URL: http://appflowy.arknode-ai.home
+- WebSocket: ws://appflowy.arknode-ai.home/ws/v2/
+- Port: 80 (proxied via Nginx)
+- Deployment: LXC Container CT102 (192.168.68.55)
+- Admin: admin@arknode.local
+
+**Access Information:**
+- Configuration: `/opt/appflowy-cloud/.env` on CT102
+- Workspace ID: 22bcbccd-9cf3-41ac-aa0b-28fe144ba71d
+- To-dos Database ID: bb7a9c66-8088-4f71-a7b7-551f4c1adc5d
+
 ## Table of Contents
 
 1. [Quick Start with Docker](#quick-start-with-docker)
@@ -49,8 +63,9 @@ docker-compose logs -f appflowy
 
 ### Access AppFlowy
 
-- Web Interface: http://localhost:8080
-- API Endpoint: http://localhost:8080/api
+- Web Interface: http://localhost:8080 (development) or http://appflowy.arknode-ai.home (production)
+- API Endpoint: http://localhost:8080/api (development) or http://appflowy.arknode-ai.home/api (production)
+- WebSocket: ws://localhost:8080/ws/v2/ (development) or ws://appflowy.arknode-ai.home/ws/v2/ (production)
 
 ---
 
@@ -271,11 +286,20 @@ docker exec -it appflowy sh
 ### 2. Get JWT Token via API
 
 ```bash
-# Create user and get token
+# Create user and get token (development)
 curl -X POST "http://localhost:8080/gotrue/token" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@example.com",
+    "password": "your_password",
+    "grant_type": "password"
+  }'
+
+# Production (ArkNode-AI)
+curl -X POST "http://appflowy.arknode-ai.home/gotrue/token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@arknode.local",
     "password": "your_password",
     "grant_type": "password"
   }'
@@ -295,17 +319,27 @@ Response:
 ### 3. Configure Agent Environment
 
 ```bash
-# Add to agent environment
+# Add to agent environment (development)
 export APPFLOWY_API_URL="http://localhost:8080"
 export APPFLOWY_API_TOKEN="eyJhbGc..."
 export APPFLOWY_WORKSPACE_ID="workspace-id"
+
+# Production (ArkNode-AI)
+export APPFLOWY_API_URL="http://appflowy.arknode-ai.home"
+export APPFLOWY_API_TOKEN="eyJhbGc..."
+export APPFLOWY_WORKSPACE_ID="22bcbccd-9cf3-41ac-aa0b-28fe144ba71d"
+export APPFLOWY_TODOS_DB_ID="bb7a9c66-8088-4f71-a7b7-551f4c1adc5d"
 ```
 
 ### 4. Get Workspace ID
 
 ```bash
-# List workspaces
+# List workspaces (development)
 curl -X GET "http://localhost:8080/api/workspace" \
+  -H "Authorization: Bearer your_token"
+
+# Production (ArkNode-AI)
+curl -X GET "http://appflowy.arknode-ai.home/api/workspace" \
   -H "Authorization: Bearer your_token"
 ```
 
@@ -341,7 +375,7 @@ docker exec -it appflowy-db psql -U appflowy_user -d appflowy
 
 ```bash
 # Token may be expired - get new token
-curl -X POST "http://localhost:8080/gotrue/token" \
+curl -X POST "http://appflowy.arknode-ai.home/gotrue/token" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "your-email@example.com",
@@ -350,12 +384,46 @@ curl -X POST "http://localhost:8080/gotrue/token" \
   }'
 
 # Or use refresh token
-curl -X POST "http://localhost:8080/gotrue/token" \
+curl -X POST "http://appflowy.arknode-ai.home/gotrue/token" \
   -H "Content-Type: application/json" \
   -d '{
     "refresh_token": "your_refresh_token",
     "grant_type": "refresh_token"
   }'
+```
+
+### WebSocket Connection Issues
+
+**Symptom:** "Disconnected from cloud" in UI
+
+**Solutions:**
+```bash
+# 1. Verify WebSocket endpoint is correct (must be /ws/v2/)
+# Check .env file: APPFLOWY_WS_BASE_URL should be ws://appflowy.arknode-ai.home/ws/v2/
+
+# 2. Recreate containers to reload environment variables
+docker compose down
+docker compose up -d
+
+# 3. Test DNS resolution
+nslookup appflowy.arknode-ai.home 192.168.68.10
+
+# 4. Check browser console for WebSocket errors
+# Open browser DevTools → Console → look for WebSocket connection messages
+```
+
+### Environment Variables Not Taking Effect
+
+**Issue:** Changed `.env` but still seeing old values
+
+**Solution:**
+```bash
+# WRONG - doesn't reload .env file
+docker compose restart
+
+# RIGHT - recreates containers with new config
+docker compose down
+docker compose up -d
 ```
 
 ### Performance Issues

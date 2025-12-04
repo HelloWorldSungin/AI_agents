@@ -6,7 +6,9 @@ services:
     image: appflowy/appflowy-cloud:latest
     container_name: appflowy
     ports:
-      - "8080:80"
+      - "8080:80"  # Development: Access at http://localhost:8080
+                   # Production: Uses port 80 with Nginx reverse proxy
+                   # Access at http://appflowy.arknode-ai.home
     volumes:
       - appflowy-data:/data
     environment:
@@ -20,6 +22,12 @@ services:
       # Authentication (GoTrue)
       - GOTRUE_JWT_SECRET=${JWT_SECRET:-change_this_secret_in_production}
       - GOTRUE_JWT_EXP=3600
+
+      # WebSocket Configuration
+      # NOTE: WebSocket endpoint must be /ws/v2/ (not /ws/v1/)
+      # Production: ws://appflowy.arknode-ai.home/ws/v2/
+      # Development: ws://localhost:8080/ws/v2/
+      - APPFLOWY_WS_BASE_URL=${APPFLOWY_WS_BASE_URL:-ws://localhost:8080/ws/v2/}
 
     depends_on:
       postgres:

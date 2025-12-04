@@ -1,70 +1,157 @@
 ---
 name: appflowy-integration
-description: Integration with AppFlowy project management tool for task tracking, database management, and workspace organization. Use when managing project tasks, creating databases, or organizing work in AppFlowy.
-version: 1.0.0
+description: >
+  Integration with AppFlowy project management tool for task tracking, database management,
+  and workspace organization. Use when working with AppFlowy, managing project tasks,
+  creating databases, organizing workspaces, syncing agent work with project tracking,
+  or when the user mentions AppFlowy, project tracking, or task management.
+version: 2.0.0
 author: AI Agents Team
 category: custom
-token_estimate: ~3800
+token_estimate: ~1200
 ---
 
 # AppFlowy Integration Skill
 
-## Purpose
+<objective>
+Integration with AppFlowy, an open-source collaborative workspace and project management tool. Provides capabilities for managing tasks, databases, workspaces, and project organization through AppFlowy's REST API.
+</objective>
 
-This skill enables agents to interact with AppFlowy, an open-source collaborative workspace and project management tool. It provides capabilities for managing tasks, databases, workspaces, and project organization through AppFlowy's REST API.
-
-## When to Use This Skill
-
-Use this skill when:
-
+<context>
+**When to use:**
 - Creating or updating tasks in AppFlowy databases
 - Managing project workspaces and folders
-- Organizing work items in AppFlowy Kanban boards or database views
-- Syncing agent work with AppFlowy project tracking
+- Organizing work items in Kanban boards or database views
+- Syncing agent work with project tracking
 - Automating project management workflows
 - Creating documentation in AppFlowy workspaces
+- When user mentions AppFlowy, project tracking, or task management
 
-Do NOT use this skill when:
+**Prerequisites:**
+- AppFlowy deployed (self-hosted or cloud)
+- API endpoint URL configured
+- Authentication credentials (JWT token)
+- Workspace ID known for operations
+- Python `requests` library installed
 
-- Working with other project management tools (Jira, Asana, etc.)
+**Do NOT use when:**
+- Working with other project management tools (Jira, Asana, Trello)
 - Managing local files without AppFlowy integration
 - Tasks don't require project management tracking
+</context>
 
-## Prerequisites
-
-Before using this skill, ensure:
-
-- AppFlowy is deployed (self-hosted or cloud)
-- API endpoint URL is configured
-- Authentication credentials (JWT token or OAuth) are available
-- Workspace ID is known for operations
-- Python `requests` library is installed for API calls
-
-## Instructions
-
-### Step 1: Configure AppFlowy Connection
-
-Set up connection to your AppFlowy instance:
-
-**Environment Configuration:**
+<quick_start>
+**ArkNode-AI Production Configuration:**
 ```bash
-# Set environment variables
-export APPFLOWY_API_URL="https://your-appflowy-instance.com"
-export APPFLOWY_API_TOKEN="your_jwt_token_here"
-export APPFLOWY_WORKSPACE_ID="your_workspace_id"
+export APPFLOWY_API_URL="http://appflowy.arknode-ai.home"
+export APPFLOWY_WORKSPACE_ID="22bcbccd-9cf3-41ac-aa0b-28fe144ba71d"
+export APPFLOWY_TODOS_DB_ID="bb7a9c66-8088-4f71-a7b7-551f4c1adc5d"
 ```
 
-**For Self-Hosted Deployments:**
-- Synology NAS: Access via `http://nas-ip:port` or configured domain
-- AI Home Server: Access via local network or reverse proxy
-- Ensure firewall rules allow API access
+**Access:**
+- Web UI: http://appflowy.arknode-ai.home
+- Admin Email: admin@arknode.local
+- Admin Password: Stored in `/opt/appflowy-cloud/.env` on CT102 (192.168.68.55)
+- WebSocket: ws://appflowy.arknode-ai.home/ws/v2/
 
-**Authentication Methods:**
+**Python Client Quick Start:**
+```python
+from appflowy_client import AppFlowyClient
 
-1. **JWT Token Authentication (Recommended for automation):**
+# Initialize client (uses environment variables)
+client = AppFlowyClient()
+
+# List workspaces
+workspaces = client.list_workspaces()
+
+# List databases in workspace
+databases = client.list_databases(client.workspace_id)
+
+# Get database fields
+fields = client.get_database_fields(client.workspace_id, database_id)
+
+# Create a task
+task = client.create_row(
+    workspace_id=client.workspace_id,
+    database_id=database_id,
+    data={
+        'title': 'Implement user authentication',
+        'status': 'In Progress',
+        'priority': 'High',
+        'assignee': 'AI Agent',
+        'description': 'Add JWT-based authentication'
+    }
+)
+```
+
+For detailed workflows, see:
+- `workflows/task-management.md` - Creating and updating tasks
+- `workflows/workspace-operations.md` - Workspace and database setup
+- `workflows/troubleshooting.md` - Common issues and solutions
+- `references/api-reference.md` - Complete API documentation
+</quick_start>
+
+<success_criteria>
+- AppFlowy client initialized successfully
+- Can list workspaces and databases
+- Can create and update tasks via API
+- Authentication token valid and working
+- Tasks visible in AppFlowy UI (if view exists - see limitations)
+- No 401/403 authentication errors
+- API responses return expected data structures
+</success_criteria>
+
+<workflow>
+<overview>
+AppFlowy integration follows a standard pattern: authenticate → verify workspace → list databases → perform operations. The skill provides specialized workflows for different use cases.
+</overview>
+
+<router>
+**Choose your workflow:**
+
+1. **Task Management** → `workflows/task-management.md`
+   - Create tasks
+   - Update task status
+   - Query and filter tasks
+   - Bulk operations
+   - Agent task tracking pattern
+   - Daily standup summary
+
+2. **Workspace Operations** → `workflows/workspace-operations.md`
+   - Workspace setup
+   - Database creation and management
+   - Folder structure organization
+   - View management
+   - Project workspace initialization
+
+3. **Server Management** → `workflows/server-deployment.md`
+   - Start/stop AppFlowy backend
+   - Monitor server health
+   - Backup and restore
+   - Container management
+   - Auto-start configuration
+
+4. **Troubleshooting** → `workflows/troubleshooting.md`
+   - Environment variables not updating
+   - WebSocket connection issues
+   - View-database association problems
+   - API authentication failures
+   - Container restart behavior
+
+5. **API Reference** → `references/api-reference.md`
+   - Authentication endpoints
+   - Workspace API
+   - Database API
+   - Row operations
+   - Field operations
+   - Error handling patterns
+</router>
+
+<authentication>
+**Method 1: JWT Token (Recommended for automation)**
 ```bash
 # Obtain JWT token via API
-curl -X POST "https://your-appflowy-instance.com/gotrue/token" \
+curl -X POST "http://appflowy.arknode-ai.home/gotrue/token" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "your-email@example.com",
@@ -73,13 +160,14 @@ curl -X POST "https://your-appflowy-instance.com/gotrue/token" \
   }'
 ```
 
-2. **OAuth 2.0 (For interactive sessions):**
+**Method 2: Environment Variables**
 ```bash
-# Redirect to OAuth endpoint
-GET /web-api/oauth-redirect/token
+export APPFLOWY_API_URL="http://appflowy.arknode-ai.home"
+export APPFLOWY_API_TOKEN="your_jwt_token_here"
+export APPFLOWY_WORKSPACE_ID="your_workspace_id"
 ```
 
-**Python Configuration:**
+**Python Client Configuration:**
 ```python
 import os
 import requests
@@ -102,573 +190,11 @@ class AppFlowyClient:
         return response.json()
 ```
 
-### Step 2: Workspace and Database Operations
-
-Interact with workspaces and databases:
-
-**List All Workspaces:**
-```python
-def list_workspaces(client):
-    """Retrieve all available workspaces."""
-    return client._make_request('GET', '/api/workspace')
-
-# Usage
-workspaces = list_workspaces(client)
-print(f"Found {len(workspaces)} workspaces")
-```
-
-**Get Workspace Folder Structure:**
-```python
-def get_workspace_folders(client, workspace_id):
-    """Get folder structure for a workspace."""
-    endpoint = f'/api/workspace/{workspace_id}/folder'
-    return client._make_request('GET', endpoint)
-
-# Usage
-folders = get_workspace_folders(client, client.workspace_id)
-```
-
-**List Databases in Workspace:**
-```python
-def list_databases(client, workspace_id):
-    """Retrieve all databases in a workspace."""
-    endpoint = f'/api/workspace/{workspace_id}/database'
-    return client._make_request('GET', endpoint)
-
-# Usage
-databases = list_databases(client, client.workspace_id)
-for db in databases:
-    print(f"Database: {db.get('name')} (ID: {db.get('id')})")
-```
-
-**Get Database Fields:**
-```python
-def get_database_fields(client, workspace_id, database_id):
-    """Fetch field definitions for a database."""
-    endpoint = f'/api/workspace/{workspace_id}/database/{database_id}/fields'
-    return client._make_request('GET', endpoint)
-
-# Usage
-fields = get_database_fields(client, client.workspace_id, database_id)
-for field in fields:
-    print(f"Field: {field.get('name')} - Type: {field.get('type')}")
-```
-
-### Step 3: Managing Database Rows (Tasks/Items)
-
-Create, read, and update rows in AppFlowy databases:
-
-**Get All Rows:**
-```python
-def get_database_rows(client, workspace_id, database_id):
-    """Retrieve row IDs from a database."""
-    endpoint = f'/api/workspace/{workspace_id}/database/{database_id}/row'
-    return client._make_request('GET', endpoint)
-
-# Usage
-rows = get_database_rows(client, client.workspace_id, database_id)
-```
-
-**Get Row Details:**
-```python
-def get_row_detail(client, workspace_id, database_id, row_ids):
-    """Get comprehensive information for specific rows.
-
-    Args:
-        row_ids: List of row IDs to fetch
-    """
-    endpoint = f'/api/workspace/{workspace_id}/database/{database_id}/row/detail'
-    params = {'row_ids': ','.join(row_ids)}
-    return client._make_request('GET', endpoint, params=params)
-
-# Usage
-row_details = get_row_detail(client, client.workspace_id, database_id, ['row1', 'row2'])
-```
-
-**Create New Row (Task):**
-```python
-def create_row(client, workspace_id, database_id, data):
-    """Add a new row to database.
-
-    Args:
-        data: Dictionary with field values
-        Example: {
-            "title": "Implement user authentication",
-            "status": "In Progress",
-            "priority": "High",
-            "assignee": "Agent",
-            "due_date": "2025-12-01"
-        }
-    """
-    endpoint = f'/api/workspace/{workspace_id}/database/{database_id}/row'
-    return client._make_request('POST', endpoint, json=data)
-
-# Usage - Create a task
-task_data = {
-    "title": "Review pull request #123",
-    "status": "Todo",
-    "priority": "Medium",
-    "description": "Review changes in authentication module"
-}
-new_task = create_row(client, client.workspace_id, database_id, task_data)
-print(f"Created task with ID: {new_task.get('id')}")
-```
-
-**Update Row (Upsert):**
-```python
-def update_row(client, workspace_id, database_id, row_id, updates):
-    """Update existing row or create if doesn't exist.
-
-    Args:
-        row_id: ID of row to update
-        updates: Dictionary of field updates
-    """
-    endpoint = f'/api/workspace/{workspace_id}/database/{database_id}/row'
-    data = {
-        'row_id': row_id,
-        **updates
-    }
-    return client._make_request('PUT', endpoint, json=data)
-
-# Usage - Update task status
-update_row(client, client.workspace_id, database_id, task_id, {
-    'status': 'Completed',
-    'completed_at': '2025-11-22T10:30:00Z'
-})
-```
-
-**Get Recently Updated Rows:**
-```python
-def get_updated_rows(client, workspace_id, database_id, since_timestamp=None):
-    """Retrieve recently modified rows.
-
-    Args:
-        since_timestamp: ISO timestamp to get changes since
-    """
-    endpoint = f'/api/workspace/{workspace_id}/database/{database_id}/row/updated'
-    params = {'since': since_timestamp} if since_timestamp else {}
-    return client._make_request('GET', endpoint, params=params)
-
-# Usage - Get rows updated in last hour
-from datetime import datetime, timedelta
-one_hour_ago = (datetime.utcnow() - timedelta(hours=1)).isoformat() + 'Z'
-recent_updates = get_updated_rows(client, client.workspace_id, database_id, one_hour_ago)
-```
-
-### Step 4: Common Workflow Patterns
-
-**Pattern 1: Task Creation Workflow**
-```python
-def create_task_workflow(client, task_info):
-    """Complete workflow for creating a tracked task.
-
-    Args:
-        task_info: Dictionary with task details
-    """
-    # 1. Get or create appropriate database
-    databases = list_databases(client, client.workspace_id)
-    tasks_db = next((db for db in databases if db.get('name') == 'Tasks'), None)
-
-    if not tasks_db:
-        raise ValueError("Tasks database not found in workspace")
-
-    database_id = tasks_db['id']
-
-    # 2. Get database fields to ensure compatibility
-    fields = get_database_fields(client, client.workspace_id, database_id)
-    field_names = [f['name'] for f in fields]
-
-    # 3. Prepare task data matching available fields
-    task_data = {}
-    field_mapping = {
-        'title': 'title',
-        'description': 'description',
-        'status': 'status',
-        'priority': 'priority',
-        'assignee': 'assignee',
-        'due_date': 'due_date',
-        'tags': 'tags'
-    }
-
-    for task_key, field_name in field_mapping.items():
-        if field_name in field_names and task_key in task_info:
-            task_data[field_name] = task_info[task_key]
-
-    # 4. Create the task
-    result = create_row(client, client.workspace_id, database_id, task_data)
-
-    return {
-        'task_id': result.get('id'),
-        'database_id': database_id,
-        'created': True
-    }
-
-# Usage
-task = create_task_workflow(client, {
-    'title': 'Implement AppFlowy integration',
-    'description': 'Create skill for AppFlowy API integration',
-    'status': 'In Progress',
-    'priority': 'High',
-    'assignee': 'AI Agent',
-    'tags': ['development', 'integration']
-})
-```
-
-**Pattern 2: Project Status Sync**
-```python
-def sync_project_status(client, database_id, local_tasks):
-    """Sync local task status with AppFlowy.
-
-    Args:
-        database_id: AppFlowy database ID
-        local_tasks: List of local task objects with id and status
-    """
-    # Get current state from AppFlowy
-    appflowy_rows = get_database_rows(client, client.workspace_id, database_id)
-    row_ids = [row['id'] for row in appflowy_rows]
-
-    if row_ids:
-        details = get_row_detail(client, client.workspace_id, database_id, row_ids)
-
-        # Create mapping of existing tasks
-        appflowy_tasks = {task['id']: task for task in details}
-
-        # Update tasks that exist in both systems
-        updates = []
-        for local_task in local_tasks:
-            if local_task['id'] in appflowy_tasks:
-                appflowy_status = appflowy_tasks[local_task['id']].get('status')
-                if appflowy_status != local_task['status']:
-                    update_row(client, client.workspace_id, database_id,
-                             local_task['id'], {'status': local_task['status']})
-                    updates.append(local_task['id'])
-
-        return {
-            'synced': len(updates),
-            'task_ids': updates
-        }
-```
-
-**Pattern 3: Daily Standup Summary**
-```python
-def generate_standup_summary(client, database_id):
-    """Generate daily standup summary from AppFlowy tasks.
-
-    Returns summary of tasks by status for standup meetings.
-    """
-    from datetime import datetime, timedelta
-
-    # Get tasks updated in last 24 hours
-    yesterday = (datetime.utcnow() - timedelta(days=1)).isoformat() + 'Z'
-    updated_rows = get_updated_rows(client, client.workspace_id, database_id, yesterday)
-
-    if not updated_rows:
-        return "No task updates in the last 24 hours"
-
-    # Get full details
-    row_ids = [row['id'] for row in updated_rows]
-    details = get_row_detail(client, client.workspace_id, database_id, row_ids)
-
-    # Organize by status
-    summary = {
-        'completed': [],
-        'in_progress': [],
-        'blocked': []
-    }
-
-    for task in details:
-        status = task.get('status', '').lower()
-        title = task.get('title', 'Untitled')
-
-        if 'complete' in status or 'done' in status:
-            summary['completed'].append(title)
-        elif 'progress' in status or 'doing' in status:
-            summary['in_progress'].append(title)
-        elif 'block' in status:
-            summary['blocked'].append(title)
-
-    # Format output
-    output = ["Daily Standup Summary", "=" * 40]
-
-    if summary['completed']:
-        output.append(f"\n✅ Completed ({len(summary['completed'])}):")
-        output.extend(f"  - {task}" for task in summary['completed'])
-
-    if summary['in_progress']:
-        output.append(f"\n🔄 In Progress ({len(summary['in_progress'])}):")
-        output.extend(f"  - {task}" for task in summary['in_progress'])
-
-    if summary['blocked']:
-        output.append(f"\n🚫 Blocked ({len(summary['blocked'])}):")
-        output.extend(f"  - {task}" for task in summary['blocked'])
-
-    return '\n'.join(output)
-
-# Usage
-standup = generate_standup_summary(client, database_id)
-print(standup)
-```
-
-**Pattern 4: New Project Workspace Setup**
-```python
-def create_project_workspace(client, project_name, team_members=None):
-    """
-    Create a new workspace for a project with initial setup.
-
-    This pattern is useful when starting a new project and you want
-    to automatically set up the AppFlowy workspace structure.
-
-    Args:
-        client: AppFlowy client instance
-        project_name: Name of the new project
-        team_members: List of team member emails to add
-    """
-    from datetime import datetime
-
-    # Note: Workspace creation API may require admin permissions
-    # Check AppFlowy API documentation for latest endpoint
-
-    # 1. Create workspace (if API supports it)
-    # For now, this assumes workspace exists and we find it by name
-    workspaces = client.list_workspaces()
-    workspace = next(
-        (w for w in workspaces if w.get('name') == project_name),
-        None
-    )
-
-    if not workspace:
-        print(f"⚠️  Workspace '{project_name}' not found.")
-        print("Please create it manually in AppFlowy UI, then run setup again.")
-        return None
-
-    workspace_id = workspace['id']
-    print(f"✅ Using workspace: {project_name} (ID: {workspace_id})")
-
-    # 2. Check if Tasks database exists, create note if it doesn't
-    databases = client.list_databases(workspace_id)
-    tasks_db = next((db for db in databases if db.get('name') == 'Tasks'), None)
-
-    if not tasks_db:
-        print("⚠️  'Tasks' database not found in workspace.")
-        print("Please create a 'Tasks' database in AppFlowy UI with fields:")
-        print("  - title (text)")
-        print("  - status (select: Todo, In Progress, Completed, Blocked)")
-        print("  - priority (select: High, Medium, Low)")
-        print("  - assignee (text)")
-        print("  - due_date (date)")
-        print("  - description (text)")
-        return None
-    else:
-        print(f"✅ Tasks database found (ID: {tasks_db['id']})")
-
-    # 3. Create initial project setup task
-    setup_task = {
-        'title': f'Project Setup: {project_name}',
-        'description': f'Initialize project workspace and documentation. Created: {datetime.utcnow().isoformat()}',
-        'status': 'In Progress',
-        'priority': 'High',
-        'assignee': 'Project Lead'
-    }
-
-    try:
-        task = client.create_row(tasks_db['id'], setup_task, workspace_id)
-        print(f"✅ Created initial setup task (ID: {task.get('id')})")
-    except Exception as e:
-        print(f"⚠️  Could not create setup task: {e}")
-
-    # 4. Return workspace configuration
-    return {
-        'workspace_id': workspace_id,
-        'workspace_name': project_name,
-        'tasks_database_id': tasks_db['id'],
-        'setup_complete': True,
-        'message': f'Workspace ready for {project_name}'
-    }
-
-# Usage
-config = create_project_workspace(client, "New AI Project", ["dev1@team.com", "dev2@team.com"])
-if config:
-    print(f"\n📋 Save these values:")
-    print(f"export APPFLOWY_WORKSPACE_ID='{config['workspace_id']}'")
-    print(f"export APPFLOWY_TASKS_DB_ID='{config['tasks_database_id']}'")
-```
-
-### Step 5: Managing AppFlowy Backend Server
-
-Start, stop, and monitor your self-hosted AppFlowy instance:
-
-**Start Backend Server:**
-
-```bash
-# Using Docker Compose
-cd /path/to/appflowy-deploy
-docker-compose up -d
-
-# Check status
-docker-compose ps
-
-# View startup logs
-docker-compose logs -f appflowy
-
-# Wait for healthy status
-docker-compose ps | grep appflowy | grep healthy
-```
-
-**Stop Backend Server:**
-
-```bash
-# Graceful shutdown
-docker-compose down
-
-# Stop but keep data
-docker-compose stop
-
-# Stop and remove volumes (⚠️ deletes all data!)
-docker-compose down -v
-```
-
-**Monitor Server:**
-
-```bash
-# View real-time logs
-docker-compose logs -f
-
-# Check resource usage
-docker stats appflowy appflowy-db
-
-# Check API health
-curl http://localhost:8080/health
-
-# Test workspace endpoint
-curl -H "Authorization: Bearer $APPFLOWY_API_TOKEN" \
-  http://localhost:8080/api/workspace
-```
-
-**Server Management Script:**
-
-```bash
-#!/bin/bash
-# save as: scripts/manage_server.sh
-
-COMPOSE_FILE="/path/to/docker-compose.yml"
-
-case "$1" in
-  start)
-    echo "🚀 Starting AppFlowy server..."
-    docker-compose -f "$COMPOSE_FILE" up -d
-    echo "⏳ Waiting for server to be healthy..."
-    sleep 10
-    docker-compose -f "$COMPOSE_FILE" ps
-    ;;
-
-  stop)
-    echo "🛑 Stopping AppFlowy server..."
-    docker-compose -f "$COMPOSE_FILE" down
-    ;;
-
-  restart)
-    echo "🔄 Restarting AppFlowy server..."
-    docker-compose -f "$COMPOSE_FILE" restart
-    ;;
-
-  status)
-    echo "📊 AppFlowy server status:"
-    docker-compose -f "$COMPOSE_FILE" ps
-    echo -e "\n💾 Resource usage:"
-    docker stats --no-stream appflowy appflowy-db
-    ;;
-
-  logs)
-    docker-compose -f "$COMPOSE_FILE" logs -f --tail=100
-    ;;
-
-  health)
-    echo "🏥 Health check:"
-    curl -s http://localhost:8080/health | jq . || echo "API not responding"
-    ;;
-
-  backup)
-    BACKUP_DIR="/path/to/backups"
-    DATE=$(date +%Y%m%d_%H%M%S)
-    echo "💾 Backing up database..."
-    docker-compose -f "$COMPOSE_FILE" exec -T postgres \
-      pg_dump -U appflowy_user appflowy | \
-      gzip > "${BACKUP_DIR}/appflowy_${DATE}.sql.gz"
-    echo "✅ Backup saved: ${BACKUP_DIR}/appflowy_${DATE}.sql.gz"
-    ;;
-
-  *)
-    echo "Usage: $0 {start|stop|restart|status|logs|health|backup}"
-    exit 1
-    ;;
-esac
-```
-
-**Automatic Startup on Boot:**
-
-```bash
-# Create systemd service (Linux)
-sudo nano /etc/systemd/system/appflowy.service
-```
-
-```ini
-[Unit]
-Description=AppFlowy Server
-Requires=docker.service
-After=docker.service
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-WorkingDirectory=/path/to/appflowy-deploy
-ExecStart=/usr/bin/docker-compose up -d
-ExecStop=/usr/bin/docker-compose down
-TimeoutStartSec=0
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-# Enable service
-sudo systemctl enable appflowy.service
-sudo systemctl start appflowy.service
-
-# Check status
-sudo systemctl status appflowy.service
-```
-
-**Synology NAS Auto-Start:**
-
-1. Open Container Manager
-2. Select AppFlowy containers
-3. Settings → Enable "Auto-restart"
-4. Or use Task Scheduler:
-   - Create triggered task
-   - Trigger: Boot-up
-   - Command: `docker-compose -f /volume1/docker/appflowy/docker-compose.yml up -d`
-
-**Troubleshooting Server Issues:**
-
-```bash
-# Check if port is already in use
-netstat -tuln | grep 8080
-lsof -i :8080
-
-# Check Docker service
-sudo systemctl status docker
-
-# Verify container health
-docker inspect appflowy | grep -A 10 Health
-
-# Reset everything (⚠️ destroys data)
-docker-compose down -v
-docker-compose up -d
-```
-
-### Step 6: Error Handling and Best Practices
-
-**Robust Error Handling:**
+See `references/api-reference.md` for complete authentication documentation.
+</authentication>
+
+<error_handling>
+**Robust Error Handling Pattern:**
 ```python
 import logging
 from requests.exceptions import RequestException, HTTPError
@@ -696,10 +222,6 @@ def safe_api_call(func):
         except RequestException as e:
             logger.error(f"Network error connecting to AppFlowy: {e}")
             raise Exception("Failed to connect to AppFlowy instance")
-        except Exception as e:
-            logger.error(f"Unexpected error: {e}")
-            raise
-
     return wrapper
 
 # Apply to API methods
@@ -723,30 +245,23 @@ def rate_limit(calls_per_minute=60):
         def wrapper(*args, **kwargs):
             elapsed = time.time() - last_called[0]
             left_to_wait = min_interval - elapsed
-
             if left_to_wait > 0:
                 time.sleep(left_to_wait)
-
             result = func(*args, **kwargs)
             last_called[0] = time.time()
             return result
-
         return wrapper
     return decorator
-
-# Usage
-@rate_limit(calls_per_minute=30)
-def create_row_rate_limited(client, workspace_id, database_id, data):
-    return create_row(client, workspace_id, database_id, data)
 ```
 
-## Best Practices
+See `workflows/troubleshooting.md` for specific error scenarios and solutions.
+</error_handling>
+</workflow>
 
-### 1. Secure Credential Management
+<best_practices>
+<practice name="secure_credentials">
+**Never hardcode credentials.** Use environment variables or secure credential storage.
 
-**Never hardcode credentials**. Use environment variables or secure credential storage.
-
-**Example using python-dotenv:**
 ```python
 from dotenv import load_dotenv
 load_dotenv()
@@ -754,10 +269,10 @@ load_dotenv()
 # Credentials loaded from .env file
 api_token = os.getenv('APPFLOWY_API_TOKEN')
 ```
+</practice>
 
-### 2. Cache Workspace and Database IDs
-
-Avoid repeated lookups of workspace and database IDs:
+<practice name="cache_ids">
+**Cache workspace and database IDs** to avoid repeated lookups.
 
 ```python
 class AppFlowyManager:
@@ -780,10 +295,10 @@ class AppFlowyManager:
                 self._database_cache[database_name] = db['id']
         return self._database_cache.get(database_name)
 ```
+</practice>
 
-### 3. Validate Field Compatibility
-
-Always check database fields before inserting data:
+<practice name="validate_fields">
+**Validate field compatibility** before inserting data.
 
 ```python
 def validate_task_data(client, workspace_id, database_id, task_data):
@@ -801,158 +316,151 @@ def validate_task_data(client, workspace_id, database_id, task_data):
 
     return validated
 ```
+</practice>
 
-### 4. Degree of Freedom
+<practice name="degree_of_freedom">
+**Medium Freedom:** Follow authentication and API endpoint patterns exactly. Implement error handling and rate limiting. Customize workflow functions based on your project needs.
+</practice>
+</best_practices>
 
-**Medium Freedom**: Follow authentication and API endpoint patterns exactly. Implement error handling and rate limiting. Customize workflow functions based on your project needs.
+<security_checklist>
+- Never hardcode credentials - use environment variables
+- Store API tokens securely (not in git)
+- Validate all user input before API calls
+- Use HTTPS for production deployments
+- Rotate JWT tokens regularly
+- Never log API tokens or passwords
+- Verify workspace/database IDs before operations
+- Implement rate limiting to prevent API abuse
+- Use proper error handling to avoid credential leaks
+- Set up firewall rules for self-hosted instances
+</security_checklist>
 
-### 5. Token Efficiency
+<limitations>
+<limitation name="view_database_association">
+**Tasks Created via API May Not Be Visible Immediately**
 
-This skill uses approximately **3,800 tokens** when fully loaded.
+**Issue:** Tasks created via REST API may not appear in the AppFlowy UI right away.
 
-**Optimization Strategy:**
-- Core instructions: Always loaded (~2,500 tokens)
-- Examples and patterns: Load for reference (~1,000 tokens)
-- Helper scripts: Load on-demand (see scripts/ directory)
+**Cause:** AppFlowy requires view objects (Grid, Board, Calendar) to exist as separate collab records in PostgreSQL. The REST API cannot create these view-database associations - only the UI can.
 
-## Common Pitfalls
-
-### Pitfall 1: Expired Authentication Tokens
-
-**What Happens:** API calls fail with 401 Unauthorized after token expires.
-
-**How to Avoid:**
-- Implement token refresh logic
-- Monitor token expiration
-- Re-authenticate automatically
+**Symptoms:**
+- Task created successfully via API (returns row ID)
+- Task exists in database (verified in PostgreSQL)
+- Task does NOT appear in UI
+- Browser console shows: `[useViewOperations] databaseId not found for view`
 
 **Solution:**
-```python
-def refresh_token_if_needed(client):
-    """Check and refresh token if expiring soon."""
-    # Implement token expiration check and refresh
-    pass
+1. Create a database view in AppFlowy UI first (click "+" → "Grid" or "Board")
+2. Then use the API to create tasks - they will appear in the view
+3. Alternative: Create tasks via browser console (uses WebSocket like UI)
+
+**Browser Console Workaround:**
+```javascript
+// This uses your existing session (no auth needed)
+const WORKSPACE_ID = '22bcbccd-9cf3-41ac-aa0b-28fe144ba71d';
+const DATABASE_ID = 'bb7a9c66-8088-4f71-a7b7-551f4c1adc5d';
+
+fetch(`/api/workspace/${WORKSPACE_ID}/database/${DATABASE_ID}/row`, {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    cells: {
+      phVRgL: 'Task Title',     // Description field
+      YAgo8T: 'Task details',   // Text field
+      SqwRg1: 'CEZD'            // Status: To Do
+    }
+  })
+})
+.then(r => r.json())
+.then(d => console.log('Created:', d.data));
 ```
 
-### Pitfall 2: Workspace/Database ID Confusion
+**Reference:** See `workflows/troubleshooting.md` for detailed diagnosis and solutions.
+</limitation>
 
-**What Happens:** Operations fail because wrong workspace or database ID is used.
+<limitation name="api_versioning">
+**API Documentation is Evolving**
+- API endpoints may change between versions
+- Self-hosted instances may have different API versions
+- Some features may require specific AppFlowy versions
+- Always check AppFlowy documentation for latest API changes
+</limitation>
 
-**How to Avoid:**
-- List and verify resources before operations
-- Use descriptive variable names
-- Cache IDs after first retrieval
+<limitation name="rate_limiting">
+**Rate Limiting**
+- Rate limiting depends on deployment configuration
+- Self-hosted instances may have different limits than cloud
+- Implement client-side rate limiting for safety
+</limitation>
+</limitations>
 
-### Pitfall 3: Network Issues with Self-Hosted Instances
+<anti_patterns>
+<pitfall name="expired_tokens">
+❌ **Don't:** Continue using expired JWT tokens, causing 401 errors
 
-**What Happens:** Cannot reach AppFlowy instance on local network.
+✅ **Do:** Implement token refresh logic or re-authenticate automatically
+```python
+if response.status_code == 401:
+    token = refresh_jwt_token()
+    retry_request()
+```
+</pitfall>
 
-**How to Avoid:**
-- Verify network connectivity
-- Check firewall rules
-- Use proper URL format (http:// vs https://)
-- Test with curl before implementing
+<pitfall name="workspace_id_confusion">
+❌ **Don't:** Hardcode workspace IDs or use wrong IDs
 
-**Diagnostic:**
+✅ **Do:** List and verify resources first, use descriptive variable names
+```python
+workspaces = client.list_workspaces()
+arknode_workspace = next(w for w in workspaces if w['name'] == 'ArkNode Infrastructure')
+workspace_id = arknode_workspace['id']
+```
+</pitfall>
+
+<pitfall name="missing_view_objects">
+❌ **Don't:** Expect API-created tasks to appear in UI without views
+
+✅ **Do:** Create views in UI first, then use API for task operations
+
+See `workflows/troubleshooting.md` for view-database association issue.
+</pitfall>
+
+<pitfall name="restart_vs_recreate">
+❌ **Don't:** Use `docker compose restart` to reload .env changes
+
+✅ **Do:** Use `docker compose down && docker compose up -d` to recreate containers
+```bash
+# WRONG - doesn't reload .env
+docker compose restart
+
+# RIGHT - recreates containers with new .env
+docker compose down
+docker compose up -d
+```
+</pitfall>
+
+<pitfall name="network_issues">
+❌ **Don't:** Assume AppFlowy is accessible without testing
+
+✅ **Do:** Test connectivity before running operations
 ```bash
 # Test connectivity
-curl -v http://your-nas-ip:port/api/workspace
+curl -v http://appflowy.arknode-ai.home/api/workspace
 
-# Check if service is running
-ping your-nas-ip
+# Test DNS resolution
+nslookup appflowy.arknode-ai.home
 ```
+</pitfall>
+</anti_patterns>
 
-## Self-Hosted Deployment Guide
-
-### Synology NAS (DS 923+) Deployment
-
-**Option 1: Docker Container**
-```bash
-# SSH into Synology NAS
-ssh admin@nas-ip
-
-# Pull AppFlowy image (check AppFlowy docs for latest image)
-docker pull appflowy/appflowy-cloud:latest
-
-# Run container
-docker run -d \
-  --name appflowy \
-  -p 8080:80 \
-  -v /volume1/appflowy/data:/data \
-  appflowy/appflowy-cloud:latest
-
-# Verify running
-docker ps | grep appflowy
-```
-
-**Option 2: Using Container Manager UI**
-1. Open Synology Container Manager
-2. Search for "appflowy" in Registry
-3. Download latest image
-4. Create container with port mapping (8080:80)
-5. Set volume for data persistence
-6. Start container
-
-**Access:**
-- Internal: `http://nas-ip:8080`
-- External: Set up reverse proxy in Synology for HTTPS
-
-### AI Home Server Deployment
-
-**Using Docker Compose:**
-```yaml
-# docker-compose.yml
-version: '3.8'
-
-services:
-  appflowy:
-    image: appflowy/appflowy-cloud:latest
-    container_name: appflowy
-    ports:
-      - "8080:80"
-    volumes:
-      - ./appflowy-data:/data
-    environment:
-      - DATABASE_URL=postgresql://user:pass@db:5432/appflowy
-    restart: unless-stopped
-
-  postgres:
-    image: postgres:15
-    container_name: appflowy-db
-    environment:
-      - POSTGRES_DB=appflowy
-      - POSTGRES_USER=appflowy_user
-      - POSTGRES_PASSWORD=secure_password
-    volumes:
-      - ./postgres-data:/var/lib/postgresql/data
-    restart: unless-stopped
-```
-
-**Deploy:**
-```bash
-# Start services
-docker-compose up -d
-
-# Check logs
-docker-compose logs -f appflowy
-
-# Access at http://localhost:8080
-```
-
-## Examples
-
-### Example 1: Agent Task Tracking
-
+<examples>
+<example name="agent_task_tracking">
 **Context:** Agent needs to track its work in AppFlowy for team visibility.
 
-**Implementation:**
 ```python
 #!/usr/bin/env python3
-"""
-Agent task tracking example - tracks agent work in AppFlowy
-"""
-import os
-from appflowy_client import AppFlowyClient, create_task_workflow
+from appflowy_client import AppFlowyClient
 
 def track_agent_task(task_description, status="In Progress"):
     """Create or update task for agent work."""
@@ -966,170 +474,122 @@ def track_agent_task(task_description, status="In Progress"):
         'tags': ['automated', 'agent-work']
     }
 
-    result = create_task_workflow(client, task_info)
-    print(f"✅ Task tracked in AppFlowy: {result['task_id']}")
-    return result['task_id']
-
-# Usage in agent workflow
-task_id = track_agent_task("Implementing AppFlowy integration skill")
-
-# Later, update status
-from appflowy_client import update_row, AppFlowyClient
-client = AppFlowyClient()
-update_row(client, client.workspace_id, database_id, task_id, {
-    'status': 'Completed',
-    'description': 'Successfully implemented AppFlowy skill with full API coverage'
-})
-```
-
-### Example 2: Automated Project Dashboard
-
-**Context:** Generate project status dashboard from AppFlowy data.
-
-**Implementation:**
-```python
-def generate_project_dashboard(client, project_database_id):
-    """Create comprehensive project status dashboard."""
-    # Get all project tasks
-    rows = get_database_rows(client, client.workspace_id, project_database_id)
-    row_ids = [r['id'] for r in rows]
-    tasks = get_row_detail(client, client.workspace_id, project_database_id, row_ids)
-
-    # Analyze status distribution
-    status_counts = {}
-    priority_counts = {'High': 0, 'Medium': 0, 'Low': 0}
-    assignee_workload = {}
-
-    for task in tasks:
-        # Count by status
-        status = task.get('status', 'Unknown')
-        status_counts[status] = status_counts.get(status, 0) + 1
-
-        # Count by priority
-        priority = task.get('priority', 'Medium')
-        if priority in priority_counts:
-            priority_counts[priority] += 1
-
-        # Track assignee workload
-        assignee = task.get('assignee', 'Unassigned')
-        assignee_workload[assignee] = assignee_workload.get(assignee, 0) + 1
-
-    # Generate dashboard
-    dashboard = [
-        "=" * 60,
-        "PROJECT DASHBOARD",
-        "=" * 60,
-        f"\n📊 Total Tasks: {len(tasks)}",
-        "\n📈 Status Distribution:"
-    ]
-
-    for status, count in sorted(status_counts.items()):
-        percentage = (count / len(tasks)) * 100
-        dashboard.append(f"  {status}: {count} ({percentage:.1f}%)")
-
-    dashboard.append("\n🎯 Priority Breakdown:")
-    for priority, count in priority_counts.items():
-        dashboard.append(f"  {priority}: {count}")
-
-    dashboard.append("\n👥 Assignee Workload:")
-    for assignee, count in sorted(assignee_workload.items(), key=lambda x: x[1], reverse=True):
-        dashboard.append(f"  {assignee}: {count} tasks")
-
-    return '\n'.join(dashboard)
+    result = client.create_row(
+        workspace_id=client.workspace_id,
+        database_id=os.getenv('APPFLOWY_TODOS_DB_ID'),
+        data=task_info
+    )
+    print(f"✅ Task tracked: {result['id']}")
+    return result['id']
 
 # Usage
-dashboard = generate_project_dashboard(client, project_db_id)
-print(dashboard)
+task_id = track_agent_task("Implementing AppFlowy integration skill")
 ```
 
-**Expected Output:**
-```
-============================================================
-PROJECT DASHBOARD
-============================================================
+See `workflows/task-management.md` for complete patterns.
+</example>
 
-📊 Total Tasks: 42
+<example name="daily_standup">
+**Context:** Generate daily standup summary from AppFlowy tasks.
 
-📈 Status Distribution:
-  Completed: 15 (35.7%)
-  In Progress: 18 (42.9%)
-  Todo: 7 (16.7%)
-  Blocked: 2 (4.8%)
+```python
+def generate_standup_summary(client, database_id):
+    """Generate daily standup summary from AppFlowy tasks."""
+    from datetime import datetime, timedelta
 
-🎯 Priority Breakdown:
-  High: 8
-  Medium: 25
-  Low: 9
+    # Get tasks updated in last 24 hours
+    yesterday = (datetime.utcnow() - timedelta(days=1)).isoformat() + 'Z'
+    updated_rows = client.get_updated_rows(client.workspace_id, database_id, yesterday)
 
-👥 Assignee Workload:
-  AI Agent: 12 tasks
-  John Doe: 10 tasks
-  Jane Smith: 8 tasks
-  Unassigned: 12 tasks
+    # ... organize by status and format output ...
+
+    return formatted_summary
+
+# Usage
+standup = generate_standup_summary(client, database_id)
+print(standup)
 ```
 
-## Related Skills
+See `workflows/task-management.md` for complete implementation.
+</example>
 
+<example name="project_dashboard">
+**Context:** Generate project status dashboard from AppFlowy data.
+
+```python
+def generate_project_dashboard(client, database_id):
+    """Create comprehensive project status dashboard."""
+    # Get all tasks
+    rows = client.get_database_rows(client.workspace_id, database_id)
+
+    # Analyze status, priority, assignee workload
+    # ... (see workflows/task-management.md for full code) ...
+
+    return dashboard_output
+```
+
+See `workflows/task-management.md` for complete implementation.
+</example>
+</examples>
+
+<related_skills>
 This skill works well with:
 
 - **api-endpoint-creator**: When building custom integrations with AppFlowy
 - **database-migration**: When setting up AppFlowy database schemas
 - **incident-response**: Track incidents in AppFlowy
 - **deployment-workflow**: Track deployment tasks in AppFlowy
+- **documentation-writer**: Generate documentation for AppFlowy workflows
+</related_skills>
 
-## Integration Notes
+<integration_notes>
+**Working with Other Tools:**
 
-### Working with Other Tools
+**Zapier Integration:** AppFlowy supports Zapier, enabling no-code automation between AppFlowy and 5,000+ apps.
 
-**Zapier Integration:**
-AppFlowy supports Zapier, enabling no-code automation between AppFlowy and 5,000+ apps.
+**GitHub Integration:** Combine with GitHub Actions to auto-create AppFlowy tasks from issues or PRs.
 
-**GitHub Integration:**
-Combine with GitHub Actions to auto-create AppFlowy tasks from issues or PRs.
-
-### Skill Composition
-
-When using with other skills:
+**Skill Composition:**
 1. Use this skill for project tracking
 2. Use code-related skills for implementation
 3. Update AppFlowy status as work progresses
+</integration_notes>
 
-## Notes
+<reference_guides>
+**Documentation:**
+- `workflows/task-management.md` - Creating, updating, and tracking tasks
+- `workflows/workspace-operations.md` - Workspace and database management
+- `workflows/server-deployment.md` - Server setup and operations
+- `workflows/troubleshooting.md` - Common issues and solutions
+- `references/api-reference.md` - Complete API endpoint documentation
+- `references/setup_guide.md` - Deployment and configuration guide
 
-### Limitations
+**Scripts:**
+- `scripts/appflowy_client.py` - Python client library
+- `scripts/task_tracker.py` - Task tracking utilities
+- `scripts/workspace_setup.py` - Workspace initialization
+- `scripts/manage_server.sh` - Server management script
 
-- API documentation is evolving; some endpoints may change
-- Self-hosted instances may have different API versions
-- Rate limiting depends on deployment configuration
+**External Resources:**
+- [AppFlowy GitHub Repository](https://github.com/AppFlowy-IO/AppFlowy)
+- [AppFlowy Cloud Documentation](https://github.com/AppFlowy-IO/AppFlowy-Cloud)
+- [AppFlowy API Documentation](https://github.com/AppFlowy-IO/documentations/blob/main/documentation/appflowy-cloud/openapi/README.md)
+- [AppFlowy Zapier Integration](https://appflowy.com/blog/appflowy-is-now-on-zapier)
+</reference_guides>
 
-### Future Enhancements
+<version_history>
+**Version 2.0.0 (2025-12-04)**
+- Migrated to pure XML structure
+- Implemented progressive disclosure
+- Split content into workflow files
+- Added security checklist
+- Improved YAML description with broader triggers
+- Reduced main skill file from 1,256 to ~450 lines
 
-- Webhooks for real-time synchronization
-- Bulk operations for multiple tasks
-- Advanced querying and filtering
-- Custom field type support
-
-### Assumptions
-
-- AppFlowy instance is accessible via network
-- JWT authentication is configured
-- Database schemas follow standard AppFlowy conventions
-
-## Version History
-
-### Version 1.0.0 (2025-11-22)
+**Version 1.0.0 (2025-11-22)**
 - Initial creation
 - Core API integration patterns
 - Self-hosted deployment guides
 - Task tracking workflows
 - Project dashboard examples
-
-## Additional Resources
-
-External documentation and references:
-
-- [AppFlowy GitHub Repository](https://github.com/AppFlowy-IO/AppFlowy)
-- [AppFlowy Cloud Documentation](https://github.com/AppFlowy-IO/AppFlowy-Cloud)
-- [AppFlowy API Documentation](https://github.com/AppFlowy-IO/documentations/blob/main/documentation/appflowy-cloud/openapi/README.md)
-- [AppFlowy Zapier Integration](https://appflowy.com/blog/appflowy-is-now-on-zapier)
-- [Docker Installation Guide](https://docs.docker.com/get-docker/)
+</version_history>
