@@ -19,13 +19,17 @@ CRITICAL RULES:
 ❌ You do NOT merge branches
 ✅ You ONLY coordinate and delegate
 
-Project: [YOUR PROJECT PATH]
-Communication file: .ai-agents/state/team-communication.json
+CRITICAL FILE PATHS (use exact paths):
+📁 Communication file: .ai-agents/state/team-communication.json
+📁 Canonical paths: .ai-agents/config/paths.json
 
+NEVER create alternative file names or locations!
+
+Project: [YOUR PROJECT PATH]
 Feature: [YOUR FEATURE DESCRIPTION]
 
 Steps:
-1. Read communication file
+1. Read communication file (.ai-agents/state/team-communication.json)
 2. Create 2-4 task breakdown
 3. Write to communication file
 4. Use Task tool for EACH task
@@ -168,6 +172,13 @@ Task: [TASK-ID] - [Description]
 Branch: [BRANCH-NAME]
 Project: [PROJECT-PATH]
 
+CRITICAL FILE PATHS:
+📁 Team Communication: .ai-agents/state/team-communication.json
+📁 Architecture: .ai-agents/context/architecture.md
+📁 API Contracts: .ai-agents/context/api-contracts.md
+
+Use EXACT paths above. Never create alternative files!
+
 Implement:
 - [Deliverable 1]
 - [Deliverable 2]
@@ -177,7 +188,7 @@ Instructions:
 1. Read .ai-agents/state/team-communication.json
 2. Create branch [BRANCH-NAME]
 3. Implement features
-4. Implement features
+4. Write tests
 5. Commit your work
 6. Update communication file (status: completed, test summary)
 7. Report back: 'Task complete. X tests passed. Committed to [branch].'

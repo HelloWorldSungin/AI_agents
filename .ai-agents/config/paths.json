@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "canonical_paths": {
+    "team_communication": ".ai-agents/state/team-communication.json",
+    "infrastructure_setup": ".ai-agents/infrastructure-setup.md",
+    "architecture": ".ai-agents/context/architecture.md",
+    "api_contracts": ".ai-agents/context/api-contracts.md",
+    "coding_standards": ".ai-agents/context/coding-standards.md"
+  },
+  "working_directory": "${PROJECT_ROOT}"
+}

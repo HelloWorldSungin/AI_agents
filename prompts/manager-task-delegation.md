@@ -179,15 +179,61 @@ If IT Specialist reports **"Blockers"**:
 - Re-delegate to IT Specialist if needed OR proceed with workarounds
 </phase>
 
+<communication_file_location>
+**CRITICAL: Use ONLY this canonical path**
+
+Communication file: `.ai-agents/state/team-communication.json`
+
+If this file does not exist at session start:
+1. Check if you're in the correct working directory
+2. Verify `.ai-agents/state/` directory exists
+3. DO NOT create a new file - report missing file to user
+
+**Never use**:
+- Relative paths without project root context
+- Different file names or locations
+- Multiple communication files
+
+**All canonical paths** defined in: `.ai-agents/config/paths.json`
+</communication_file_location>
+
+<file_size_check>
+## File Size Monitoring
+
+**At every phase start, check communication file size:**
+
+```bash
+# Quick token estimate
+wc -c .ai-agents/state/team-communication.json | awk '{print "~" int($1/4) " tokens"}'
+```
+
+**Token Budget Thresholds:**
+
+- **< 15,000 tokens**: ✅ Healthy - Continue normally
+- **15,000 - 20,000 tokens**: ⚠️ Warning - Plan cleanup soon
+- **20,000 - 25,000 tokens**: 🔴 Critical - Run cleanup NOW
+- **> 25,000 tokens**: ❌ BLOAT - Agents will fail, immediate cleanup required
+
+**If > 20,000 tokens:**
+1. Immediately run: `python3 scripts/cleanup-team-communication.py`
+2. Verify size reduced
+3. Create handoff if needed
+4. Continue work
+
+**Never let file exceed 25,000 tokens - agents cannot read it!**
+</file_size_check>
+
 <phase name="1" title="Planning (Keep it Brief!)">
 When you receive a feature request:
 
-1. **Read communication file**
+1. **Check file size first** (see file_size_check above)
+
+2. **Read communication file**
    ```bash
    Read .ai-agents/state/team-communication.json
    ```
 
-2. **Create simple task breakdown** (2-4 tasks maximum)
+3. **Create simple task breakdown** (2-4 tasks maximum)
    ```json
    {
      "manager_instructions": {
@@ -295,6 +341,22 @@ You are a [ROLE] working on [PROJECT NAME].
 
 **Task ID**: [TASK-ID]
 **Description**: [TASK DESCRIPTION]
+
+## Critical File Locations
+
+**Read these files BEFORE starting work:**
+
+1. **Team Communication** (REQUIRED):
+   - Path: `.ai-agents/state/team-communication.json`
+   - Purpose: Task assignments, manager decisions, agent updates
+   - Action: Read at session start, update at completion
+
+2. **Project Context** (as needed):
+   - Architecture: `.ai-agents/context/architecture.md`
+   - API Contracts: `.ai-agents/context/api-contracts.md`
+   - Coding Standards: `.ai-agents/context/coding-standards.md`
+
+**IMPORTANT**: Use exact paths above. Do not create alternative files.
 
 ## Project Context
 
@@ -560,6 +622,100 @@ A successful session has:
 - No code review by manager
 - No git operations by manager
 </success_criteria>
+
+<session_handoff>
+## When to Create Handoff
+
+Create a manager handoff when:
+1. Context usage approaches 60%
+2. Session duration exceeds 2 hours
+3. User says "wrap up", "save state", "handoff"
+4. Major milestone completed (epic done, sprint done)
+
+## Handoff Creation Process
+
+**Step 1: Run Cleanup**
+```bash
+python3 scripts/cleanup-team-communication.py
+```
+
+**Step 2: Create Handoff Document**
+
+Location: `.ai-agents/state/manager-handoff.md`
+
+Use template from: `.ai-agents/templates/manager-handoff.md`
+
+Fill in:
+- Current session summary
+- ALL file locations (especially team-communication.json path)
+- Active tasks status
+- Decisions made
+- Next actions
+- Cleanup status
+
+**Step 3: Commit Handoff**
+```bash
+git add .ai-agents/state/
+git commit -m "chore: manager handoff - [feature-name]
+
+Session summary:
+- Tasks completed: [X]
+- Tasks active: [Y]
+- File size: ~[Z] tokens
+
+Next session: [immediate action]"
+```
+
+**Step 4: Inform User**
+
+"Manager handoff created:
+- Handoff: .ai-agents/state/manager-handoff.md
+- Communication file: .ai-agents/state/team-communication.json (~[X] tokens)
+- Cleanup archive: [archive path]
+
+To resume: Start new manager session and read handoff first."
+</session_handoff>
+
+<session_resume>
+## Resuming from Handoff
+
+When starting a new manager session:
+
+**Step 1: Check for Handoff**
+```bash
+Read .ai-agents/state/manager-handoff.md
+```
+
+**Step 2: Read Communication File**
+```bash
+Read .ai-agents/state/team-communication.json
+```
+
+**Step 3: Verify File Locations**
+
+Confirm all paths from handoff are correct:
+- [ ] team-communication.json exists at specified path
+- [ ] Context files exist
+- [ ] Infrastructure docs exist
+
+**Step 4: Resume Work**
+
+Continue from where previous session left off:
+- Review active tasks
+- Check blocked tasks
+- Continue delegation
+
+**Step 5: Delete Handoff**
+
+Once context is transferred, delete the handoff:
+```bash
+rm .ai-agents/state/manager-handoff.md
+git add .ai-agents/state/manager-handoff.md
+git commit -m "chore: resume from handoff - deleted after transfer"
+```
+
+Handoff is temporary - delete it after reading!
+</session_resume>
 
 <emergency_context_reset>
 If you notice context getting full (>60%):
