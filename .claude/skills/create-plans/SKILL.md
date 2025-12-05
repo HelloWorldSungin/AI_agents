@@ -169,6 +169,25 @@ All planning artifacts are version controlled. Commit outcomes, not process.
 See: references/git-integration.md
 </principle>
 
+<principle name="direct_file_writing">
+**CRITICAL: This skill writes directly to `.planning/` - NEVER use EnterPlanMode or delegate to Plan agents.**
+
+All planning artifacts are created using the Write tool directly in the project directory:
+- `.planning/BRIEF.md`
+- `.planning/ROADMAP.md`
+- `.planning/phases/{phase}/{plan}-PLAN.md`
+- `.planning/phases/{phase}/{plan}-SUMMARY.md`
+
+**NEVER:**
+- Use EnterPlanMode tool (saves to `~/.claude/plans/` home directory)
+- Delegate to Task tool with `subagent_type=Plan`
+- Save plans anywhere except `.planning/`
+
+**WHY:** Plan mode is for Claude Code's internal planning. This skill creates project-specific planning artifacts that must live in the project repository for version control and team collaboration.
+
+Follow the workflows exactly - they use Write tool with explicit `.planning/` paths.
+</principle>
+
 </essential_principles>
 
 <context_scan>
@@ -485,4 +504,5 @@ Planning skill succeeds when:
 - All work (planned and discovered) fully documented
 - Domain expertise loaded intelligently (SKILL.md + selective references, not all files)
 - Plan execution uses /run-plan command (not skill invocation)
+- **All files written to `.planning/` directory using Write tool (NEVER EnterPlanMode or Plan agents)**
 </success_criteria>
