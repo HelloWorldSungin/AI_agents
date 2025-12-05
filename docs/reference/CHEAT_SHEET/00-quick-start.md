@@ -48,6 +48,148 @@ python scripts/compose-agent.py --config ../config.yml --all
 
 ---
 
+## Recommended Workflow
+
+The most effective workflow for multi-agent projects:
+
+### 1. Plan Your Project
+
+Use the planning skill to research, make decisions, and break work into phases:
+
+```bash
+/create-plan "your project description"
+```
+
+**Example:**
+```bash
+/create-plan "Build authentication system with JWT, user registration, login, and password reset"
+```
+
+**Output:** `.planning/PLAN-[project].md` with:
+- Research findings
+- Decision rationale
+- Phase breakdown
+- Success criteria
+
+### 2. Generate Manager Prompt
+
+Create an optimized manager prompt from your plan:
+
+```bash
+/create-manager-meta-prompt @.planning/PLAN-[project].md
+```
+
+**What this does:**
+- Analyzes your plan
+- Generates manager prompt with:
+  - Task Tool Delegation pattern
+  - State file coordination
+  - Agent spawning sequence
+  - Progress tracking
+  - Handoff instructions
+
+**Output:** Ready-to-use manager prompt (copy and paste into Claude)
+
+### 3. Set Up State Files
+
+Create the coordination file:
+
+```bash
+mkdir -p .ai-agents/state
+cat > .ai-agents/state/team-communication.json << 'EOF'
+{
+  "manager_instructions": {},
+  "agent_updates": [],
+  "integration_requests": []
+}
+EOF
+```
+
+**For Complex Mode** (multi-day, 5+ agents):
+```bash
+# Add session continuity
+cat > .ai-agents/state/session-progress.json << 'EOF'
+{
+  "last_session": null,
+  "current_phase": "initial-setup",
+  "completed_tasks": [],
+  "active_tasks": [],
+  "blockers": [],
+  "next_priorities": [],
+  "git_baseline": null
+}
+EOF
+
+# Add feature tracking
+cat > .ai-agents/state/feature-tracking.json << 'EOF'
+{
+  "features": [],
+  "summary": {"total": 0, "passing": 0, "in_progress": 0, "failing": 0}
+}
+EOF
+```
+
+### 4. Execute with Manager
+
+Paste the generated manager prompt into Claude and let it coordinate:
+
+```
+Manager (stays lean at 15-25% context)
+  ↓ spawns via Task tool
+Agent 1 (fresh context) → completes → reports back
+  ↓ Manager spawns next
+Agent 2 (fresh context) → completes → reports back
+  ↓ Manager spawns next
+Agent 3 (fresh context) → completes → reports back
+```
+
+**Benefits:**
+- ✅ Manager never accumulates context (stays lean)
+- ✅ Each agent gets fresh context (15,000+ tokens working memory)
+- ✅ Structured coordination via state files
+- ✅ Clear progress tracking
+- ✅ Easy to resume across sessions (Complex Mode)
+
+### Workflow Summary
+
+```
+1. /create-plan "project"
+   └─ Generates: .planning/PLAN-[project].md
+
+2. /create-manager-meta-prompt @.planning/PLAN-[project].md
+   └─ Generates: Optimized manager prompt
+
+3. Set up state files (one-time)
+   └─ Creates: .ai-agents/state/*.json
+
+4. Paste manager prompt into Claude
+   └─ Manager coordinates via Task tool delegation
+   └─ Agents work with fresh context
+   └─ State files track progress
+```
+
+**Time Investment:**
+- Initial setup: 5 minutes (steps 1-3)
+- Ongoing: Just step 1-2 per new project
+- Benefit: 50% faster execution, scalable to any team size
+
+### Workflow Modes
+
+**Simple Mode** (default):
+- Use for: 1-3 days, existing infrastructure, 3-5 agents
+- State files: `team-communication.json` only
+- Pattern: Manager → Task Agents → Integration Agent
+
+**Complex Mode** (when needed):
+- Use for: Multi-day, new infrastructure, 5+ agents, code review required
+- State files: All three (team-communication, session-progress, feature-tracking)
+- Pattern: Manager → IT Specialist → Task Agents → Senior Engineer
+- Add `--complex` flag: `/create-manager-meta-prompt @PLAN.md --complex`
+
+**See:** [05-workflows.md](05-workflows.md) for detailed comparison
+
+---
+
 ## What's Next?
 
 - **New Project?** → See [06-scripts-tools.md](06-scripts-tools.md#starter-templates) for starter templates

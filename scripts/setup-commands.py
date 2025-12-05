@@ -33,6 +33,7 @@ TOOL_CATEGORIES = {
     "Prompt Engineering": [
         "create-prompt",
         "create-meta-prompt",
+        "create-manager-meta-prompt",
         "run-prompt",
     ],
     "Agent Development": [
@@ -122,6 +123,21 @@ def discover_tools() -> Dict[str, Dict]:
                     "type": "command",
                     "source": str(cmd_file),
                     "description": meta.get("description", f"Thinking model: {cmd_file.stem}"),
+                    "argument_hint": meta.get("argument-hint", ""),
+                }
+
+    # Discover local commands (.claude/commands)
+    if LOCAL_COMMANDS.exists():
+        for cmd_file in LOCAL_COMMANDS.glob("*.md"):
+            name = cmd_file.stem
+            # Skip if already discovered from taches (taches takes precedence)
+            if name not in tools:
+                meta = parse_frontmatter(cmd_file)
+                tools[name] = {
+                    "name": name,
+                    "type": "command",
+                    "source": str(cmd_file),
+                    "description": meta.get("description", f"Command: {name}"),
                     "argument_hint": meta.get("argument-hint", ""),
                 }
 
