@@ -938,15 +938,28 @@ Based on the [Context Engineering Guide](Context_Engineering.md), this library i
 
 ### Communication Protocol
 
-Agents use structured JSON messages:
+Agents use structured JSON for coordination via **three complementary state files**:
 
+**Within-Session Communication** (`.ai-agents/state/team-communication.json`):
 - **Task assignments** - Manager → Agent
 - **Status updates** - Agent → Manager
 - **Blocker reports** - Agent → Manager
-- **Dependency requests** - Agent → Agent (via Manager)
+- **Integration requests** - Agent → Agent (via Manager)
 - **Code reviews** - Manager → Agent
 
-See [schemas/communication-protocol.json](schemas/communication-protocol.json).
+**Cross-Session Tracking** (`.ai-agents/state/session-progress.json`):
+- Current project phase
+- Completed vs. active tasks
+- Blockers and priorities
+- Git baseline for resumption
+
+**Feature Verification** (`.ai-agents/state/feature-tracking.json`):
+- Feature ID, description, status
+- Test files and pass/fail status
+- Verification history
+- Progress metrics
+
+See [schemas/communication-protocol.json](schemas/communication-protocol.json) for message formats and [docs/guides/LONG_RUNNING_AGENTS.md](docs/guides/LONG_RUNNING_AGENTS.md) for workflow examples.
 
 ### Branch Isolation
 
@@ -997,33 +1010,54 @@ Long-term memory for:
 
 ### Long-Running Agent Patterns
 
-Based on Anthropic's research, AI_agents now supports multi-session projects with session continuity:
+Based on Anthropic's research, AI_agents now supports multi-session projects with a **three-file state management system**:
 
-**Session Progress Tracking** (`session-progress.json`):
+#### State File System
+
+**1. Real-Time Communication** (`.ai-agents/state/team-communication.json`):
+- Live coordination between agents **within a single session**
+- Task assignments (Manager → Agents)
+- Status updates (Agents → Manager)
+- Integration requests (Agent ↔ Agent)
+- Cleared/reset between sessions
+
+**2. Session Progress Tracking** (`.ai-agents/state/session-progress.json`):
+- **Cross-session continuity** - resume work without rediscovery
 - Tracks completed/active tasks across sessions
 - Records blockers and priorities
 - Maintains git baseline
 - Reduces session startup time by 50%
 
-**Feature Status Management** (`feature-tracking.json`):
+**3. Feature Status Management** (`.ai-agents/state/feature-tracking.json`):
 - Structured feature lists with pass/fail status
 - Prevents premature "done" declarations
 - Mandatory E2E testing for user-facing features
-- Clear progress visibility
+- Clear progress visibility (e.g., "6/8 features passing")
+
+#### Additional Enhancements
 
 **Environment Automation** (`init.sh`):
-- IT Specialist generates setup scripts
+- IT Specialist generates project-specific setup scripts
 - Automates dependency installation
 - Ensures consistent environments
 - Onboards new team members in minutes
 
-**Security Framework** (`security_validator.py`):
-- Three-layer defense-in-depth
-- Command allowlist for autonomous execution
+**Security Framework** (`scripts/security_validator.py`):
+- Three-layer defense-in-depth for autonomous execution
+- Command allowlist
 - Destructive pattern detection
 - Filesystem scope restrictions
 
-See [docs/guides/LONG_RUNNING_AGENTS.md](docs/guides/LONG_RUNNING_AGENTS.md) for complete guide.
+#### How They Work Together
+
+- **Within session**: Agents use `team-communication.json` for real-time coordination
+- **End of session**: Manager updates `session-progress.json` and `feature-tracking.json`
+- **Next session**: Manager reads progress files first → skips redundant planning → 50% faster startup
+
+**Simple Mode**: Uses `team-communication.json` only
+**Complex Mode**: Uses all three state files for full project tracking
+
+See [docs/guides/LONG_RUNNING_AGENTS.md](docs/guides/LONG_RUNNING_AGENTS.md) for complete guide with workflows and examples.
 
 ---
 

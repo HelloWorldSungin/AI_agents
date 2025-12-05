@@ -267,6 +267,119 @@ orchestrator.assign_task("TASK-002", frontend_agent)
 
 **Tools:** Custom Python scripts, LLM APIs, message queues
 **Communication:** Direct agent-to-agent messaging via message queue
+
+### What are the three state files and when do I use each?
+
+The system uses **three complementary JSON files** for different coordination needs:
+
+**1. `team-communication.json` - Real-Time Coordination**
+- **Purpose:** Live communication within a single session
+- **Used for:** Task assignments, status updates, agent requests
+- **Lifespan:** Within session (can be cleared between sessions)
+- **Example:** Manager assigns TASK-001 to backend-dev
+
+**2. `session-progress.json` - Cross-Session Continuity**
+- **Purpose:** Resume work across sessions without rediscovery
+- **Used for:** Tracking completed/active tasks, blockers, next priorities
+- **Lifespan:** Persistent across all sessions
+- **Example:** "Last session completed AUTH-001, AUTH-002 is active, next: TASK-001"
+- **Benefit:** 50% faster startup - skip redundant planning
+
+**3. `feature-tracking.json` - Feature Verification**
+- **Purpose:** Detailed feature status with pass/fail tracking
+- **Used for:** Prevent premature "done", enforce E2E testing, show progress
+- **Lifespan:** Persistent through project lifecycle
+- **Example:** "6/8 features passing, 1 in progress, 0 failing"
+
+**Quick Rule:**
+- **Within session:** Use `team-communication.json`
+- **End of session:** Update `session-progress.json` and `feature-tracking.json`
+- **Resume session:** Read `session-progress.json` first
+
+**Mode Usage:**
+- **Simple Mode:** `team-communication.json` only
+- **Complex Mode:** All three for full tracking
+
+**See:** [docs/guides/LONG_RUNNING_AGENTS.md](../guides/LONG_RUNNING_AGENTS.md) for complete workflows
+
+### Do I need all three state files?
+
+**No!** It depends on your workflow mode:
+
+**Simple Mode (90% of projects):**
+- Required: `team-communication.json` only
+- Optional: Other files if you want session continuity
+- Best for: Quick tasks, prototypes, one-day projects
+
+**Complex Mode (10% of projects):**
+- Required: All three files
+- Benefit: Full session continuity and progress tracking
+- Best for: Multi-day projects, long-running development, complex features
+
+**Start simple:** Begin with just `team-communication.json`. Add the other files when you need cross-session continuity.
+
+### How do I resume work from a previous session?
+
+**With session-progress.json (recommended):**
+
+1. **Manager reads state files:**
+   ```bash
+   # Read session-progress.json
+   {
+     "last_session": "2025-12-03",
+     "completed_tasks": ["AUTH-001"],
+     "active_tasks": ["AUTH-002"],
+     "next_priorities": ["AUTH-002", "TASK-001"]
+   }
+
+   # Read feature-tracking.json
+   {
+     "summary": {
+       "passing": 1,
+       "in_progress": 1,
+       "failing": 0
+     }
+   }
+   ```
+
+2. **Manager immediately continues:**
+   - No re-planning needed
+   - No rediscovery of "what's done"
+   - Direct to AUTH-002
+   - Result: 50% faster startup
+
+**Without state files (manual approach):**
+- Review git commits
+- Ask agents what they remember
+- Re-read task files
+- Manually reconstruct state
+- Result: 15-20 minutes wasted
+
+**Tip:** Always update `session-progress.json` at end of session with clear notes about what's next.
+
+### When should features be marked "passing" in feature-tracking.json?
+
+**Only when ALL criteria are met:**
+
+1. ✅ **Code implemented** - Feature functionality complete
+2. ✅ **Unit tests written** - Code-level tests passing
+3. ✅ **E2E tests passing** - User-facing behavior verified (mandatory!)
+4. ✅ **Code reviewed** - Senior Engineer approval (in Complex Mode)
+5. ✅ **Integration verified** - Works with rest of system
+
+**Anti-pattern:** Marking "passing" after just implementation
+- This leads to bugs discovered later
+- Wastes time with back-and-forth fixes
+- Defeats the purpose of status tracking
+
+**Best practice:** Use intermediate statuses
+- `not_started` → `in_progress` → `testing` → `passing`
+- Or: `in_progress` → `implemented` → `tested` → `passing`
+
+**E2E Testing Requirement:**
+In Complex Mode, the Senior Engineer **blocks** merges if E2E tests are missing. This enforces quality gates.
+
+**See:** Phase 2 in [docs/guides/LONG_RUNNING_AGENTS.md](../guides/LONG_RUNNING_AGENTS.md#phase-2-e2e-testing-mandate)
 **Best for:** Large projects (5+ agents), CI/CD automation, true parallel execution
 
 **Key differences:**

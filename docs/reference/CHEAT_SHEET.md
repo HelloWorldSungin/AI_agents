@@ -26,6 +26,110 @@ python scripts/compose-agent.py --config ../config.yml --all
 
 ---
 
+## State Files System
+
+### Three-File State Management
+
+The system uses three complementary JSON files for coordination:
+
+#### 1. Real-Time Communication (`team-communication.json`)
+**Purpose:** Live coordination within a session
+**Location:** `.ai-agents/state/team-communication.json`
+
+```json
+{
+  "manager_instructions": {"current_focus": "...", "active_tasks": [...]},
+  "agent_updates": [{"agent_id": "...", "status": "..."}],
+  "integration_requests": [...]
+}
+```
+
+**Used for:**
+- Task assignments (Manager → Agents)
+- Status updates (Agents → Manager)
+- Inter-agent coordination
+- Real-time communication
+
+**Lifespan:** Within session (ephemeral)
+
+---
+
+#### 2. Session Progress (`session-progress.json`)
+**Purpose:** Cross-session continuity
+**Location:** `.ai-agents/state/session-progress.json`
+**Schema:** `schemas/session-progress.json`
+
+```json
+{
+  "last_session": "2025-12-03T18:00:00Z",
+  "current_phase": "authentication-implementation",
+  "completed_tasks": ["SETUP-001", "DB-001"],
+  "active_tasks": ["AUTH-002"],
+  "blockers": [],
+  "next_priorities": ["AUTH-002", "TASK-001"],
+  "git_baseline": "abc123"
+}
+```
+
+**Used for:**
+- Resume work without rediscovery (50% faster startup)
+- Track project phase
+- Document blockers
+- Set priorities for next session
+
+**Lifespan:** Persistent across all sessions
+
+---
+
+#### 3. Feature Tracking (`feature-tracking.json`)
+**Purpose:** Feature verification and progress
+**Location:** `.ai-agents/state/feature-tracking.json`
+**Schema:** `schemas/feature-tracking.json`
+
+```json
+{
+  "features": [
+    {
+      "id": "AUTH-001",
+      "description": "User registration",
+      "status": "passing",
+      "test_file": "tests/auth/register.spec.ts",
+      "verified_by": "senior_engineer"
+    }
+  ],
+  "summary": {"total": 8, "passing": 1, "in_progress": 1, "failing": 0}
+}
+```
+
+**Used for:**
+- Track pass/fail status
+- Prevent premature "done" declarations
+- Enforce E2E testing
+- Show progress metrics
+
+**Lifespan:** Persistent through project lifecycle
+
+---
+
+### Quick Reference: Which File When?
+
+| Action | File | When |
+|--------|------|------|
+| Assign task to agent | `team-communication.json` | During session |
+| Agent reports status | `team-communication.json` | During session |
+| End session | Update `session-progress.json` + `feature-tracking.json` | End of day |
+| Resume work | Read `session-progress.json` first | Start of new session |
+| Mark feature complete | Update `feature-tracking.json` | After E2E tests pass |
+| Check progress | Read `feature-tracking.json` summary | Anytime |
+
+**Mode Usage:**
+- **Simple Mode:** `team-communication.json` only
+- **Complex Mode:** All three files for full tracking
+
+**See:** [docs/guides/LONG_RUNNING_AGENTS.md](../guides/LONG_RUNNING_AGENTS.md) for complete workflows
+
+---
+
 ## Slash Commands
 
 ### Thinking Models (`/consider:*`)

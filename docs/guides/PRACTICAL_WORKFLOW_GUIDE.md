@@ -178,9 +178,186 @@ agents:
 
 ---
 
+## Understanding State Files
+
+### Three-File State System
+
+The AI_agents system uses **three complementary state files** for coordination. Understanding their roles is crucial:
+
+#### 1. Real-Time Communication (`team-communication.json`)
+**Purpose**: Live coordination **within a single session**
+
+```json
+{
+  "manager_instructions": {
+    "current_focus": "User authentication",
+    "active_tasks": [...]
+  },
+  "agent_updates": [
+    {"agent_id": "backend-dev", "status": "completed", ...}
+  ],
+  "integration_requests": [...]
+}
+```
+
+**Used for**:
+- ✅ Manager assigns tasks to agents
+- ✅ Agents report status back
+- ✅ Agents request help from each other
+- ✅ Coordination during active work
+
+**Lifespan**: Within session (can be cleared between sessions)
+
+---
+
+#### 2. Session Progress (`session-progress.json`)
+**Purpose**: **Cross-session continuity** - resume work days/weeks later
+
+```json
+{
+  "last_session": "2025-12-03T18:00:00Z",
+  "current_phase": "authentication-implementation",
+  "completed_tasks": ["SETUP-001", "DB-001"],
+  "active_tasks": ["AUTH-002"],
+  "blockers": [],
+  "next_priorities": ["AUTH-002", "TASK-001"],
+  "git_baseline": "abc123",
+  "notes": "Login in progress, registration complete"
+}
+```
+
+**Used for**:
+- ✅ **Next session** - "Where did we leave off?"
+- ✅ Prevents redundant planning (50% faster startup)
+- ✅ Tracks overall project phase
+- ✅ Documents blockers for next time
+
+**Lifespan**: Persistent across all sessions
+
+---
+
+#### 3. Feature Tracking (`feature-tracking.json`)
+**Purpose**: Detailed feature status with **pass/fail verification**
+
+```json
+{
+  "features": [
+    {
+      "id": "AUTH-001",
+      "description": "User registration",
+      "status": "passing",
+      "test_file": "tests/auth/register.spec.ts",
+      "verified_by": "senior_engineer"
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "passing": 1,
+    "in_progress": 1,
+    "failing": 0
+  }
+}
+```
+
+**Used for**:
+- ✅ Track feature pass/fail status
+- ✅ Prevent premature "done" declarations
+- ✅ Enforce E2E testing
+- ✅ Show progress metrics (6/8 complete)
+
+**Lifespan**: Persistent, tracks entire project lifecycle
+
+---
+
+### How They Work Together
+
+**Within a Session:**
+```
+1. Manager reads session-progress.json (if resuming)
+2. Manager writes tasks to team-communication.json
+3. Agents read team-communication.json for assignments
+4. Agents update team-communication.json with status
+5. Manager updates feature-tracking.json when features complete
+```
+
+**End of Session:**
+```
+Manager updates:
+  - session-progress.json: What's done, what's next
+  - feature-tracking.json: Feature statuses
+  - Commits all to git
+```
+
+**Next Session (Days Later):**
+```
+Manager reads:
+  1. session-progress.json → "We completed AUTH-001, AUTH-002 is active"
+  2. feature-tracking.json → "1/8 features passing"
+  3. Skips re-planning → Continues immediately
+
+Result: 50% faster startup, no wasted time
+```
+
+---
+
+### When to Use Which File
+
+| Scenario | File to Use |
+|----------|-------------|
+| Assigning task to agent | `team-communication.json` |
+| Agent reporting "done" | `team-communication.json` |
+| Agent requesting help | `team-communication.json` |
+| Wrapping up session | Update `session-progress.json` and `feature-tracking.json` |
+| Starting new session | Read `session-progress.json` first |
+| Checking progress | Read `feature-tracking.json` summary |
+| Marking feature "passing" | Update `feature-tracking.json` |
+
+---
+
+### Quick Setup for All Three Files
+
+```bash
+# Create state directory
+mkdir -p .ai-agents/state
+
+# 1. Team communication (real-time)
+cat > .ai-agents/state/team-communication.json << 'EOF'
+{
+  "manager_instructions": {"current_focus": "", "active_tasks": []},
+  "agent_updates": [],
+  "integration_requests": []
+}
+EOF
+
+# 2. Session progress (cross-session)
+cat > .ai-agents/state/session-progress.json << 'EOF'
+{
+  "last_session": null,
+  "current_phase": "initialization",
+  "completed_tasks": [],
+  "active_tasks": [],
+  "blockers": [],
+  "next_priorities": []
+}
+EOF
+
+# 3. Feature tracking (verification)
+cat > .ai-agents/state/feature-tracking.json << 'EOF'
+{
+  "project": "your-project-name",
+  "features": [],
+  "summary": {"total": 0, "passing": 0, "in_progress": 0, "failing": 0}
+}
+EOF
+```
+
+**Schemas available**: See `schemas/session-progress.json` and `schemas/feature-tracking.json` for complete structures.
+
+---
+
 ## Communication Protocol
 
-### The Communication File Structure
+### The Communication File Structure (team-communication.json)
 
 ```json
 {
