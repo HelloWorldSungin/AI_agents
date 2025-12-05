@@ -1,0 +1,351 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ai-agents.dev/schemas/feature-tracking.json",
+  "title": "Feature Tracking Schema",
+  "description": "Structured feature list with pass/fail status for long-running projects. Prevents premature 'done' declarations and enables clear verification criteria.",
+  "type": "object",
+  "required": ["project", "features", "summary"],
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "The project name or identifier",
+      "example": "user-authentication"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this feature tracking file was created"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this file was last updated"
+    },
+    "features": {
+      "type": "array",
+      "description": "List of all features with their current status",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique feature identifier (e.g., AUTH-001, USER-042)",
+            "pattern": "^[A-Z]+-[0-9]+$",
+            "example": "AUTH-001"
+          },
+          "description": {
+            "type": "string",
+            "description": "Clear description of what the feature does",
+            "example": "User can register with email/password"
+          },
+          "assigned_to": {
+            "type": "string",
+            "description": "Agent role assigned to this feature",
+            "enum": [
+              "backend_developer",
+              "frontend_developer",
+              "fullstack_developer",
+              "data_engineer",
+              "devops_engineer",
+              "qa_tester",
+              "senior_engineer",
+              "it_specialist"
+            ],
+            "example": "backend_developer"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the feature",
+            "enum": ["not_started", "in_progress", "passing", "failing", "blocked"],
+            "example": "passing"
+          },
+          "priority": {
+            "type": "string",
+            "description": "Feature priority level",
+            "enum": ["low", "medium", "high", "critical"],
+            "default": "medium"
+          },
+          "progress": {
+            "type": "integer",
+            "description": "Percentage completion (0-100) for in_progress features",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "test_file": {
+            "type": "string",
+            "description": "Path to the test file for this feature",
+            "example": "tests/auth/register.test.ts"
+          },
+          "test_command": {
+            "type": "string",
+            "description": "Command to run tests for this feature",
+            "example": "npm test -- auth/register"
+          },
+          "git_commit": {
+            "type": "string",
+            "description": "Git commit SHA where this feature was implemented",
+            "pattern": "^[a-f0-9]{7,40}$"
+          },
+          "verified_by": {
+            "type": "string",
+            "description": "Agent role that verified this feature",
+            "enum": ["qa_tester", "senior_engineer", "automated_tests"]
+          },
+          "assigned_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the feature was assigned"
+          },
+          "completed_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the feature reached passing status"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error message if status is failing",
+            "example": "Error message div not rendering"
+          },
+          "blocker": {
+            "type": "object",
+            "description": "Information about what's blocking this feature",
+            "properties": {
+              "description": {
+                "type": "string",
+                "description": "What is blocking progress"
+              },
+              "dependency_on": {
+                "type": "string",
+                "description": "Feature ID this feature depends on",
+                "pattern": "^[A-Z]+-[0-9]+$"
+              },
+              "external": {
+                "type": "boolean",
+                "description": "Whether the blocker is external (e.g., API not ready)"
+              }
+            }
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about this feature",
+            "example": "All edge cases covered"
+          },
+          "acceptance_criteria": {
+            "type": "array",
+            "description": "List of acceptance criteria that must be met",
+            "items": {
+              "type": "object",
+              "required": ["criterion", "met"],
+              "properties": {
+                "criterion": {
+                  "type": "string",
+                  "description": "The acceptance criterion"
+                },
+                "met": {
+                  "type": "boolean",
+                  "description": "Whether this criterion has been met"
+                }
+              }
+            }
+          },
+          "related_features": {
+            "type": "array",
+            "description": "IDs of related features",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z]+-[0-9]+$"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "description": "Tags for categorization",
+            "items": {
+              "type": "string"
+            },
+            "example": ["authentication", "security", "frontend"]
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "description": "Summary statistics for the feature list",
+      "required": ["total", "passing", "failing", "in_progress", "not_started"],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "description": "Total number of features",
+          "minimum": 0
+        },
+        "passing": {
+          "type": "integer",
+          "description": "Number of features with passing status",
+          "minimum": 0
+        },
+        "failing": {
+          "type": "integer",
+          "description": "Number of features with failing status",
+          "minimum": 0
+        },
+        "in_progress": {
+          "type": "integer",
+          "description": "Number of features currently in progress",
+          "minimum": 0
+        },
+        "not_started": {
+          "type": "integer",
+          "description": "Number of features not yet started",
+          "minimum": 0
+        },
+        "blocked": {
+          "type": "integer",
+          "description": "Number of features that are blocked",
+          "minimum": 0
+        },
+        "completion_percentage": {
+          "type": "number",
+          "description": "Percentage of features passing",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "phases": {
+      "type": "array",
+      "description": "Project phases for organizing features",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "feature_ids"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Phase identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Phase name"
+          },
+          "feature_ids": {
+            "type": "array",
+            "description": "Feature IDs in this phase",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z]+-[0-9]+$"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["planned", "in_progress", "completed", "on_hold"]
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "project": "user-authentication",
+      "created_at": "2024-01-14T10:00:00Z",
+      "last_updated": "2024-01-15T14:30:00Z",
+      "features": [
+        {
+          "id": "AUTH-001",
+          "description": "User can register with email/password",
+          "assigned_to": "backend_developer",
+          "status": "passing",
+          "priority": "high",
+          "test_file": "tests/auth/register.test.ts",
+          "test_command": "npm test -- auth/register",
+          "git_commit": "abc123",
+          "verified_by": "qa_tester",
+          "assigned_date": "2024-01-14T10:00:00Z",
+          "completed_date": "2024-01-14T16:30:00Z",
+          "notes": "All edge cases covered including duplicate email detection",
+          "acceptance_criteria": [
+            {
+              "criterion": "User can submit registration form",
+              "met": true
+            },
+            {
+              "criterion": "Password validation shows clear error messages",
+              "met": true
+            },
+            {
+              "criterion": "Duplicate emails are rejected",
+              "met": true
+            }
+          ],
+          "tags": ["authentication", "backend", "database"]
+        },
+        {
+          "id": "AUTH-002",
+          "description": "Login form validates input",
+          "assigned_to": "frontend_developer",
+          "status": "in_progress",
+          "priority": "high",
+          "progress": 75,
+          "assigned_date": "2024-01-15T09:00:00Z",
+          "notes": "Form validation logic complete, styling pending",
+          "tags": ["authentication", "frontend", "validation"]
+        },
+        {
+          "id": "AUTH-003",
+          "description": "Failed login shows error message",
+          "assigned_to": "frontend_developer",
+          "status": "failing",
+          "priority": "medium",
+          "test_file": "tests/auth/login-errors.spec.ts",
+          "error": "Error message div not rendering on failed login attempt",
+          "assigned_date": "2024-01-15T10:00:00Z",
+          "notes": "Backend returns error correctly, frontend not displaying it",
+          "tags": ["authentication", "frontend", "error-handling"]
+        },
+        {
+          "id": "AUTH-004",
+          "description": "JWT token generation on successful login",
+          "assigned_to": "backend_developer",
+          "status": "blocked",
+          "priority": "critical",
+          "blocker": {
+            "description": "JWT library dependency not installed",
+            "external": false
+          },
+          "assigned_date": "2024-01-15T11:00:00Z",
+          "tags": ["authentication", "backend", "security"]
+        },
+        {
+          "id": "AUTH-005",
+          "description": "Session management with token refresh",
+          "assigned_to": "backend_developer",
+          "status": "not_started",
+          "priority": "medium",
+          "related_features": ["AUTH-004"],
+          "tags": ["authentication", "backend", "sessions"]
+        }
+      ],
+      "summary": {
+        "total": 5,
+        "passing": 1,
+        "failing": 1,
+        "in_progress": 1,
+        "not_started": 1,
+        "blocked": 1,
+        "completion_percentage": 20.0
+      },
+      "phases": [
+        {
+          "id": "phase-1",
+          "name": "Core Authentication",
+          "feature_ids": ["AUTH-001", "AUTH-002", "AUTH-003", "AUTH-004"],
+          "status": "in_progress"
+        },
+        {
+          "id": "phase-2",
+          "name": "Advanced Features",
+          "feature_ids": ["AUTH-005"],
+          "status": "planned"
+        }
+      ]
+    }
+  ]
+}

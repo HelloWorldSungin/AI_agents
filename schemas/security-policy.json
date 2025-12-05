@@ -1,0 +1,331 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ai-agents.dev/schemas/security-policy.json",
+  "title": "Security Policy Schema",
+  "description": "Configuration for command validation and security policies in autonomous agent execution",
+  "type": "object",
+  "required": ["project_root", "enforcement_level", "allowed_commands"],
+  "properties": {
+    "project_root": {
+      "type": "string",
+      "description": "Root directory of the project - all operations restricted to this path",
+      "example": "/Users/username/projects/my-app"
+    },
+    "enforcement_level": {
+      "type": "string",
+      "description": "How strictly to enforce security policies",
+      "enum": ["strict", "moderate", "permissive", "audit_only"],
+      "default": "strict"
+    },
+    "allowed_commands": {
+      "type": "array",
+      "description": "Commands permitted for autonomous execution",
+      "items": {
+        "type": "string"
+      },
+      "example": ["git", "npm", "python", "pytest", "docker"]
+    },
+    "blocked_commands": {
+      "type": "array",
+      "description": "Commands explicitly blocked (overrides allowlist)",
+      "items": {
+        "type": "string"
+      },
+      "example": ["rm", "dd", "sudo"]
+    },
+    "blocked_patterns": {
+      "type": "array",
+      "description": "Regular expression patterns that are never allowed",
+      "items": {
+        "type": "object",
+        "required": ["pattern", "reason"],
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "Regex pattern to match against commands"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why this pattern is blocked"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low"],
+            "default": "critical"
+          }
+        }
+      },
+      "example": [
+        {
+          "pattern": "rm\\s+-rf\\s+/",
+          "reason": "Prevents filesystem destruction",
+          "severity": "critical"
+        }
+      ]
+    },
+    "warning_patterns": {
+      "type": "array",
+      "description": "Patterns that trigger warnings but don't block execution",
+      "items": {
+        "type": "object",
+        "required": ["pattern", "message"],
+        "properties": {
+          "pattern": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "filesystem_restrictions": {
+      "type": "object",
+      "description": "Filesystem access restrictions",
+      "properties": {
+        "allowed_paths": {
+          "type": "array",
+          "description": "Paths where file operations are permitted (relative to project_root)",
+          "items": {
+            "type": "string"
+          },
+          "example": ["src", "tests", "docs", "scripts"]
+        },
+        "blocked_paths": {
+          "type": "array",
+          "description": "Paths where file operations are forbidden",
+          "items": {
+            "type": "string"
+          },
+          "example": [".git/config", ".env", "node_modules"]
+        },
+        "read_only_paths": {
+          "type": "array",
+          "description": "Paths that can be read but not modified",
+          "items": {
+            "type": "string"
+          },
+          "example": ["package.json", "tsconfig.json"]
+        }
+      }
+    },
+    "network_restrictions": {
+      "type": "object",
+      "description": "Network access restrictions",
+      "properties": {
+        "allow_network": {
+          "type": "boolean",
+          "description": "Whether network access is permitted",
+          "default": false
+        },
+        "allowed_hosts": {
+          "type": "array",
+          "description": "Hostnames that can be accessed",
+          "items": {
+            "type": "string"
+          },
+          "example": ["api.github.com", "registry.npmjs.org"]
+        },
+        "blocked_ports": {
+          "type": "array",
+          "description": "Ports that cannot be accessed",
+          "items": {
+            "type": "integer"
+          },
+          "example": [22, 23, 3389]
+        }
+      }
+    },
+    "environment_restrictions": {
+      "type": "object",
+      "description": "Environment variable restrictions",
+      "properties": {
+        "allowed_env_vars": {
+          "type": "array",
+          "description": "Environment variables that can be read",
+          "items": {
+            "type": "string"
+          }
+        },
+        "blocked_env_vars": {
+          "type": "array",
+          "description": "Environment variables that cannot be accessed",
+          "items": {
+            "type": "string"
+          },
+          "example": ["AWS_SECRET_KEY", "DATABASE_PASSWORD"]
+        }
+      }
+    },
+    "audit_settings": {
+      "type": "object",
+      "description": "Audit logging configuration",
+      "properties": {
+        "log_all_commands": {
+          "type": "boolean",
+          "description": "Whether to log all commands attempted",
+          "default": true
+        },
+        "log_blocked_commands": {
+          "type": "boolean",
+          "description": "Whether to log blocked commands",
+          "default": true
+        },
+        "log_warnings": {
+          "type": "boolean",
+          "description": "Whether to log warnings",
+          "default": true
+        },
+        "log_file": {
+          "type": "string",
+          "description": "Path to audit log file",
+          "example": ".ai-agents/logs/security-audit.log"
+        }
+      }
+    },
+    "override_settings": {
+      "type": "object",
+      "description": "Override settings for specific contexts",
+      "properties": {
+        "allow_user_override": {
+          "type": "boolean",
+          "description": "Whether user can override security blocks",
+          "default": false
+        },
+        "override_requires_approval": {
+          "type": "boolean",
+          "description": "Whether overrides require explicit user approval",
+          "default": true
+        },
+        "override_timeout_seconds": {
+          "type": "integer",
+          "description": "How long to wait for override approval",
+          "default": 300
+        }
+      }
+    },
+    "exceptions": {
+      "type": "array",
+      "description": "Specific exceptions to security rules",
+      "items": {
+        "type": "object",
+        "required": ["command", "reason", "approved_by"],
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "The exact command or pattern to allow"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Justification for the exception"
+          },
+          "approved_by": {
+            "type": "string",
+            "description": "Who approved this exception"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When this exception expires"
+          },
+          "context": {
+            "type": "string",
+            "description": "Specific context where exception applies"
+          }
+        }
+      }
+    },
+    "custom_validators": {
+      "type": "array",
+      "description": "Custom validation functions",
+      "items": {
+        "type": "object",
+        "required": ["name", "script"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the custom validator"
+          },
+          "script": {
+            "type": "string",
+            "description": "Path to validation script"
+          },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "project_root": "/Users/username/projects/my-app",
+      "enforcement_level": "strict",
+      "allowed_commands": [
+        "git", "npm", "node", "python", "pytest", "docker",
+        "ls", "cat", "grep", "find", "ps", "kill"
+      ],
+      "blocked_commands": [
+        "rm", "dd", "sudo", "chmod"
+      ],
+      "blocked_patterns": [
+        {
+          "pattern": "rm\\s+-rf\\s+/",
+          "reason": "Prevents recursive deletion from root",
+          "severity": "critical"
+        },
+        {
+          "pattern": "git\\s+push\\s+--force",
+          "reason": "Force push can cause data loss",
+          "severity": "high"
+        },
+        {
+          "pattern": "curl.*\\|\\s*bash",
+          "reason": "Piping downloads to shell is dangerous",
+          "severity": "critical"
+        }
+      ],
+      "warning_patterns": [
+        {
+          "pattern": "eval\\s*\\(",
+          "message": "eval() can execute arbitrary code"
+        }
+      ],
+      "filesystem_restrictions": {
+        "allowed_paths": ["src", "tests", "docs", "scripts"],
+        "blocked_paths": [".git/config", ".env", "node_modules"],
+        "read_only_paths": ["package.json", "tsconfig.json", "README.md"]
+      },
+      "network_restrictions": {
+        "allow_network": true,
+        "allowed_hosts": [
+          "api.github.com",
+          "registry.npmjs.org",
+          "pypi.org"
+        ],
+        "blocked_ports": [22, 23, 3389]
+      },
+      "audit_settings": {
+        "log_all_commands": true,
+        "log_blocked_commands": true,
+        "log_warnings": true,
+        "log_file": ".ai-agents/logs/security-audit.log"
+      },
+      "override_settings": {
+        "allow_user_override": true,
+        "override_requires_approval": true,
+        "override_timeout_seconds": 300
+      },
+      "exceptions": [
+        {
+          "command": "chmod +x scripts/deploy.sh",
+          "reason": "Deployment script needs execute permission",
+          "approved_by": "tech-lead@company.com",
+          "expires_at": "2025-12-31T23:59:59Z",
+          "context": "deployment-automation"
+        }
+      ]
+    }
+  ]
+}

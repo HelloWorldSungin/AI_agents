@@ -1,0 +1,99 @@
+{
+  "project": "task-management-api",
+  "created_at": "2024-01-14T10:00:00Z",
+  "last_updated": "2024-01-14T16:30:00Z",
+  "features": [
+    {
+      "id": "SETUP-001",
+      "description": "Project infrastructure setup and dependency installation",
+      "assigned_to": "it_specialist",
+      "status": "passing",
+      "priority": "critical",
+      "test_command": "npm test -- infrastructure",
+      "git_commit": "a1b2c3d",
+      "verified_by": "it_specialist",
+      "assigned_date": "2024-01-14T10:00:00Z",
+      "completed_date": "2024-01-14T12:00:00Z",
+      "notes": "All 8 infrastructure checks passing. Init.sh script created.",
+      "acceptance_criteria": [
+        {
+          "criterion": "Node.js and npm installed and verified",
+          "met": true
+        },
+        {
+          "criterion": "Database connection established",
+          "met": true
+        },
+        {
+          "criterion": "All dependencies installed",
+          "met": true
+        }
+      ],
+      "tags": ["infrastructure", "setup"]
+    },
+    {
+      "id": "DB-001",
+      "description": "Database schema for users and tasks tables",
+      "assigned_to": "backend_developer",
+      "status": "passing",
+      "priority": "high",
+      "test_file": "tests/db/schema.test.ts",
+      "test_command": "npm test -- db/schema",
+      "git_commit": "a1b2c3d",
+      "verified_by": "qa_tester",
+      "assigned_date": "2024-01-14T12:00:00Z",
+      "completed_date": "2024-01-14T16:00:00Z",
+      "notes": "Schema includes users table with auth fields and tasks table with relationships. Migrations tested.",
+      "acceptance_criteria": [
+        {
+          "criterion": "Users table with email, password_hash, created_at",
+          "met": true
+        },
+        {
+          "criterion": "Tasks table with title, description, user_id FK, status",
+          "met": true
+        },
+        {
+          "criterion": "Database migrations run successfully",
+          "met": true
+        }
+      ],
+      "tags": ["database", "backend", "schema"]
+    },
+    {
+      "id": "AUTH-001",
+      "description": "User registration endpoint with validation",
+      "assigned_to": null,
+      "status": "not_started",
+      "priority": "high",
+      "tags": ["authentication", "backend", "api"]
+    },
+    {
+      "id": "AUTH-002",
+      "description": "User login endpoint with JWT token generation",
+      "assigned_to": null,
+      "status": "not_started",
+      "priority": "high",
+      "related_features": ["AUTH-001"],
+      "tags": ["authentication", "backend", "api", "security"]
+    },
+    {
+      "id": "AUTH-003",
+      "description": "JWT middleware for protected routes",
+      "assigned_to": null,
+      "status": "not_started",
+      "priority": "high",
+      "related_features": ["AUTH-002"],
+      "tags": ["authentication", "backend", "middleware"]
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "passing": 2,
+    "failing": 0,
+    "in_progress": 0,
+    "not_started": 3,
+    "blocked": 0,
+    "completion_percentage": 40.0
+  }
+}

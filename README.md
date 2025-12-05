@@ -995,6 +995,36 @@ Long-term memory for:
 - Troubleshooting solutions
 - Requirements
 
+### Long-Running Agent Patterns
+
+Based on Anthropic's research, AI_agents now supports multi-session projects with session continuity:
+
+**Session Progress Tracking** (`session-progress.json`):
+- Tracks completed/active tasks across sessions
+- Records blockers and priorities
+- Maintains git baseline
+- Reduces session startup time by 50%
+
+**Feature Status Management** (`feature-tracking.json`):
+- Structured feature lists with pass/fail status
+- Prevents premature "done" declarations
+- Mandatory E2E testing for user-facing features
+- Clear progress visibility
+
+**Environment Automation** (`init.sh`):
+- IT Specialist generates setup scripts
+- Automates dependency installation
+- Ensures consistent environments
+- Onboards new team members in minutes
+
+**Security Framework** (`security_validator.py`):
+- Three-layer defense-in-depth
+- Command allowlist for autonomous execution
+- Destructive pattern detection
+- Filesystem scope restrictions
+
+See [docs/guides/LONG_RUNNING_AGENTS.md](docs/guides/LONG_RUNNING_AGENTS.md) for complete guide.
+
 ---
 
 ## Advanced Tool Use

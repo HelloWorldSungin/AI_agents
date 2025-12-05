@@ -225,6 +225,22 @@ Possible issue with password hash generation during reset process. Check if rese
 - Optimize test execution time
 - Integrate tests into CI/CD pipeline
 
+**PRIMARY TOOL FOR E2E TESTING: webapp-testing skill (Playwright)**
+
+For all user-facing features (web applications, mobile apps):
+- MUST use webapp-testing skill for E2E testing
+- Tests verify actual user behavior, not just code execution
+- Run in real browser/app environments
+- Mandatory before marking features as "passing"
+
+**When to Use webapp-testing:**
+- Any feature with a user interface
+- User workflows (login, registration, checkout, etc.)
+- Form submissions and validation
+- Navigation and routing
+- Error message display
+- Loading states and async operations
+
 **Test Types:**
 
 **Unit Tests:**
@@ -281,25 +297,75 @@ describe('Auth API Integration', () => {
 });
 ```
 
-**E2E Tests:**
+**E2E Tests (Using webapp-testing skill):**
 ```javascript
-// Example: End-to-end user flow
+// Example: End-to-end user flow with Playwright
+// Use the webapp-testing skill to generate and run these tests
 describe('Login Flow', () => {
   test('should allow user to login and access dashboard', async () => {
     await page.goto('http://localhost:3000/login');
 
+    // Fill form fields
     await page.fill('input[name="email"]', 'test@example.com');
     await page.fill('input[name="password"]', 'ValidPass123!');
-    await page.click('button[type="submit"]');
 
+    // Submit and wait for navigation
+    await page.click('button[type="submit"]');
     await page.waitForNavigation();
 
+    // Verify user is on dashboard
     expect(page.url()).toBe('http://localhost:3000/dashboard');
+
+    // Verify UI elements are displayed
     const welcomeText = await page.textContent('.welcome-message');
     expect(welcomeText).toContain('Welcome back');
   });
+
+  test('should show error message for invalid credentials', async () => {
+    await page.goto('http://localhost:3000/login');
+
+    await page.fill('input[name="email"]', 'test@example.com');
+    await page.fill('input[name="password"]', 'WrongPassword');
+    await page.click('button[type="submit"]');
+
+    // Verify error message is DISPLAYED to user (not just returned by API)
+    const errorMessage = await page.textContent('.error-message');
+    expect(errorMessage).toContain('Invalid credentials');
+
+    // Verify user stays on login page
+    expect(page.url()).toContain('/login');
+  });
+
+  test('should show validation errors for empty fields', async () => {
+    await page.goto('http://localhost:3000/login');
+
+    // Try to submit without filling fields
+    await page.click('button[type="submit"]');
+
+    // Verify validation errors are VISIBLE to user
+    const emailError = await page.isVisible('.email-error');
+    const passwordError = await page.isVisible('.password-error');
+    expect(emailError).toBe(true);
+    expect(passwordError).toBe(true);
+  });
 });
 ```
+
+**CRITICAL: E2E Testing Requirements**
+
+Features CANNOT be marked "passing" without E2E tests that verify:
+1. **Visual Verification**: UI elements render correctly
+2. **User Interaction**: Buttons, forms, navigation work
+3. **Error Display**: Error messages show to user (not just in console)
+4. **Success Feedback**: Success states are visible
+5. **Real Browser**: Tests run in actual browser environment
+
+**Common Gaps E2E Tests Catch:**
+- API returns error but UI shows blank screen
+- Form validation works in code but not shown to user
+- Loading state missing (user sees nothing during async operations)
+- Success message never displays despite backend success
+- Navigation doesn't work despite route being defined
 
 ### 5. Quality Metrics
 

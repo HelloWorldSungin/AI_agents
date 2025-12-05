@@ -88,8 +88,39 @@ npm run test:coverage 2>/dev/null
 **Testing Standards:**
 - Unit tests: 80%+ coverage for business logic
 - Integration tests: Key workflows covered
-- E2E tests: Critical user paths (if applicable)
+- E2E tests: MANDATORY for all user-facing features
 - All tests passing: 100% pass rate required
+
+**E2E Testing Requirements (MANDATORY):**
+
+For features with user interfaces (web, mobile):
+- E2E tests MUST be written using webapp-testing skill (Playwright)
+- Tests MUST verify user-facing behavior, not just code execution
+- Tests MUST run against real browser/app environment
+- Features CANNOT be marked complete without passing E2E tests
+
+**Common E2E Testing Gaps:**
+- Unit tests pass but UI doesn't render
+- API works but error messages not displayed to user
+- Form validation logic correct but UX confusing
+- Success case works but failure case shows blank screen
+
+**E2E Test Checklist:**
+```bash
+# For web applications
+npm run test:e2e 2>&1 | tee e2e-output.txt
+
+# Verify E2E test files exist
+find . -name "*.spec.ts" -o -name "*.e2e.ts" | grep -E "(spec|e2e)"
+```
+
+**Required E2E Coverage:**
+- Happy path: Primary user workflow succeeds
+- Error path: User sees clear error messages
+- Validation: Form validation displays to user
+- Edge cases: Boundary conditions handled gracefully
+
+**DO NOT approve features without E2E tests.** This is a critical quality gate that prevents user-facing bugs from reaching production.
 </review_area>
 
 <review_area name="architecture">
