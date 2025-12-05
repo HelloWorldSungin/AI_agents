@@ -10,12 +10,16 @@ Generate an optimized manager prompt for executing a plan using the AI_agents mu
 ## What This Command Does
 
 1. **Analyzes your plan** (PLAN.md, phase files, or description)
-2. **Generates manager prompt** optimized for:
+2. **Recommends workflow mode** based on plan scope:
+   - Analyzes: task count, duration, dependencies, infrastructure needs
+   - Suggests: Simple (90%) vs Complex (10%) vs Fully Automated
+   - Explains: reasoning for recommendation
+3. **Generates manager prompt** optimized for:
    - Task Tool Delegation (fresh context per agent)
    - State file coordination (team-communication.json)
    - Proper agent spawning sequence
    - Progress tracking and handoffs
-3. **Outputs ready-to-use prompt** you can paste into Claude
+4. **Outputs ready-to-use prompt** you can paste into Claude
 
 ## Usage
 
@@ -71,6 +75,133 @@ Manager spawns agents via Task tool:
 - Progress tracking
 - Blocker handling
 - Handoff creation (/whats-next)
+
+## Workflow Mode Recommendation
+
+The command automatically analyzes your plan and recommends the appropriate workflow mode.
+
+### Decision Criteria
+
+**Simple Mode** recommended when:
+- ✅ 1-10 tasks in total
+- ✅ Estimated 1-3 days duration
+- ✅ Existing infrastructure (no setup needed)
+- ✅ 2-5 agents required
+- ✅ Clear, independent tasks
+- ✅ No code review requirements mentioned
+
+**Complex Mode** recommended when:
+- ⚠️ 10+ tasks or multi-phase project
+- ⚠️ Estimated 3+ days or multi-session work
+- ⚠️ New project or infrastructure setup needed
+- ⚠️ 5+ agents required
+- ⚠️ Dependencies between tasks
+- ⚠️ Code review or quality gates mentioned
+- ⚠️ E2E testing requirements
+- ⚠️ Session continuity needed
+
+**Fully Automated** recommended when:
+- 🔧 10+ agents needed
+- 🔧 CI/CD automation mentioned
+- 🔧 Production deployment pipeline
+- 🔧 High-frequency operations
+- 🔧 True parallel execution required
+- 🔧 Enterprise-scale system
+
+### Example Analysis
+
+**Plan:** "Add login form with validation"
+```
+Analysis:
+- Tasks: 3 (UI, validation, tests)
+- Duration: 1-2 days
+- Infrastructure: Existing
+- Agents: 2-3 (Frontend, QA)
+- Dependencies: Minimal
+
+Recommendation: Simple Mode ✅
+Reason: Small, focused feature on existing infrastructure
+```
+
+**Plan:** "Build authentication system from scratch"
+```
+Analysis:
+- Tasks: 15+ (registration, login, reset, sessions, tokens, tests, etc.)
+- Duration: 5+ days across multiple sessions
+- Infrastructure: New (database, sessions, email)
+- Agents: 6+ (IT Specialist, Backend, Frontend, QA, Senior Engineer)
+- Dependencies: High (database → endpoints → UI → tests)
+- Quality: Code review + E2E tests required
+
+Recommendation: Complex Mode ⚠️
+Reason: Multi-day project requiring infrastructure setup,
+        multiple agents, code review, and session continuity
+```
+
+**Plan:** "Enterprise CI/CD pipeline for microservices"
+```
+Analysis:
+- Tasks: 50+ across multiple services
+- Duration: Multi-week
+- Infrastructure: Production-grade
+- Agents: 15+ (per-service teams)
+- Parallelization: Required
+- Automation: CI/CD integration
+
+Recommendation: Fully Automated 🔧
+Reason: Enterprise scale requiring true parallel execution
+        and production automation
+```
+
+### How Recommendation Appears
+
+The generated manager prompt will include:
+
+```markdown
+# Workflow Mode Recommendation
+
+Based on analysis of your plan:
+
+**Recommended Mode:** Complex Mode
+
+**Analysis:**
+- Total tasks: 18
+- Estimated duration: 5-7 days (multi-session)
+- Infrastructure setup: Required (IT Specialist)
+- Agents needed: 6 (IT Specialist, Backend Dev, Frontend Dev, QA, Senior Engineer, Integration)
+- Dependencies: High (sequential phases)
+- Quality requirements: Code review + E2E testing
+
+**State Files Required:**
+1. `.ai-agents/state/team-communication.json` (real-time coordination)
+2. `.ai-agents/state/session-progress.json` (session continuity)
+3. `.ai-agents/state/feature-tracking.json` (progress verification)
+
+**Setup Commands:** [included below]
+
+**You can override this recommendation by:**
+- Downgrade to Simple: Remove session-progress.json and feature-tracking.json
+- Upgrade to Fully Automated: Use scripts/orchestration/programmatic_orchestrator.py
+```
+
+### Override Recommendation
+
+**Force Simple Mode:**
+```bash
+/create-manager-meta-prompt @PLAN.md --mode simple
+```
+
+**Force Complex Mode:**
+```bash
+/create-manager-meta-prompt @PLAN.md --mode complex
+# or
+/create-manager-meta-prompt @PLAN.md --complex
+```
+
+**Force Fully Automated:**
+```bash
+/create-manager-meta-prompt @PLAN.md --mode automated
+```
 
 ## Workflow Integration
 
@@ -153,20 +284,46 @@ Generated prompt includes:
 ## Advanced Options
 
 ### Specify Workflow Mode
-```
+
+Override automatic recommendation:
+
+```bash
+# Force Simple Mode (90% of projects)
 /create-manager-meta-prompt @PLAN.md --mode simple
+
+# Force Complex Mode (10% of projects)
 /create-manager-meta-prompt @PLAN.md --mode complex
+/create-manager-meta-prompt @PLAN.md --complex  # shorthand
+
+# Force Fully Automated (advanced users)
+/create-manager-meta-prompt @PLAN.md --mode automated
 ```
 
+**When to Override:**
+- You know your project better than the analyzer
+- Team has specific workflow preferences
+- Testing a different approach
+- Upgrading/downgrading from previous mode
+
 ### Include Specific Agents
-```
+
+Customize agent team:
+
+```bash
 /create-manager-meta-prompt @PLAN.md --agents "IT Specialist, Backend Dev, Frontend Dev, QA Tester"
 ```
 
+**Default behavior:** Automatically selects agents based on plan analysis
+
 ### Set State File Location
-```
+
+Customize state file directory:
+
+```bash
 /create-manager-meta-prompt @PLAN.md --state-dir .ai-agents/state
 ```
+
+**Default:** `.ai-agents/state/`
 
 ## Tips
 
