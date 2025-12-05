@@ -24,10 +24,17 @@ You are resuming a manager session from a previous context.
    - Recent decisions
    - Blocked tasks
    - Next actions
+   - README update status (check if previous session updated it)
 
-5. **Continue work** from where previous manager left off
+5. **Verify README is current** (optional):
+   ```
+   Read README.md
+   ```
+   Check that it reflects recent progress mentioned in handoff.
 
-6. **Delete handoff** after context transfer:
+6. **Continue work** from where previous manager left off
+
+7. **Delete handoff** after context transfer:
    ```bash
    rm .ai-agents/state/manager-handoff.md
    ```

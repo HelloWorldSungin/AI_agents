@@ -69,6 +69,17 @@ session_id: [unique-id]
 - [ ] Old updates archived to: [archive path]
 - [ ] File size now: ~[X] tokens
 
+## Documentation Updates
+
+### README.md Status
+- [ ] README.md updated with session progress
+- **Recent Progress Section**: [What was added/updated]
+- **Current Status Section**: [What was updated]
+- **Version**: [Current version, updated if needed]
+
+### Changes Made to README
+[Brief summary of README updates made during handoff]
+
 ## Resume Instructions
 
 To resume as manager:

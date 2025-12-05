@@ -639,7 +639,22 @@ Create a manager handoff when:
 python3 scripts/cleanup-team-communication.py
 ```
 
-**Step 2: Create Handoff Document**
+**Step 2: Update README.md**
+
+Read current README and update with session progress:
+```bash
+Read README.md
+```
+
+Update sections as needed:
+- **Recent Progress**: What was accomplished this session
+- **Current Status**: Active features and work in progress
+- **Version**: Increment if significant features completed
+- **Next Steps**: What should happen next (optional)
+
+Keep it high-level - focus on project status, not implementation details.
+
+**Step 3: Create Handoff Document**
 
 Location: `.ai-agents/state/manager-handoff.md`
 
@@ -652,28 +667,31 @@ Fill in:
 - Decisions made
 - Next actions
 - Cleanup status
+- README update summary
 
-**Step 3: Commit Handoff**
+**Step 4: Commit Handoff**
 ```bash
-git add .ai-agents/state/
+git add .ai-agents/state/ README.md
 git commit -m "chore: manager handoff - [feature-name]
 
 Session summary:
 - Tasks completed: [X]
 - Tasks active: [Y]
-- File size: ~[Z] tokens
+- Communication file: ~[Z] tokens (cleaned)
+- README updated with current status
 
 Next session: [immediate action]"
 ```
 
-**Step 4: Inform User**
+**Step 5: Inform User**
 
 "Manager handoff created:
 - Handoff: .ai-agents/state/manager-handoff.md
 - Communication file: .ai-agents/state/team-communication.json (~[X] tokens)
 - Cleanup archive: [archive path]
+- README.md updated with session progress
 
-To resume: Start new manager session and read handoff first."
+To resume: Start new manager session and run /manager-resume"
 </session_handoff>
 
 <session_resume>
