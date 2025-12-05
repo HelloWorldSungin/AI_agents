@@ -175,18 +175,66 @@ Agent 3 (fresh context) → completes → reports back
 
 ### Workflow Modes
 
-**Simple Mode** (default):
+**Simple Mode** (default - 90% of projects):
 - Use for: 1-3 days, existing infrastructure, 3-5 agents
 - State files: `team-communication.json` only
 - Pattern: Manager → Task Agents → Integration Agent
+- Coordination: Human-coordinated or Task Tool Delegation
 
-**Complex Mode** (when needed):
+**Complex Mode** (10% of projects):
 - Use for: Multi-day, new infrastructure, 5+ agents, code review required
 - State files: All three (team-communication, session-progress, feature-tracking)
 - Pattern: Manager → IT Specialist → Task Agents → Senior Engineer
+- Coordination: Task Tool Delegation
 - Add `--complex` flag: `/create-manager-meta-prompt @PLAN.md --complex`
 
-**See:** [05-workflows.md](05-workflows.md) for detailed comparison
+**Fully Automated** (advanced users):
+- Use for: Large-scale (7+ agents), CI/CD automation, production deployments
+- State files: All three + message queue
+- Pattern: Programmatic orchestration via LLM APIs
+- Coordination: Fully automated, true parallel execution
+- Requires: Programming experience, API keys, orchestration scripts
+
+**How Fully Automated Works:**
+```python
+# Orchestrator script reads config and spawns agents via API
+orchestrator.py
+  ├─ Spawns agents in parallel via Anthropic API
+  ├─ Agents communicate via message queue (not through human)
+  ├─ Monitors progress and handles failures
+  └─ True concurrent execution
+```
+
+**Setup:**
+1. Configure orchestrator: `scripts/orchestration/programmatic_orchestrator.py`
+2. Set API keys: `export ANTHROPIC_API_KEY=...`
+3. Define agent config: `orchestration-config.yml`
+4. Run: `python scripts/orchestration/programmatic_orchestrator.py`
+
+**Benefits:**
+- ✅ True parallel execution (not sequential)
+- ✅ Scales to many agents (10+)
+- ✅ CI/CD integration ready
+- ✅ Automatic retry and error handling
+- ✅ Production-grade reliability
+
+**Trade-offs:**
+- ❌ Complex setup (requires programming)
+- ❌ API costs (multiple concurrent calls)
+- ❌ Less human control
+- ❌ Harder to debug
+
+**When to Use:**
+- Production CI/CD pipelines
+- Large enterprise systems (10+ agents)
+- Automated testing workflows
+- High-frequency operations
+- When speed > human oversight
+
+**See:**
+- Detailed comparison: [05-workflows.md](05-workflows.md)
+- Orchestration guide: `scripts/orchestration/COMPLETE_GUIDE.md`
+- Advanced patterns: [07-advanced.md](07-advanced.md)
 
 ---
 
