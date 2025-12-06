@@ -31,13 +31,21 @@ fi
 echo "Creating handoff for session: $session_num"
 ```
 
-### Step 2: Run Cleanup
+### Step 2: Run Cleanup (if available)
+
+Check if cleanup script exists and run it:
 
 ```bash
-python3 scripts/cleanup-team-communication.py
+if [ -f "scripts/cleanup-team-communication.py" ]; then
+  echo "Running cleanup script..."
+  python3 scripts/cleanup-team-communication.py
+else
+  echo "⚠️  Cleanup script not found at scripts/cleanup-team-communication.py"
+  echo "Skipping cleanup. File size may be large."
+fi
 ```
 
-Verify the file size was reduced:
+Check current file size:
 ```bash
 wc -c .ai-agents/state/team-communication.json | awk '{print "~" int($1/4) " tokens"}'
 ```
