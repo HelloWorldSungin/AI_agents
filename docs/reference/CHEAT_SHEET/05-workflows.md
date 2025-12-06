@@ -282,6 +282,147 @@ Three ways to implement multi-agent coordination.
 
 ---
 
+## Multi-Session Manager Workflow
+
+For projects spanning multiple sessions, use this workflow to maintain state continuity while managing context limits.
+
+### Overview
+
+**Problem:** Long projects exhaust Claude's context window
+**Solution:** Session handoffs with persistent manager role
+
+**Key Components:**
+- Persistent manager agent file (`.claude/agents/project-manager.md`)
+- Session handoffs (`.ai-agents/handoffs/session-XXX.md`)
+- State files (team-communication, session-progress, feature-tracking)
+- Resume command (`/manager-resume`)
+
+### Workflow Pattern
+
+#### Session 1: Initial Setup
+
+```bash
+# 1. Create project plan
+/create-plan "Build authentication system with JWT, OAuth, and MFA"
+
+# 2. Generate manager agent (creates persistent agent file)
+/create-manager-meta-prompt @.planning/PLAN-auth.md
+# Output: Created .claude/agents/project-manager.md
+
+# 3. Set up state files (run commands from output)
+mkdir -p .ai-agents/state
+# ... initialize JSON files ...
+
+# 4. Load manager and work
+@manager
+
+# Manager delegates tasks using /create-sub-task
+# Agents complete work, update state files
+
+# 5. End of session - create handoff
+/manager-handoff
+# Output: Created .ai-agents/handoffs/session-001.md
+
+# 6. Clear context for next session
+/clear
+```
+
+#### Session 2+: Resume and Continue
+
+```bash
+# 1. Load manager and resume from latest handoff
+@manager /manager-resume
+
+# Shows comprehensive summary:
+# - Last session: session-001
+# - Completed: TASK-001, TASK-002, TASK-003
+# - Current phase: Phase 4
+# - Active tasks: TASK-004
+# - Next: Continue with Phase 4
+
+# 2. Continue delegating work
+# Manager picks up where it left off
+# /create-sub-task for new work
+
+# 3. End of session - create handoff
+/manager-handoff
+# Output: Created .ai-agents/handoffs/session-002.md
+
+# 4. Clear context
+/clear
+```
+
+#### Session N: Repeat Pattern
+
+Same pattern repeats for any number of sessions:
+1. `@manager /manager-resume`
+2. Work (delegate, monitor, coordinate)
+3. `/manager-handoff`
+4. `/clear`
+
+### Benefits
+
+✅ **Solves context bloat**: Clear context between sessions
+✅ **Persistent manager role**: `@manager` loads same agent every time
+✅ **State continuity**: State files preserve all project information
+✅ **Clear handoff docs**: Each handoff documents progress
+✅ **Auto-numbering**: Session files auto-increment (001, 002, 003...)
+✅ **Quick resume**: `/manager-resume` provides instant status update
+
+### State Files
+
+**team-communication.json**:
+- Manager instructions and active tasks
+- Agent updates and status
+- Integration requests
+- Questions for manager
+
+**session-progress.json**:
+- Current phase
+- Completed phases and tasks
+- Blocked tasks
+- Decisions made
+- Last handoff reference
+
+**feature-tracking.json**:
+- Feature verification checklist
+- Integration status
+- Review status
+
+### When to Use
+
+**Use multi-session workflow when:**
+- Project will take multiple days
+- Context usage approaching 60-70%
+- Natural breaking points (phase completion)
+- Multiple complex features in sequence
+
+**Don't use when:**
+- Single feature, one session
+- Quick fixes or small changes
+- Context usage under 40%
+
+### Best Practices
+
+1. **Create handoff at natural breakpoints**: Phase completions, major milestones
+2. **Keep state files updated**: Agents update after each task
+3. **Use meaningful agent names**: `--agent-name auth-manager` for clarity
+4. **Review resume summary**: Check active/blocked tasks before continuing
+5. **Commit state files**: Include in git commits for history
+
+### Troubleshooting
+
+**Problem**: `/manager-resume` shows "No handoff files found"
+**Solution**: Run `/manager-handoff` to create first handoff
+
+**Problem**: State files show stale data
+**Solution**: Agents should update team-communication.json after completing tasks
+
+**Problem**: Context still filling up
+**Solution**: Use `/manager-handoff` more frequently, review state file sizes
+
+---
+
 ## Coordination Model Comparison
 
 | Aspect | Human-Coord | Task Tool | Automated |

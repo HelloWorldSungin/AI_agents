@@ -188,6 +188,22 @@ Agent 3 (fresh context) → completes → reports back
 - Coordination: Task Tool Delegation
 - Add `--complex` flag: `/create-manager-meta-prompt @PLAN.md --complex`
 
+**Multi-Session Manager Workflow** (for long projects):
+```bash
+# Session 1
+/create-manager-meta-prompt @PLAN.md  # Creates @manager agent
+@manager                               # Work as manager
+/manager-handoff                       # Save state
+/clear                                 # Clear context
+
+# Session 2+
+@manager /manager-resume               # Load + resume
+# ... continue work ...
+/manager-handoff                       # Save state
+/clear                                 # Clear context
+```
+See: `05-workflows.md` > Multi-Session Manager Workflow
+
 **Fully Automated** (advanced users):
 - Use for: Large-scale (7+ agents), CI/CD automation, production deployments
 - State files: All three + message queue
