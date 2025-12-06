@@ -1,6 +1,7 @@
 ---
 description: Generate optimized manager prompt from plan files with state coordination and Task tool delegation
-argument-hint: ['@path/to/PLAN.md or plan description']
+argument-hint: ['@path/to/PLAN.md or plan description'] [--agent-name custom-name] [--mode simple|complex|automated]
+allowed-tools: [Read, Write, Bash]
 ---
 
 # Implementation Instructions
@@ -83,6 +84,10 @@ Total Score:
 - `--mode simple` or `--simple` → Force Simple
 - `--mode complex` or `--complex` → Force Complex
 - `--mode automated` or `--automated` → Force Automated
+
+**Agent Name Argument:**
+- `--agent-name custom-name` → Create agent file as `.claude/agents/custom-name.md`
+- If not provided → Default to `.claude/agents/project-manager.md`
 
 ## Step 3: Generate Recommendation Report
 
@@ -417,6 +422,130 @@ If you want to use a different mode:
 
 ```
 
+## Step 6: Create Manager Agent File
+
+Now create the manager agent file so it can be loaded with @manager syntax:
+
+### Parse Agent Name
+
+Extract agent name from arguments:
+- Check `$ARGUMENTS` for `--agent-name` flag
+- If found: Use the provided custom name
+- If not found: Use default "project-manager"
+
+### Determine File Path
+
+**File Path:** `.claude/agents/{agent-name}.md`
+- Default: `.claude/agents/project-manager.md`
+- Custom (if `--agent-name` provided): `.claude/agents/{custom-name}.md`
+
+### Create Directory if Needed
+
+Ensure the agents directory exists:
+
+```bash
+# Check if .claude/agents/ exists, create if needed
+if ! [ -d ".claude/agents" ]; then
+  mkdir -p .claude/agents
+fi
+```
+
+### Generate YAML Frontmatter
+
+Extract information from the plan to populate frontmatter:
+
+**Preferred (if extractable from plan):**
+```yaml
+---
+name: {Project Name} Manager
+description: Manager for {project name} coordinating {N} agents across {M} phases
+---
+```
+
+**Fallback (if extraction difficult):**
+```yaml
+---
+name: Project Manager
+description: Manager agent coordinating multi-agent development workflow
+---
+```
+
+Examples:
+- Plan about "Authentication System" with 5 agents, 3 phases:
+  ```yaml
+  ---
+  name: Authentication System Manager
+  description: Manager for Authentication System coordinating 5 agents across 3 phases
+  ---
+  ```
+- Generic fallback:
+  ```yaml
+  ---
+  name: Project Manager
+  description: Manager agent coordinating multi-agent development workflow
+  ---
+  ```
+
+### Write Agent File
+
+Use Write tool to create or update the agent file:
+
+**File Structure:**
+```markdown
+---
+name: {Project Name} Manager
+description: {Description from above}
+---
+
+{Full generated manager prompt from Step 4}
+```
+
+**Important:** The manager prompt written to the file should be the EXACT prompt generated in Step 4 (including all setup commands, execution plan, etc.)
+
+### Output Agent File Confirmation
+
+After creating the agent file, show this confirmation to the user:
+
+```markdown
+---
+
+## Manager Agent File Created ✓
+
+**File:** `.claude/agents/{agent-name}.md`
+
+### How to Use This Manager
+
+**In a fresh context:**
+```bash
+@manager  # if using default name (project-manager)
+# or
+@{custom-name}  # if you used --agent-name
+```
+
+**Multi-session workflow:**
+
+Session 1:
+1. `@manager` (loads your persistent manager)
+2. Work as manager, delegate tasks
+3. `/manager-handoff` (saves state)
+4. `/clear` (clear context)
+
+Session 2+:
+1. `@manager /manager-resume` (loads manager + resumes from handoff)
+2. Continue work
+3. `/manager-handoff`
+4. `/clear`
+
+This workflow solves context bloat while maintaining state continuity across sessions.
+
+---
+
+**Next Steps:**
+1. Copy the state file setup commands (shown earlier in generated prompt)
+2. Run them to initialize your project state files
+3. Use `@manager` to start your first manager session
+```
+
 ---
 
 # Command Reference
@@ -439,6 +568,18 @@ If you want to use a different mode:
 /create-manager-meta-prompt @PLAN.md --complex  # shorthand
 ```
 
+### With Custom Agent Name
+```
+/create-manager-meta-prompt @PLAN.md --agent-name auth-manager
+# Creates: .claude/agents/auth-manager.md
+# Usage: @auth-manager
+```
+
+### Multiple Arguments
+```
+/create-manager-meta-prompt @PLAN.md --agent-name workflow-mgr --complex
+```
+
 ## What This Does
 
 1. Analyzes your plan (tasks, duration, infrastructure, agents, quality)
@@ -446,7 +587,8 @@ If you want to use a different mode:
 3. Recommends workflow mode with full reasoning
 4. Generates customized manager prompt
 5. Provides state file setup commands (copy-paste ready)
-6. Outputs everything you need to start
+6. **Creates persistent manager agent file** at `.claude/agents/{name}.md`
+7. Outputs everything you need to start
 
 ## Workflow Modes
 
