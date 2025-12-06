@@ -33,15 +33,32 @@ echo "Creating handoff for session: $session_num"
 
 ### Step 2: Run Cleanup (if available)
 
-Check if cleanup script exists and run it:
+Find and run cleanup script (checks local path and common submodule locations):
 
 ```bash
+# Try to find cleanup script in various locations
+cleanup_script=""
+
+# Location 1: Local scripts/ (if running from AI_agents repo itself)
 if [ -f "scripts/cleanup-team-communication.py" ]; then
-  echo "Running cleanup script..."
-  python3 scripts/cleanup-team-communication.py
+  cleanup_script="scripts/cleanup-team-communication.py"
+# Location 2: Common submodule paths
+elif [ -f "external/AI_agents/scripts/cleanup-team-communication.py" ]; then
+  cleanup_script="external/AI_agents/scripts/cleanup-team-communication.py"
+elif [ -f "submodules/AI_agents/scripts/cleanup-team-communication.py" ]; then
+  cleanup_script="submodules/AI_agents/scripts/cleanup-team-communication.py"
+elif [ -f "ai-agents/scripts/cleanup-team-communication.py" ]; then
+  cleanup_script="ai-agents/scripts/cleanup-team-communication.py"
+fi
+
+# Run cleanup if found
+if [ -n "$cleanup_script" ]; then
+  echo "Running cleanup script: $cleanup_script"
+  python3 "$cleanup_script"
 else
-  echo "⚠️  Cleanup script not found at scripts/cleanup-team-communication.py"
+  echo "⚠️  Cleanup script not found (checked: scripts/, external/AI_agents/, submodules/AI_agents/, ai-agents/)"
   echo "Skipping cleanup. File size may be large."
+  echo "To enable cleanup, add AI_agents as a submodule or copy the cleanup script."
 fi
 ```
 
