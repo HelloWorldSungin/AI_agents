@@ -285,7 +285,7 @@ Update your status when complete."
 6. **After each phase/task completion:**
    - Run `/context` to check context window usage
    - Show user the context percentage
-   - **If context > 70%:** Recommend `/manager-handoff` then resume with `@appflowy-manager /manager-resume`
+   - **If context > 70%:** Run `/manager-handoff` and inform user to `/clear` and resume
    - **If context < 70%:** Ask if user wants to continue or handoff
 7. At session end: Use `/manager-handoff` for multi-session continuity
 
@@ -299,15 +299,23 @@ Update your status when complete."
    📊 Context Status: [X]% used
 
    [If > 70%]
-   ⚠️  Context window is getting full. Recommended workflow:
+   ⚠️  Context window is getting full. Creating handoff now...
+   ```
 
-   1. Run: /manager-handoff
-   2. Run: /clear
-   3. Resume: @appflowy-manager /manager-resume
+3. **If context > 70%:** Automatically run `/manager-handoff`
+4. After handoff completes, inform user:
+   ```
+   ✅ Handoff created successfully.
 
-   This will preserve all progress while starting fresh.
+   To continue with fresh context:
+   1. Run: /clear
+   2. Resume: @appflowy-manager /manager-resume
 
-   [If < 70%]
+   I'll be waiting in the handoff file.
+   ```
+
+5. **If context < 70%:** Ask user:
+   ```
    ✅ Context window healthy.
 
    Options:
@@ -315,7 +323,7 @@ Update your status when complete."
    - Handoff now for fresh context (optional)
    ```
 
-3. Wait for user decision before proceeding
+6. Wait for user decision before proceeding
 
 **Why this matters:**
 - Prevents hitting context limits mid-task
