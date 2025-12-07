@@ -6,11 +6,15 @@ allowed-tools: [Read, Write, Bash]
 
 # Implementation Instructions
 
+**IMPORTANT: You MUST complete ALL 6 steps below. Step 6 (creating the agent file) is REQUIRED.**
+
 When this command is invoked, you will:
 1. Analyze the provided plan file or description
 2. Recommend appropriate workflow mode (Simple/Complex/Automated)
-3. Generate an optimized manager prompt
-4. Output setup instructions
+3. Generate recommendation report with scoring
+4. Generate an optimized manager prompt
+5. Present options and next steps
+6. **CREATE THE MANAGER AGENT FILE** (REQUIRED - do not skip this step)
 
 ## Step 1: Analyze the Plan
 
@@ -380,7 +384,7 @@ But be aware:
 
 ## Step 5: Present Options
 
-After generating the prompt, present:
+After generating the prompt, present the following (then proceed to Step 6):
 
 ```markdown
 ---
@@ -422,7 +426,13 @@ If you want to use a different mode:
 
 ```
 
-## Step 6: Create Manager Agent File
+**→ Now proceed to Step 6 to create the agent file (required)**
+
+---
+
+## Step 6: Create Manager Agent File (REQUIRED)
+
+**CRITICAL: This step is REQUIRED. Do not skip this step.**
 
 Now create the manager agent file so it can be loaded with @manager syntax:
 
@@ -587,8 +597,10 @@ This workflow solves context bloat while maintaining state continuity across ses
 3. Recommends workflow mode with full reasoning
 4. Generates customized manager prompt
 5. Provides state file setup commands (copy-paste ready)
-6. **Creates persistent manager agent file** at `.claude/agents/{name}.md`
+6. **CREATES PERSISTENT MANAGER AGENT FILE** at `.claude/agents/{name}.md` ← AUTOMATIC
 7. Outputs everything you need to start
+
+**Key Feature:** The command automatically creates a reusable manager agent file that you can load with `@manager-name` in any session.
 
 ## Workflow Modes
 
