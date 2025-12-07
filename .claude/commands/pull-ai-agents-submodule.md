@@ -1,12 +1,12 @@
 ---
-description: Pull and sync latest AI_agents updates from submodule to parent project
-argument-hint: [project-path (optional, defaults to current directory)]
+description: Pull and sync latest AI_agents updates from submodule to parent project(s)
+argument-hint: [project-path] [--recursive | -r]
 allowed-tools: [Bash, Read, Write, Edit, Glob, Grep]
 ---
 
 # Pull AI_agents Submodule Updates
 
-This command updates your project with the latest AI_agents system improvements from the submodule.
+This command updates your project(s) with the latest AI_agents system improvements from the submodule.
 
 **Usage:**
 ```bash
@@ -18,31 +18,203 @@ This command updates your project with the latest AI_agents system improvements 
 
 # Update project with absolute path
 /pull-ai-agents-submodule /Users/you/projects/my-app
+
+# RECURSIVE: Update all projects under a directory
+/pull-ai-agents-submodule --recursive
+/pull-ai-agents-submodule ./projects --recursive
+/pull-ai-agents-submodule -r  # short form
 ```
 
 **Prerequisites:**
 - AI_agents repository installed as submodule at `{project-path}/.ai-agents/library/`
 - Project has `.claude/commands/`, `.claude/agents/`, and `prompts/` directories
 
-## Step 0: Parse Arguments and Set Project Path
+## Step 0: Parse Arguments and Detect Mode
 
 ```bash
-# Parse project path argument (optional)
-# Default to current directory if not provided
-project_path="${1:-.}"
+# Parse arguments
+recursive_mode=false
+project_path="."
+
+# Check for recursive flag
+for arg in "$@"; do
+  if [[ "$arg" == "--recursive" ]] || [[ "$arg" == "-r" ]]; then
+    recursive_mode=true
+  elif [[ "$arg" != -* ]]; then
+    project_path="$arg"
+  fi
+done
 
 # Resolve to absolute path
 project_path=$(cd "$project_path" && pwd)
-
-echo "Target project: $project_path"
-echo ""
 
 # Verify project path exists
 if [ ! -d "$project_path" ]; then
   echo "❌ Error: Project path does not exist: $project_path"
   exit 1
 fi
+
+# Determine mode
+if [ "$recursive_mode" = true ]; then
+  echo "🔍 Recursive mode: Scanning for all projects under $project_path"
+  echo ""
+else
+  echo "📁 Single mode: Target project: $project_path"
+  echo ""
+fi
 ```
+
+## Step 0.1: Recursive Mode - Scan for Projects
+
+**Only if `recursive_mode=true`:**
+
+```bash
+if [ "$recursive_mode" = true ]; then
+  # Find all directories containing .ai-agents/library/
+  echo "Scanning for projects with AI_agents submodules..."
+
+  # Use find to locate all .ai-agents/library directories
+  found_projects=()
+  while IFS= read -r submodule_path; do
+    # Get parent directory of .ai-agents
+    project_dir=$(dirname $(dirname "$submodule_path"))
+    found_projects+=("$project_dir")
+  done < <(find "$project_path" -type d -name "library" -path "*/.ai-agents/library" 2>/dev/null)
+
+  # Count projects found
+  project_count=${#found_projects[@]}
+
+  if [ $project_count -eq 0 ]; then
+    echo "❌ No projects found with AI_agents submodules under $project_path"
+    echo ""
+    echo "Looking for directories with .ai-agents/library/"
+    exit 1
+  fi
+
+  # Show found projects
+  echo ""
+  echo "Found $project_count project(s) with AI_agents submodules:"
+  echo ""
+  for i in "${!found_projects[@]}"; do
+    proj="${found_projects[$i]}"
+    rel_path=$(realpath --relative-to="$project_path" "$proj" 2>/dev/null || echo "$proj")
+
+    # Get current commit for this project
+    if [ -d "$proj/.ai-agents/library/.git" ]; then
+      current_commit=$(cd "$proj/.ai-agents/library" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+      current_branch=$(cd "$proj/.ai-agents/library" && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+      echo "  $((i+1)). $rel_path"
+      echo "     Current: $current_branch @ $current_commit"
+    else
+      echo "  $((i+1)). $rel_path"
+      echo "     ⚠️  Not a git submodule"
+    fi
+  done
+
+  echo ""
+  echo "─────────────────────────────────────────"
+  echo ""
+fi
+```
+
+## Step 0.2: Recursive Mode - Confirm Batch Update
+
+**Only if `recursive_mode=true`:**
+
+```markdown
+## Batch Update Summary
+
+**Mode:** Recursive
+**Scan root:** {project_path}
+**Projects found:** {project_count}
+
+**What will happen:**
+
+For each project found:
+1. Fetch latest updates from AI_agents origin/master
+2. Show available commits and file changes
+3. Pull updates to submodule
+4. Sync changed files to parent project
+5. Generate update report
+
+**Processing order:**
+{List each project path}
+
+**Safety:**
+- Each project updated independently
+- Conflicts reported per project
+- Can skip individual projects
+- Update reports saved per project
+
+---
+
+**Proceed with batch update?**
+
+Options:
+- **Yes** - Update all {project_count} projects
+- **Select** - Choose which projects to update
+- **Cancel** - Exit without updating
+```
+
+Wait for user response.
+
+### If user chooses "Select":
+
+```markdown
+Select projects to update (comma-separated numbers):
+
+{numbered list of projects}
+
+Example: 1,3,5 (to update projects 1, 3, and 5)
+```
+
+Parse user selection and filter `found_projects` array.
+
+### If user chooses "Yes":
+
+Proceed with all projects.
+
+### If user chooses "Cancel":
+
+Exit.
+
+## Step 0.3: Recursive Mode - Loop Through Projects
+
+**Only if `recursive_mode=true`:**
+
+```bash
+# Track overall results
+declare -A project_results
+total_updated=0
+total_skipped=0
+total_failed=0
+
+# Loop through each project
+for i in "${!found_projects[@]}"; do
+  current_project="${found_projects[$i]}"
+
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "📦 Project $((i+1))/$project_count"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "Path: $current_project"
+  echo ""
+
+  # Set project_path for the single-project workflow
+  project_path="$current_project"
+
+  # Now proceed with Steps 1-10 for this project
+  # (The rest of the workflow runs as normal for each project)
+
+  # Track result
+  # (Set in Step 10 based on success/failure)
+done
+
+# After all projects processed, show summary (see Step 10.1)
+```
+
+**Note:** For recursive mode, the single-project workflow (Steps 1-10) runs for each project in the loop. After all projects are processed, jump to Step 10.1 for the batch summary.
 
 ## Step 1: Validate Submodule Setup
 
@@ -541,6 +713,127 @@ echo "See .ai-agents/update-reports/update-{timestamp}.md for details"
 
 Ask user if they want to commit now or review first.
 
+## Step 10.1: Batch Summary Report (Recursive Mode Only)
+
+**Only if `recursive_mode=true`:**
+
+After all projects have been processed, generate a comprehensive batch summary:
+
+```markdown
+# Batch Update Summary
+
+**Mode:** Recursive
+**Scan root:** {scan_root_path}
+**Date:** {ISO-8601 timestamp}
+**Projects processed:** {total_projects}
+
+## Results Overview
+
+| Status | Count | Projects |
+|--------|-------|----------|
+| ✅ Updated | {total_updated} | {list of updated project names} |
+| ⏭️ Skipped | {total_skipped} | {list of skipped project names} |
+| ❌ Failed | {total_failed} | {list of failed project names} |
+
+## Per-Project Details
+
+### Updated Projects ({total_updated})
+
+{For each updated project:}
+
+#### {project_name}
+- **Path:** {relative_path}
+- **Submodule:** {old_commit} → {new_commit}
+- **Files synced:**
+  - Commands: {count} files
+  - Agents: {count} files
+  - Prompts: {count} files
+  - Scripts: {count} files
+- **Conflicts:** {count}
+- **Report:** `.ai-agents/update-reports/update-{timestamp}.md`
+
+---
+
+### Skipped Projects ({total_skipped})
+
+{For each skipped project:}
+
+#### {project_name}
+- **Path:** {relative_path}
+- **Reason:** {Already up to date | User skipped | Other}
+- **Current commit:** {commit}
+
+---
+
+### Failed Projects ({total_failed})
+
+{For each failed project:}
+
+#### {project_name}
+- **Path:** {relative_path}
+- **Error:** {error_message}
+- **Action needed:** {troubleshooting steps}
+
+---
+
+## Overall Statistics
+
+- **Total commits pulled:** {sum of all commit counts}
+- **Total files synced:** {sum of all synced files}
+- **Total conflicts:** {sum of all conflicts}
+- **Execution time:** {duration}
+
+## Next Steps
+
+1. **Review individual reports:**
+   - Each project has detailed report in `.ai-agents/update-reports/`
+   - Check for conflicts and breaking changes
+
+2. **Test projects:**
+   - Run tests for each updated project
+   - Verify new commands and agents work correctly
+
+3. **Commit changes:**
+   - Review and commit changes in each project repository
+   - Consider using provided commit messages
+
+4. **Resolve conflicts:**
+   {If any conflicts detected:}
+   - {List projects with conflicts}
+   - Manual review required
+
+## Rollback
+
+If you need to revert updates for a specific project:
+
+```bash
+cd {project_path}/.ai-agents/library
+git checkout {old_commit}
+cd ../..
+/pull-ai-agents-submodule {project_path}
+```
+
+---
+
+**Batch update complete!** ✓
+
+All projects under `{scan_root_path}` have been processed.
+```
+
+Save this batch summary report:
+
+```bash
+# Save batch summary in scan root
+batch_report_file="$scan_root/.ai-agents/batch-update-$(date +%Y%m%d-%H%M%S).md"
+mkdir -p "$(dirname "$batch_report_file")"
+echo "{batch_summary_content}" > "$batch_report_file"
+
+echo ""
+echo "📊 Batch summary saved to:"
+echo "   $batch_report_file"
+echo ""
+```
+
 ---
 
 # Usage Examples
@@ -563,39 +856,120 @@ Updates the project in the current directory.
 /pull-ai-agents-submodule /Users/you/work/my-mono-repo/apps/backend
 ```
 
-## Mono-Repo Workflow
+## Recursive Mode - Update All Projects
 
-When working in a mono-repo with multiple projects:
+**NEW:** Update all projects under a directory tree automatically.
+
+```bash
+# Update all projects in current directory tree
+/pull-ai-agents-submodule --recursive
+
+# Update all projects under ./projects/
+/pull-ai-agents-submodule ./projects --recursive
+
+# Short form
+/pull-ai-agents-submodule -r
+/pull-ai-agents-submodule ./apps -r
+```
+
+### Example Workflow
 
 ```
 my-mono-repo/
 ├── projects/
 │   ├── trading-signal-ai/
-│   │   ├── .ai-agents/library/  ← Submodule
-│   │   ├── .claude/commands/
-│   │   └── prompts/
+│   │   └── .ai-agents/library/  ← Will be updated
 │   ├── portfolio-tracker/
-│   │   ├── .ai-agents/library/  ← Submodule
-│   │   ├── .claude/commands/
-│   │   └── prompts/
+│   │   └── .ai-agents/library/  ← Will be updated
 │   └── market-analyzer/
-│       ├── .ai-agents/library/  ← Submodule
-│       ├── .claude/commands/
-│       └── prompts/
+│       └── .ai-agents/library/  ← Will be updated
+└── legacy/
+    └── old-app/
+        └── .ai-agents/library/  ← Will be updated
 ```
 
-Launch Claude Code in sub-project:
-```bash
-cd /path/to/my-mono-repo/projects/trading-signal-ai
-# In Claude Code:
-/pull-ai-agents-submodule
-```
-
-Or from mono-repo root:
+Run from mono-repo root:
 ```bash
 cd /path/to/my-mono-repo
-# In Claude Code:
+/pull-ai-agents-submodule --recursive
+```
+
+Output:
+```
+🔍 Recursive mode: Scanning for all projects under /path/to/my-mono-repo
+
+Scanning for projects with AI_agents submodules...
+
+Found 4 project(s) with AI_agents submodules:
+
+  1. projects/trading-signal-ai
+     Current: master @ a1b2c3d
+  2. projects/portfolio-tracker
+     Current: master @ a1b2c3d
+  3. projects/market-analyzer
+     Current: master @ e4f5g6h (behind)
+  4. legacy/old-app
+     Current: master @ x7y8z9w (behind)
+
+─────────────────────────────────────────
+
+Proceed with batch update?
+- Yes
+- Select (choose specific projects)
+- Cancel
+```
+
+If you choose "Select":
+```
+Select projects to update (comma-separated numbers):
+> 1,2,3
+
+Updating projects: trading-signal-ai, portfolio-tracker, market-analyzer
+Skipping: old-app
+```
+
+Each project gets updated independently with its own report.
+
+## Mono-Repo Workflow Comparison
+
+### Before (Manual):
+```bash
+# Update each project one at a time
 /pull-ai-agents-submodule ./projects/trading-signal-ai
+# ... review, commit ...
+/pull-ai-agents-submodule ./projects/portfolio-tracker
+# ... review, commit ...
+/pull-ai-agents-submodule ./projects/market-analyzer
+# ... review, commit ...
+```
+
+### After (Recursive):
+```bash
+# Update all at once
+/pull-ai-agents-submodule ./projects --recursive
+# ... batch summary shows all results ...
+# ... review each project's report ...
+# ... commit each project as needed ...
+```
+
+## Mono-Repo with Selective Updates
+
+Only update projects under `./apps/`:
+
+```bash
+# Mono-repo structure
+my-company/
+├── apps/           ← Update these
+│   ├── web/
+│   ├── mobile/
+│   └── api/
+└── internal/       ← Skip these
+    ├── admin/
+    └── tools/
+
+# Command
+cd /path/to/my-company
+/pull-ai-agents-submodule ./apps --recursive
 ```
 
 ## After Running Command
@@ -618,6 +992,9 @@ Then test your project to ensure everything works with the updates.
 ✅ **Detailed analysis:** Understand each change
 ✅ **Rollback support:** Can revert to previous version
 ✅ **Update reports:** Full audit trail
+✅ **Recursive mode:** Batch update multiple projects with selective control
+✅ **Independent updates:** Each project processed independently (no cascade failures)
+✅ **Batch summary:** Comprehensive report across all projects
 
 ---
 
@@ -664,6 +1041,54 @@ cd /mono-repo/projects/trading-signal-ai
 
 Edit the sync logic in Step 7 to add files to skip list.
 
+## "No projects found" (Recursive Mode)
+
+Recursive mode can't find any projects with AI_agents submodules:
+
+```bash
+# Check if submodules exist in expected locations
+find . -type d -name "library" -path "*/.ai-agents/library"
+
+# Initialize submodules if needed
+cd ./projects/my-app
+git submodule add https://github.com/HelloWorldSungin/AI_agents.git .ai-agents/library
+```
+
+## "Too many projects found" (Recursive Mode)
+
+Recursive mode found more projects than expected:
+
+```bash
+# Use more specific path
+/pull-ai-agents-submodule ./projects --recursive  # Instead of root
+
+# Or use "Select" mode to choose specific projects
+/pull-ai-agents-submodule --recursive
+# Then choose: Select → 1,3,5
+```
+
+## "One project failed, stopped all updates" (Recursive Mode)
+
+**This doesn't happen!** Each project is updated independently. If one fails, others continue.
+
+Check the batch summary report for:
+- Which projects succeeded
+- Which projects failed
+- Error details for failed projects
+
+## "Want different update strategy per project" (Recursive Mode)
+
+For fine-grained control, update projects individually:
+
+```bash
+# Update high-priority projects with careful review
+/pull-ai-agents-submodule ./projects/production-app
+# ... review carefully, commit ...
+
+# Batch update low-priority projects
+/pull-ai-agents-submodule ./projects/experiments --recursive
+```
+
 ---
 
-**Implementation Note:** This command automates the sync process while maintaining safety and giving users full visibility into what's changing in their AI agent system.
+**Implementation Note:** This command automates the sync process while maintaining safety and giving users full visibility into what's changing in their AI agent system. Recursive mode extends this to mono-repos with multiple projects.
