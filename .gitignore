@@ -1,1 +1,4 @@
 **/__pycache__/
+
+# Project-specific agent examples (not for general distribution)
+.claude/agents/appflowy-manager.md
