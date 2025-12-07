@@ -1,6 +1,6 @@
 ---
 description: Pull and sync latest AI_agents updates from submodule to parent project
-argument-hint:
+argument-hint: [project-path (optional, defaults to current directory)]
 allowed-tools: [Bash, Read, Write, Edit, Glob, Grep]
 ---
 
@@ -8,38 +8,71 @@ allowed-tools: [Bash, Read, Write, Edit, Glob, Grep]
 
 This command updates your project with the latest AI_agents system improvements from the submodule.
 
+**Usage:**
+```bash
+# Update current directory project
+/pull-ai-agents-submodule
+
+# Update specific sub-project in mono-repo
+/pull-ai-agents-submodule ./projects/trading-signal-ai
+
+# Update project with absolute path
+/pull-ai-agents-submodule /Users/you/projects/my-app
+```
+
 **Prerequisites:**
-- AI_agents repository installed as submodule at `.ai-agents/library/`
-- Parent project has `.claude/commands/`, `.claude/agents/`, and `prompts/` directories
+- AI_agents repository installed as submodule at `{project-path}/.ai-agents/library/`
+- Project has `.claude/commands/`, `.claude/agents/`, and `prompts/` directories
+
+## Step 0: Parse Arguments and Set Project Path
+
+```bash
+# Parse project path argument (optional)
+# Default to current directory if not provided
+project_path="${1:-.}"
+
+# Resolve to absolute path
+project_path=$(cd "$project_path" && pwd)
+
+echo "Target project: $project_path"
+echo ""
+
+# Verify project path exists
+if [ ! -d "$project_path" ]; then
+  echo "❌ Error: Project path does not exist: $project_path"
+  exit 1
+fi
+```
 
 ## Step 1: Validate Submodule Setup
 
-Check that the submodule exists and is properly configured:
+Check that the submodule exists in the target project:
 
 ```bash
-# Verify submodule exists
-if [ ! -d ".ai-agents/library" ]; then
-  echo "❌ Error: AI_agents submodule not found at .ai-agents/library/"
+# Verify submodule exists in target project
+if [ ! -d "$project_path/.ai-agents/library" ]; then
+  echo "❌ Error: AI_agents submodule not found at $project_path/.ai-agents/library/"
   echo ""
   echo "To set up the submodule:"
+  echo "  cd $project_path"
   echo "  git submodule add https://github.com/HelloWorldSungin/AI_agents.git .ai-agents/library"
   echo "  git submodule update --init --recursive"
   exit 1
 fi
 
-echo "✓ Submodule found at .ai-agents/library/"
+echo "✓ Submodule found at $project_path/.ai-agents/library/"
 
 # Check if it's actually a git submodule
-if [ ! -f ".ai-agents/library/.git" ] && [ ! -d ".ai-agents/library/.git" ]; then
+if [ ! -f "$project_path/.ai-agents/library/.git" ] && [ ! -d "$project_path/.ai-agents/library/.git" ]; then
   echo "⚠️  Warning: .ai-agents/library/ exists but is not a git submodule"
 fi
 
 # Get current submodule commit
-cd .ai-agents/library
+cd "$project_path/.ai-agents/library"
 current_commit=$(git rev-parse HEAD)
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 echo "Current: $current_branch @ ${current_commit:0:7}"
-cd ../..
+cd - > /dev/null
 ```
 
 ## Step 2: Fetch and Show Available Updates
@@ -47,7 +80,7 @@ cd ../..
 Fetch latest changes from remote and show what's new:
 
 ```bash
-cd .ai-agents/library
+cd "$project_path/.ai-agents/library"
 
 # Fetch latest from remote
 echo ""
@@ -61,7 +94,7 @@ remote_commit=$(git rev-parse origin/master)
 if [ "$current_commit" = "$remote_commit" ]; then
   echo ""
   echo "✓ Already up to date with origin/master"
-  cd ../..
+  cd - > /dev/null
   exit 0
 fi
 
@@ -76,7 +109,7 @@ echo ""
 echo "📊 Files changed:"
 git diff --stat HEAD..origin/master
 
-cd ../..
+cd - > /dev/null
 ```
 
 ## Step 3: Analyze Changes
@@ -84,7 +117,7 @@ cd ../..
 Categorize what changed in the submodule:
 
 ```bash
-cd .ai-agents/library
+cd "$project_path/.ai-agents/library"
 
 # Detect changes by category
 echo ""
@@ -125,7 +158,7 @@ if [ "$docs_changed" -gt 0 ]; then
   echo "  Documentation: $docs_changed files"
 fi
 
-cd ../..
+cd - > /dev/null
 ```
 
 ## Step 4: User Confirmation
@@ -173,7 +206,7 @@ Wait for user response. If user says "Show details", proceed to detailed analysi
 Pull the latest changes:
 
 ```bash
-cd .ai-agents/library
+cd "$project_path/.ai-agents/library"
 
 echo ""
 echo "📥 Pulling latest updates..."
@@ -182,7 +215,7 @@ git pull origin master
 new_commit=$(git rev-parse HEAD)
 echo "✓ Updated to ${new_commit:0:7}"
 
-cd ../..
+cd - > /dev/null
 ```
 
 ## Step 6: Detailed Change Analysis
@@ -193,12 +226,12 @@ For each changed file, provide detailed analysis:
 
 ```bash
 # Get list of changed files
-cd .ai-agents/library
+cd "$project_path/.ai-agents/library"
 changed_files=$(git diff --name-only HEAD~1..HEAD)
-cd ../..
+cd - > /dev/null
 ```
 
-For each file in `changed_files`:
+For each file in `changed_files` (relative to `$project_path`):
 
 ### Commands (`.claude/commands/*.md`)
 
@@ -300,12 +333,12 @@ For each file recommended to sync:
 
 ```bash
 # Create commands directory if needed
-mkdir -p .claude/commands
+mkdir -p "$project_path/.claude/commands"
 
 # For each changed command file
 for cmd_file in {changed_command_files}; do
-  source=".ai-agents/library/.claude/commands/$cmd_file"
-  dest=".claude/commands/$cmd_file"
+  source="$project_path/.ai-agents/library/.claude/commands/$cmd_file"
+  dest="$project_path/.claude/commands/$cmd_file"
 
   # Check if file exists locally
   if [ -f "$dest" ]; then
@@ -330,12 +363,12 @@ done
 
 ```bash
 # Create agents directory if needed
-mkdir -p .claude/agents
+mkdir -p "$project_path/.claude/agents"
 
 # For each changed agent file
 for agent_file in {changed_agent_files}; do
-  source=".ai-agents/library/.claude/agents/$agent_file"
-  dest=".claude/agents/$agent_file"
+  source="$project_path/.ai-agents/library/.claude/agents/$agent_file"
+  dest="$project_path/.claude/agents/$agent_file"
 
   # Check if this is a project-specific agent (e.g., appflowy-manager.md)
   # Skip syncing project-specific agents
@@ -361,7 +394,7 @@ done
 
 ```bash
 # Create prompts directory if needed
-mkdir -p prompts
+mkdir -p "$project_path/prompts"
 
 # Sync prompts with same logic
 # Handle prompts/roles/, prompts/*.md
@@ -371,7 +404,7 @@ mkdir -p prompts
 
 ```bash
 # Create scripts directory if needed
-mkdir -p scripts
+mkdir -p "$project_path/scripts"
 
 # For scripts, be more careful
 # Ask user confirmation for each script since they may have local modifications
@@ -382,10 +415,10 @@ mkdir -p scripts
 Check if state file schemas changed:
 
 ```bash
-# Read state file documentation
-Read .ai-agents/library/docs/reference/CHEAT_SHEET/01-state-files.md
+# Read state file documentation from submodule
+Read $project_path/.ai-agents/library/docs/reference/CHEAT_SHEET/01-state-files.md
 
-# Compare with local state files
+# Compare with local state files at project path
 # If schemas changed, show migration guide
 ```
 
@@ -414,6 +447,7 @@ Create comprehensive report:
 ```markdown
 # AI_agents Submodule Update Report
 
+**Project:** {project_path}
 **Date:** {ISO-8601 timestamp}
 **Updated from:** {old_commit} → {new_commit}
 
@@ -479,12 +513,14 @@ Your project is now synced with AI_agents master @ {new_commit:0:7}
 Save the update report and commit changes:
 
 ```bash
-# Save report
-mkdir -p .ai-agents/update-reports
-echo "{report_content}" > .ai-agents/update-reports/update-$(date +%Y%m%d-%H%M%S).md
+# Save report in project directory
+mkdir -p "$project_path/.ai-agents/update-reports"
+echo "{report_content}" > "$project_path/.ai-agents/update-reports/update-$(date +%Y%m%d-%H%M%S).md"
 
-# Show git status
+# Show git status for project
+cd "$project_path"
 git status
+cd - > /dev/null
 
 # Suggest commit message
 echo ""
@@ -509,13 +545,58 @@ Ask user if they want to commit now or review first.
 
 # Usage Examples
 
-## Basic Update
+## Basic Update (Current Directory)
 
 ```bash
 /pull-ai-agents-submodule
 ```
 
-Shows available updates, analyzes changes, and syncs files.
+Updates the project in the current directory.
+
+## Update Specific Sub-Project
+
+```bash
+# Relative path
+/pull-ai-agents-submodule ./projects/trading-signal-ai
+
+# Absolute path
+/pull-ai-agents-submodule /Users/you/work/my-mono-repo/apps/backend
+```
+
+## Mono-Repo Workflow
+
+When working in a mono-repo with multiple projects:
+
+```
+my-mono-repo/
+├── projects/
+│   ├── trading-signal-ai/
+│   │   ├── .ai-agents/library/  ← Submodule
+│   │   ├── .claude/commands/
+│   │   └── prompts/
+│   ├── portfolio-tracker/
+│   │   ├── .ai-agents/library/  ← Submodule
+│   │   ├── .claude/commands/
+│   │   └── prompts/
+│   └── market-analyzer/
+│       ├── .ai-agents/library/  ← Submodule
+│       ├── .claude/commands/
+│       └── prompts/
+```
+
+Launch Claude Code in sub-project:
+```bash
+cd /path/to/my-mono-repo/projects/trading-signal-ai
+# In Claude Code:
+/pull-ai-agents-submodule
+```
+
+Or from mono-repo root:
+```bash
+cd /path/to/my-mono-repo
+# In Claude Code:
+/pull-ai-agents-submodule ./projects/trading-signal-ai
+```
 
 ## After Running Command
 
@@ -544,8 +625,9 @@ Then test your project to ensure everything works with the updates.
 
 ## "Submodule not found"
 
-Initialize the submodule:
+Initialize the submodule in the target project:
 ```bash
+cd /path/to/project  # or ./projects/trading-signal-ai
 git submodule add https://github.com/HelloWorldSungin/AI_agents.git .ai-agents/library
 git submodule update --init --recursive
 ```
@@ -554,10 +636,28 @@ git submodule update --init --recursive
 
 The command will flag conflicts but not auto-merge. Review manually:
 ```bash
-# Compare versions
-diff .claude/commands/example.md .ai-agents/library/.claude/commands/example.md
+# Compare versions (adjust paths for your project)
+diff ./projects/trading-signal-ai/.claude/commands/example.md \
+     ./projects/trading-signal-ai/.ai-agents/library/.claude/commands/example.md
 
 # Choose which version to keep or merge manually
+```
+
+## "Wrong project updated"
+
+Make sure to specify the correct path:
+```bash
+# Bad - updates wrong project
+cd /mono-repo
+/pull-ai-agents-submodule  # Updates /mono-repo, not the sub-project!
+
+# Good - specify sub-project
+cd /mono-repo
+/pull-ai-agents-submodule ./projects/trading-signal-ai
+
+# Also Good - run from sub-project
+cd /mono-repo/projects/trading-signal-ai
+/pull-ai-agents-submodule
 ```
 
 ## "Want to skip certain files"
