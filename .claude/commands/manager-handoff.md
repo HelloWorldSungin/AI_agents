@@ -67,7 +67,31 @@ Check current file size:
 wc -c .ai-agents/state/team-communication.json | awk '{print "~" int($1/4) " tokens"}'
 ```
 
-### Step 3: Read All State Files
+### Step 3: Detect Manager Agent File
+
+Detect which manager agent file is being used:
+
+```bash
+# Find manager agent file in .claude/agents/
+manager_agents=$(ls .claude/agents/*.md 2>/dev/null | grep -v "^.claude/agents/README.md")
+
+if [ -n "$manager_agents" ]; then
+  # Get the first manager agent file
+  agent_file=$(echo "$manager_agents" | head -1)
+  # Extract name (e.g., .claude/agents/appflowy-manager.md -> appflowy-manager)
+  agent_name=$(basename "$agent_file" .md)
+  echo "Detected manager agent: @$agent_name"
+else
+  # No agent file detected - use generic name
+  agent_name="manager"
+  echo "⚠️  No manager agent file detected in .claude/agents/"
+  echo "Using generic @manager - consider creating one with /create-manager-meta-prompt"
+fi
+```
+
+Store the agent name for use in handoff document.
+
+### Step 4: Read All State Files
 
 ```bash
 Read .ai-agents/state/team-communication.json
@@ -83,7 +107,7 @@ Review:
 - Current phase and progress
 - Verification checklist status
 
-### Step 4: Update README.md
+### Step 5: Update README.md
 
 Read the current README:
 ```bash
@@ -98,23 +122,27 @@ Update the README.md to reflect:
 
 Focus on high-level project status, not implementation details.
 
-### Step 5: Create Enhanced Handoff Document
+### Step 6: Create Enhanced Handoff Document
 
 Create handoff at `.ai-agents/handoffs/session-{session_num}.md` with the following comprehensive structure:
+
+**IMPORTANT:** Use the detected `agent_name` from Step 3 throughout the handoff.
 
 ```markdown
 # Session Handoff - Session {session_num}
 
 ## Quick Resume
 
+**Manager Agent:** `@{agent_name}`
+
 To resume this manager session in a fresh context:
 
 \`\`\`bash
-@manager /manager-resume
+@{agent_name} /manager-resume
 \`\`\`
 
 This command will:
-- Load your persistent manager agent
+- Load your persistent manager agent (`@{agent_name}`)
 - Read this handoff automatically (finds latest session-*.md)
 - Load all state files (team-communication, session-progress, feature-tracking)
 - Present comprehensive status summary
@@ -123,7 +151,7 @@ This command will:
 **Manual resume** (if needed):
 \`\`\`bash
 # 1. Load manager agent
-@manager
+@{agent_name}
 
 # 2. Read this handoff
 @.ai-agents/handoffs/session-{session_num}.md
@@ -212,13 +240,14 @@ Key content to include:
 - Next session priority from session-progress.json or inferred
 - Comprehensive context for next manager
 
-### Step 6: Update session-progress.json
+### Step 7: Update session-progress.json
 
-Add handoff reference to session-progress.json:
+Add handoff reference and manager agent name to session-progress.json:
 
 ```json
 {
   ...existing fields...,
+  "manager_agent": "@{agent_name}",
   "last_handoff": {
     "session_id": "{session_num}",
     "file": ".ai-agents/handoffs/session-{session_num}.md",
@@ -230,7 +259,7 @@ Add handoff reference to session-progress.json:
 
 Update next_session_priority if not already set (infer from current state).
 
-### Step 7: Commit Everything
+### Step 8: Commit Everything
 
 Stage all changes:
 ```bash
@@ -251,19 +280,20 @@ Session summary:
 Next session: {next_session_priority or immediate action}"
 ```
 
-### Step 8: Inform User
+### Step 9: Inform User
 
 Report to user:
 ```
 Manager handoff created:
+- Manager agent: @{agent_name}
 - Handoff: .ai-agents/handoffs/session-{session_num}.md
 - Communication file: .ai-agents/state/team-communication.json (~{X} tokens)
 - Session progress: .ai-agents/state/session-progress.json
 - Feature tracking: .ai-agents/state/feature-tracking.json
 - README.md updated with session progress
 
-To resume: Start new manager session and run:
-  @manager /manager-resume
+To resume in a fresh context:
+  @{agent_name} /manager-resume
 ```
 
 Proceed with handoff creation now.

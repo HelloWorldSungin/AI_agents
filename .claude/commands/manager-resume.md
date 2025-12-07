@@ -42,6 +42,21 @@ Read .ai-agents/state/feature-tracking.json
 
 Verify files exist. If any are missing, show warning but continue with available files.
 
+### Step 2.5: Extract Manager Agent Name
+
+Extract the manager agent name from the handoff or session-progress.json:
+
+**From handoff document:**
+Look for line: `**Manager Agent:** \`@{agent_name}\``
+
+**From session-progress.json:**
+Look for field: `"manager_agent": "@{agent_name}"`
+
+**Fallback:**
+If not found in either location, use `"manager"` as default.
+
+Store the extracted agent name for use in the resume summary.
+
 ### Step 3: Extract Session Information
 
 From the handoff file, extract:
@@ -76,6 +91,8 @@ Present the following structured summary:
 
 ```markdown
 # Resuming Manager Session
+
+**Manager Agent:** `@{agent_name}` {if agent_name != "manager", otherwise show: "(no specific agent detected)"}
 
 ## Last Session Summary
 
@@ -173,15 +190,52 @@ Options:
 - Answer pending questions (if any)
 - Revise plan based on progress
 
+---
+
+**Note:** You loaded this resume using `@{agent_name} /manager-resume`. This manager agent is persistent across sessions - use it for all handoffs and resumes.
+
 What would you like to do?
 ```
 
-### Step 5: Handle Edge Cases
+### Step 5: Verify Manager Agent Match
+
+After extracting the agent name, verify it matches the current context:
+
+**If agent name extracted from handoff/state:**
+```markdown
+✓ Loaded with correct manager agent: @{agent_name}
+```
+
+**If no agent name found (backward compatibility):**
+```markdown
+⚠️  No manager agent recorded in handoff (older format)
+
+This handoff was created before manager agent tracking was added.
+You can continue, but future handoffs will track the agent name automatically.
+
+Current session uses: @{detected_from_current_context or "manager"}
+```
+
+**If mismatch detected (user loaded wrong agent):**
+```markdown
+⚠️  Warning: Agent mismatch detected!
+
+Handoff expects: @{expected_agent_name}
+You loaded with: @{current_agent_name}
+
+Recommended: Use `@{expected_agent_name} /manager-resume` instead for consistency.
+Continuing anyway...
+```
+
+### Step 6: Handle Edge Cases
 
 **Case 1: No handoffs exist**
 Show error message as per Step 1 bash script.
 
-**Case 2: State files missing**
+**Case 2: Manager agent name not found**
+Use "manager" as default and show backward compatibility message.
+
+**Case 3: State files missing**
 ```
 ⚠️  Warning: Some state files not found
 
@@ -193,13 +247,19 @@ Proceeding with available state files...
 
 Continue processing with whatever files are available.
 
-**Case 3: Empty state files or arrays**
+**Case 4: Empty state files or arrays**
 Handle gracefully - show "No data" or "✅ None" instead of errors.
 
-**Case 4: Multiple handoffs (normal case)**
+**Case 5: Multiple handoffs (normal case)**
 Always use the latest (sort -V ensures proper version sorting).
 
 ### Implementation Notes
+
+**Extracting Manager Agent Name:**
+- **Priority 1:** Look in handoff markdown for: `**Manager Agent:** \`@agent-name\``
+- **Priority 2:** Look in session-progress.json for: `"manager_agent": "@agent-name"`
+- **Fallback:** Use "manager" as default for backward compatibility
+- Strip the `@` prefix when storing, add it back when displaying
 
 **Counting Completed Items:**
 - For verification checklist: Count items where `status === "completed"`
