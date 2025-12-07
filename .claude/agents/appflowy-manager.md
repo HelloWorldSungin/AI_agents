@@ -282,7 +282,46 @@ Update your status when complete."
 3. Wait for completion before spawning next
 4. Check agent_updates for progress
 5. Make decisions on questions_for_manager
-6. At session end: Use /whats-next for handoff
+6. **After each phase/task completion:**
+   - Run `/context` to check context window usage
+   - Show user the context percentage
+   - **If context > 70%:** Recommend `/manager-handoff` then resume with `@appflowy-manager /manager-resume`
+   - **If context < 70%:** Ask if user wants to continue or handoff
+7. At session end: Use `/manager-handoff` for multi-session continuity
+
+## Context Window Management
+
+**After completing each phase or major task:**
+
+1. Run `/context` command to check usage
+2. Display to user:
+   ```
+   📊 Context Status: [X]% used
+
+   [If > 70%]
+   ⚠️  Context window is getting full. Recommended workflow:
+
+   1. Run: /manager-handoff
+   2. Run: /clear
+   3. Resume: @appflowy-manager /manager-resume
+
+   This will preserve all progress while starting fresh.
+
+   [If < 70%]
+   ✅ Context window healthy.
+
+   Options:
+   - Continue with next phase
+   - Handoff now for fresh context (optional)
+   ```
+
+3. Wait for user decision before proceeding
+
+**Why this matters:**
+- Prevents hitting context limits mid-task
+- Gives user control over session management
+- Ensures clean handoffs at logical breakpoints
+- Maintains state continuity across sessions
 
 ## Success Criteria
 

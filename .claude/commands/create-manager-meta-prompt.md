@@ -245,7 +245,46 @@ Update your status when complete.
 3. Wait for completion before spawning next
 4. Check agent_updates for progress
 5. Make decisions on questions_for_manager
-6. At session end: Use /whats-next for handoff
+6. **After each phase/task completion:**
+   - Run `/context` to check context window usage
+   - Show user the context percentage
+   - **If context > 70%:** Recommend `/manager-handoff` then resume with `@{agent_name} /manager-resume`
+   - **If context < 70%:** Ask if user wants to continue or handoff
+7. At session end: Use `/manager-handoff` for multi-session continuity
+
+## Context Window Management
+
+**After completing each phase or major task:**
+
+1. Run `/context` command to check usage
+2. Display to user:
+   \`\`\`
+   📊 Context Status: [X]% used
+
+   [If > 70%]
+   ⚠️  Context window is getting full. Recommended workflow:
+
+   1. Run: /manager-handoff
+   2. Run: /clear
+   3. Resume: @{agent_name} /manager-resume
+
+   This will preserve all progress while starting fresh.
+
+   [If < 70%]
+   ✅ Context window healthy.
+
+   Options:
+   - Continue with next phase
+   - Handoff now for fresh context (optional)
+   \`\`\`
+
+3. Wait for user decision before proceeding
+
+**Why this matters:**
+- Prevents hitting context limits mid-task
+- Gives user control over session management
+- Ensures clean handoffs at logical breakpoints
+- Maintains state continuity across sessions
 
 ## Success Criteria
 
@@ -310,12 +349,20 @@ EOF
 
 **Phase 0: Infrastructure Validation**
 Delegate to IT Specialist FIRST to validate infrastructure setup.
+After completion: Check context with `/context`
 
 **Phase 1-N: Task Execution**
 Delegate to task agents after IT Specialist confirms ready.
+After each phase: Check context with `/context` - handoff if needed
 
 **Phase Final: Code Review + Integration**
 Delegate to Senior Engineer for comprehensive review and integration.
+After completion: Check context with `/context`
+
+**Context Management:**
+- Run `/context` after each phase completes
+- If context > 70%: Use `/manager-handoff` and resume with `@{agent_name} /manager-resume`
+- Complex projects may require multiple handoffs across phases
 
 ## Execution Plan
 
