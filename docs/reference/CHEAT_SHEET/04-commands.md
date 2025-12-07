@@ -10,9 +10,10 @@ Custom commands and thinking models for systematic decision-making.
 |----------|-------|---------|
 | Thinking Models | 12 | Mental models for systematic thinking |
 | Workflow Commands | 4 | Task management and debugging |
+| Manager Workflow | 5 | Multi-session manager coordination |
 | Discovery | 1 | Tool discovery across projects |
 
-**Total Commands:** 17
+**Total Commands:** 22
 
 **Location:** `.claude/commands/`
 
@@ -123,16 +124,22 @@ Commands for task management, debugging, and handoffs.
 
 ## Manager Workflow Commands
 
-Commands for multi-session manager coordination with persistent agent roles.
+Commands for multi-session manager coordination with persistent agent roles and context monitoring.
 
 **Location:** `.claude/commands/`
 
 | Command | Purpose | Usage | Location |
 |---------|---------|-------|----------|
-| `/create-sub-task` | Create and spawn sub-task agent with standardized prompt | Manager delegation | `.claude/commands/create-sub-task.md` |
-| `/create-manager-meta-prompt` | Generate manager prompt and create persistent agent file | Before complex projects | `.claude/commands/create-manager-meta-prompt.md` |
-| `/manager-handoff` | Create session handoff with auto-numbering | End of manager session | `.claude/commands/manager-handoff.md` |
-| `/manager-resume` | Resume from latest handoff with full context | Start new manager session | `.claude/commands/manager-resume.md` |
+| `/create-manager-meta-prompt` | Generate manager prompt + create persistent agent file with context monitoring | Before starting project | `.claude/commands/create-manager-meta-prompt.md` |
+| `/manager-handoff` | Create session handoff with auto-numbering and agent tracking | End of session (or auto at 70% context) | `.claude/commands/manager-handoff.md` |
+| `/manager-resume` | Resume from latest handoff with manager agent verification | Start new session | `.claude/commands/manager-resume.md` |
+| `/pull-ai-agents-submodule` | Sync latest AI_agents updates from submodule to project | When updating from library | `.claude/commands/pull-ai-agents-submodule.md` |
+
+**New in v1.2.0:**
+- ✅ Manager agents now include automatic context monitoring
+- ✅ Auto-runs `/manager-handoff` when context > 70%
+- ✅ Agent name tracked in handoff files for seamless resume
+- ✅ Submodule sync command for keeping projects updated
 
 ### /whats-next
 

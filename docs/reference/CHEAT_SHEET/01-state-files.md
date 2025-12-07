@@ -72,8 +72,11 @@ Resume work across sessions WITHOUT rediscovering state (50% faster startup).
 ### Structure
 ```json
 {
+  "session_id": "003",
+  "start_time": "2025-12-07T09:00:00Z",
   "last_session": "2025-12-03T18:00:00Z",
   "current_phase": "authentication-implementation",
+  "completed_phases": ["setup", "infrastructure"],
   "completed_tasks": ["SETUP-001", "DB-001", "AUTH-001"],
   "active_tasks": [
     {
@@ -84,10 +87,18 @@ Resume work across sessions WITHOUT rediscovering state (50% faster startup).
       "blockers": []
     }
   ],
-  "blockers": [],
+  "blocked_tasks": [],
+  "decisions_made": [],
   "next_priorities": ["AUTH-002", "TEST-001"],
   "git_baseline": "abc123def456",
-  "notes": "Authentication endpoints complete, need password reset"
+  "notes": "Authentication endpoints complete, need password reset",
+  "manager_agent": "@auth-manager",
+  "last_handoff": {
+    "session_id": "002",
+    "file": ".ai-agents/handoffs/session-002.md",
+    "timestamp": "2025-12-03T18:00:00Z",
+    "next_session_priority": "Complete AUTH-002"
+  }
 }
 ```
 
@@ -275,14 +286,20 @@ EOF
 # 2. Session progress
 cat > .ai-agents/state/session-progress.json << 'EOF'
 {
+  "session_id": "001",
+  "start_time": null,
   "last_session": null,
   "current_phase": "initial-setup",
+  "completed_phases": [],
   "completed_tasks": [],
   "active_tasks": [],
-  "blockers": [],
+  "blocked_tasks": [],
+  "decisions_made": [],
   "next_priorities": [],
   "git_baseline": null,
-  "notes": ""
+  "notes": "",
+  "manager_agent": "@project-manager",
+  "last_handoff": null
 }
 EOF
 

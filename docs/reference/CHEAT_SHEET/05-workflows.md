@@ -289,13 +289,20 @@ For projects spanning multiple sessions, use this workflow to maintain state con
 ### Overview
 
 **Problem:** Long projects exhaust Claude's context window
-**Solution:** Session handoffs with persistent manager role
+**Solution:** Session handoffs with persistent manager role and automatic context monitoring
 
 **Key Components:**
 - Persistent manager agent file (`.claude/agents/project-manager.md`)
 - Session handoffs (`.ai-agents/handoffs/session-XXX.md`)
 - State files (team-communication, session-progress, feature-tracking)
+- Context monitoring (automatic `/context` checks after each phase)
 - Resume command (`/manager-resume`)
+
+**New Features (v1.2.0):**
+- ✅ Manager automatically checks context usage after each phase
+- ✅ Auto-runs `/manager-handoff` when context > 70%
+- ✅ Manager agent name tracked in handoff files
+- ✅ Seamless resume with `@manager-name /manager-resume`
 
 ### Workflow Pattern
 
@@ -314,16 +321,28 @@ mkdir -p .ai-agents/state
 # ... initialize JSON files ...
 
 # 4. Load manager and work
-@manager
+@project-manager
 
-# Manager delegates tasks using /create-sub-task
+# Manager delegates tasks via Task tool
 # Agents complete work, update state files
 
-# 5. End of session - create handoff
-/manager-handoff
-# Output: Created .ai-agents/handoffs/session-001.md
+# 5. After each phase/task, manager checks context
+# Manager: "📊 Context Status: 45% used"
+# Manager: "✅ Context window healthy. Continue with next phase?"
+# You: "Yes"
 
-# 6. Clear context for next session
+# [Continue working...]
+
+# 6. Manager detects context > 70%
+# Manager: "📊 Context Status: 72% used"
+# Manager: "⚠️ Context window is getting full. Creating handoff now..."
+# Manager automatically runs: /manager-handoff
+# Manager: "✅ Handoff created successfully.
+#          To continue with fresh context:
+#          1. Run: /clear
+#          2. Resume: @project-manager /manager-resume"
+
+# 7. Clear context for next session
 /clear
 ```
 
@@ -331,10 +350,11 @@ mkdir -p .ai-agents/state
 
 ```bash
 # 1. Load manager and resume from latest handoff
-@manager /manager-resume
+@project-manager /manager-resume
 
 # Shows comprehensive summary:
-# - Last session: session-001
+# - Manager Agent: @project-manager ✓
+# - Last session: session-001 (ended 2025-12-06T18:00:00Z)
 # - Completed: TASK-001, TASK-002, TASK-003
 # - Current phase: Phase 4
 # - Active tasks: TASK-004
@@ -342,32 +362,45 @@ mkdir -p .ai-agents/state
 
 # 2. Continue delegating work
 # Manager picks up where it left off
-# /create-sub-task for new work
+# Spawns agents via Task tool
 
-# 3. End of session - create handoff
-/manager-handoff
+# 3. Manager monitors context after each phase
+# Manager: "📊 Context Status: 55% used"
+# Manager: "✅ Continue with next phase?"
+# You: "Yes"
+
+# [Work continues...]
+
+# 4. Manager auto-handoffs when context > 70%
+# Manager: "📊 Context Status: 74% used"
+# Manager: "⚠️ Creating handoff now..."
+# Manager runs /manager-handoff automatically
 # Output: Created .ai-agents/handoffs/session-002.md
 
-# 4. Clear context
+# 5. Clear context
 /clear
 ```
 
 #### Session N: Repeat Pattern
 
 Same pattern repeats for any number of sessions:
-1. `@manager /manager-resume`
+1. `@{manager-name} /manager-resume`
 2. Work (delegate, monitor, coordinate)
-3. `/manager-handoff`
-4. `/clear`
+3. Manager checks context after each phase
+4. Manager auto-runs `/manager-handoff` when context > 70%
+5. You run `/clear` and resume in next session
 
 ### Benefits
 
 ✅ **Solves context bloat**: Clear context between sessions
-✅ **Persistent manager role**: `@manager` loads same agent every time
+✅ **Persistent manager role**: `@manager-name` loads same agent every time
 ✅ **State continuity**: State files preserve all project information
 ✅ **Clear handoff docs**: Each handoff documents progress
 ✅ **Auto-numbering**: Session files auto-increment (001, 002, 003...)
 ✅ **Quick resume**: `/manager-resume` provides instant status update
+✅ **Context monitoring**: Manager checks usage after each phase
+✅ **Auto-handoff**: Manager runs `/manager-handoff` when context > 70%
+✅ **Agent tracking**: Handoff remembers which manager to resume
 
 ### State Files
 
@@ -378,10 +411,11 @@ Same pattern repeats for any number of sessions:
 - Questions for manager
 
 **session-progress.json**:
-- Current phase
+- Current phase and session ID
 - Completed phases and tasks
 - Blocked tasks
 - Decisions made
+- Manager agent name (`@project-manager`)
 - Last handoff reference
 
 **feature-tracking.json**:
@@ -393,7 +427,7 @@ Same pattern repeats for any number of sessions:
 
 **Use multi-session workflow when:**
 - Project will take multiple days
-- Context usage approaching 60-70%
+- Context usage approaching 60-70% (manager will auto-detect)
 - Natural breaking points (phase completion)
 - Multiple complex features in sequence
 
@@ -402,13 +436,17 @@ Same pattern repeats for any number of sessions:
 - Quick fixes or small changes
 - Context usage under 40%
 
+**Note:** Manager automatically monitors context and will recommend handoff at 70% usage
+
 ### Best Practices
 
-1. **Create handoff at natural breakpoints**: Phase completions, major milestones
-2. **Keep state files updated**: Agents update after each task
-3. **Use meaningful agent names**: `--agent-name auth-manager` for clarity
-4. **Review resume summary**: Check active/blocked tasks before continuing
-5. **Commit state files**: Include in git commits for history
+1. **Trust context monitoring**: Manager checks usage after each phase automatically
+2. **Follow handoff recommendations**: When manager says > 70%, do the handoff
+3. **Keep state files updated**: Agents update after each task
+4. **Use meaningful agent names**: `--agent-name auth-manager` for clarity
+5. **Review resume summary**: Check active/blocked tasks before continuing
+6. **Commit state files**: Include in git commits for history
+7. **Let manager auto-handoff**: Manager runs `/manager-handoff` when needed
 
 ### Troubleshooting
 
@@ -418,8 +456,11 @@ Same pattern repeats for any number of sessions:
 **Problem**: State files show stale data
 **Solution**: Agents should update team-communication.json after completing tasks
 
-**Problem**: Context still filling up
-**Solution**: Use `/manager-handoff` more frequently, review state file sizes
+**Problem**: Context still filling up despite monitoring
+**Solution**: Manager should be checking after each phase. If not, remind manager to run `/context` after task completion
+
+**Problem**: Manager agent name not showing in resume
+**Solution**: Ensure using updated `/manager-handoff` command (v1.2.0+). Older handoffs won't have agent name tracking
 
 ---
 
