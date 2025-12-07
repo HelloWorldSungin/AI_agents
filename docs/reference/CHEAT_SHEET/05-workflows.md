@@ -464,6 +464,303 @@ Same pattern repeats for any number of sessions:
 
 ---
 
+## Mono-Repo Project Sync Workflow
+
+**New in v1.3.0** - For projects using AI_agents as a git submodule across multiple workspaces.
+
+### Overview
+
+**Problem:** Multiple projects using AI_agents library need to stay updated
+**Solution:** Recursive batch updates with selective control
+
+**Use Cases:**
+- Mono-repo with multiple apps/services
+- Multiple client projects using same agent library
+- Development + staging + production environments
+- Team with multiple projects per developer
+
+### Workflow Pattern
+
+#### Setup: Install AI_agents as Submodule
+
+For each project:
+
+```bash
+cd /path/to/project
+git submodule add https://github.com/HelloWorldSungin/AI_agents.git .ai-agents/library
+git submodule update --init --recursive
+
+# Set up symlinks for Claude Code discovery
+mkdir -p .claude/skills
+cd .claude/skills
+ln -s ../../.ai-agents/library/external/taches-cc-resources/skills/* .
+```
+
+#### Scenario 1: Single Project Update
+
+Update one project with careful review:
+
+```bash
+cd /path/to/critical-production-app
+/pull-ai-agents-submodule
+
+# Claude shows:
+# - New commits available
+# - Files changed (commands, agents, prompts)
+# - Detailed analysis of each change
+#
+# Proceed with update? Yes/Show details/Cancel
+```
+
+**Workflow:**
+1. Review changes carefully
+2. Pull update
+3. Sync to parent project
+4. Review update report
+5. Test changes
+6. Commit to project repo
+
+**When to use:**
+- Production/critical apps
+- Need detailed change review
+- Want fine-grained control
+
+#### Scenario 2: Batch Update (Recursive Mode)
+
+Update all projects under a directory:
+
+```bash
+# Mono-repo structure
+my-company/
+├── apps/
+│   ├── web/.ai-agents/library/
+│   ├── mobile/.ai-agents/library/
+│   ├── api/.ai-agents/library/
+│   └── admin/.ai-agents/library/
+
+cd my-company
+/pull-ai-agents-submodule ./apps --recursive
+```
+
+**Output:**
+
+```
+🔍 Recursive mode: Scanning for all projects under apps/
+
+Found 4 project(s) with AI_agents submodules:
+
+  1. apps/web
+     Current: master @ a1b2c3d (behind 3 commits)
+  2. apps/mobile
+     Current: master @ a1b2c3d (behind 3 commits)
+  3. apps/api
+     Current: master @ e4f5g6h (already up to date)
+  4. apps/admin
+     Current: master @ x7y8z9w (behind 1 commit)
+
+─────────────────────────────────────────
+
+Proceed with batch update?
+- Yes (update all 4 projects)
+- Select (choose specific projects)
+- Cancel
+```
+
+**You choose:** Select → `1,2,4`
+
+**Processing:**
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 Project 1/3: apps/web
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Fetching updates...
+New commits: a1b2c3d → f9e8d7c
+Files changed: 5
+- Commands: 2 files
+- Prompts: 1 file
+- Docs: 2 files
+
+Syncing to parent project...
+✓ Updated 3 files
+⚠️  1 conflict detected (review required)
+
+Report: apps/web/.ai-agents/update-reports/update-20251207-143022.md
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 Project 2/3: apps/mobile
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[... similar output ...]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 Project 3/3: apps/admin
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[... similar output ...]
+```
+
+**Batch Summary:**
+
+```markdown
+# Batch Update Summary
+
+**Projects processed:** 3
+**Updated:** 2 (web, mobile)
+**Skipped:** 1 (api - already up to date)
+**Failed:** 0
+
+## Statistics
+- Total commits pulled: 4
+- Total files synced: 8
+- Conflicts detected: 1 (apps/web)
+
+## Next Steps
+1. Review individual reports in each project
+2. Resolve conflict in apps/web
+3. Test each updated project
+4. Commit changes to project repos
+
+📊 Full report: my-company/.ai-agents/batch-update-20251207-143022.md
+```
+
+**When to use:**
+- Development environments
+- Multiple experimental projects
+- Staging servers
+- Regular maintenance updates
+
+#### Scenario 3: Mixed Strategy
+
+Critical apps individually, experiments in batch:
+
+```bash
+# Update production app with careful review
+/pull-ai-agents-submodule ./apps/production
+# ... review carefully, test thoroughly, commit ...
+
+# Batch update development/experimental apps
+/pull-ai-agents-submodule ./apps/dev --recursive
+# ... quick review of batch summary ...
+
+# Batch update staging
+/pull-ai-agents-submodule ./apps/staging --recursive
+```
+
+**When to use:**
+- Mixed environment (prod + dev + staging)
+- Some projects critical, others experimental
+- Want speed for low-risk, care for high-risk
+
+### Benefits
+
+✅ **Time Savings:** Update 10 projects in one command vs 10 separate runs
+✅ **Consistency:** All projects get same updates simultaneously
+✅ **Visibility:** Batch summary shows overall state across projects
+✅ **Selective Control:** Choose which projects to update (Yes/Select/Cancel)
+✅ **Independent Updates:** One project failure doesn't stop others
+✅ **Detailed Reports:** Per-project + batch summary for audit trail
+
+### Best Practices
+
+1. **Group by risk level:**
+   ```bash
+   # Critical apps: individual updates
+   /pull-ai-agents-submodule ./apps/production
+
+   # Low-risk apps: batch updates
+   /pull-ai-agents-submodule ./apps/internal-tools --recursive
+   ```
+
+2. **Test before wide deployment:**
+   ```bash
+   # Update dev first
+   /pull-ai-agents-submodule ./envs/dev --recursive
+
+   # Test thoroughly, then staging
+   /pull-ai-agents-submodule ./envs/staging --recursive
+
+   # Finally production (individually)
+   /pull-ai-agents-submodule ./envs/production/app1
+   /pull-ai-agents-submodule ./envs/production/app2
+   ```
+
+3. **Review batch summary:**
+   - Check for conflicts across projects
+   - Note breaking changes
+   - Identify common issues
+
+4. **Commit strategy:**
+   ```bash
+   # Each project commits independently
+   cd apps/web && git add . && git commit -m "chore: sync AI_agents updates"
+   cd apps/mobile && git add . && git commit -m "chore: sync AI_agents updates"
+   # etc.
+   ```
+
+5. **Schedule regular syncs:**
+   - Weekly: Development projects (batch mode)
+   - Bi-weekly: Staging projects (batch mode)
+   - Monthly: Production projects (individual mode)
+
+### Troubleshooting
+
+**Problem**: Too many projects found
+**Solution**: Use more specific path
+```bash
+# Instead of root
+/pull-ai-agents-submodule --recursive  # Finds 50 projects!
+
+# Use specific directory
+/pull-ai-agents-submodule ./apps --recursive  # Finds 4 projects
+```
+
+**Problem**: Want to skip certain projects permanently
+**Solution**: Use parent directory or selective mode
+```bash
+# Scenario: Skip legacy/ directory
+my-company/
+├── apps/         ← Update these
+├── services/     ← Update these
+└── legacy/       ← Skip these
+
+# Update apps and services separately
+/pull-ai-agents-submodule ./apps --recursive
+/pull-ai-agents-submodule ./services --recursive
+# Don't run on legacy/
+```
+
+**Problem**: One project has conflicts, need to handle separately
+**Solution**: Projects are independent - handle conflict manually
+```bash
+# Batch update completed, apps/web has conflict
+# Other projects (apps/mobile, apps/api) updated successfully
+
+# Handle conflict in apps/web
+cd apps/web
+# Review conflict in update report
+# Manually merge or choose version
+# Test and commit
+
+# Other projects already done!
+```
+
+**Problem**: Want different update cadence per project
+**Solution**: Update different directories at different times
+```bash
+# Weekly for dev
+/pull-ai-agents-submodule ./envs/dev --recursive
+
+# Bi-weekly for staging (run every 2 weeks)
+/pull-ai-agents-submodule ./envs/staging --recursive
+
+# Monthly for production (run monthly, individually)
+/pull-ai-agents-submodule ./envs/production/app1
+```
+
+---
+
 ## Coordination Model Comparison
 
 | Aspect | Human-Coord | Task Tool | Automated |

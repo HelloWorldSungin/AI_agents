@@ -10,12 +10,14 @@ Custom commands and thinking models for systematic decision-making.
 |----------|-------|---------|
 | Thinking Models | 12 | Mental models for systematic thinking |
 | Workflow Commands | 4 | Task management and debugging |
-| Manager Workflow | 5 | Multi-session manager coordination |
+| Manager Workflow | 5 | Multi-session manager coordination + project sync |
 | Discovery | 1 | Tool discovery across projects |
 
 **Total Commands:** 22
 
 **Location:** `.claude/commands/`
+
+**Latest:** v1.3.0 - Recursive mode for `/pull-ai-agents-submodule` (batch update multiple projects)
 
 ---
 
@@ -133,13 +135,14 @@ Commands for multi-session manager coordination with persistent agent roles and 
 | `/create-manager-meta-prompt` | Generate manager prompt + create persistent agent file with context monitoring | Before starting project | `.claude/commands/create-manager-meta-prompt.md` |
 | `/manager-handoff` | Create session handoff with auto-numbering and agent tracking | End of session (or auto at 70% context) | `.claude/commands/manager-handoff.md` |
 | `/manager-resume` | Resume from latest handoff with manager agent verification | Start new session | `.claude/commands/manager-resume.md` |
-| `/pull-ai-agents-submodule` | Sync latest AI_agents updates from submodule to project | When updating from library | `.claude/commands/pull-ai-agents-submodule.md` |
+| `/pull-ai-agents-submodule` | Sync latest AI_agents updates from submodule to project(s) | When updating from library | `.claude/commands/pull-ai-agents-submodule.md` |
 
 **New in v1.2.0:**
 - ✅ Manager agents now include automatic context monitoring
 - ✅ Auto-runs `/manager-handoff` when context > 70%
 - ✅ Agent name tracked in handoff files for seamless resume
 - ✅ Submodule sync command for keeping projects updated
+- ✅ Recursive mode for batch updating multiple projects (v1.3.0)
 
 ### /whats-next
 
@@ -580,6 +583,138 @@ Options:
 **Error Handling:**
 - No handoffs: Shows message to create one with `/manager-handoff`
 - Missing state files: Shows warning but continues with available data
+
+---
+
+### /pull-ai-agents-submodule
+
+**Purpose:** Sync latest AI_agents library updates to your project(s)
+
+**Prerequisites:**
+- AI_agents installed as git submodule at `.ai-agents/library/`
+- Project has `.claude/commands/`, `.claude/agents/`, `prompts/` directories
+
+**Two Modes:**
+
+#### Single Project Mode (Default)
+
+Updates one project at a time.
+
+```bash
+# Update current directory
+/pull-ai-agents-submodule
+
+# Update specific project
+/pull-ai-agents-submodule ./projects/trading-signal-ai
+
+# Absolute path
+/pull-ai-agents-submodule /Users/you/projects/my-app
+```
+
+**What Happens:**
+1. Fetches latest updates from AI_agents origin/master
+2. Shows commits and file changes
+3. Pulls submodule update
+4. Analyzes changed files in detail
+5. Syncs to parent project (commands, agents, prompts, scripts)
+6. Generates update report in `.ai-agents/update-reports/`
+
+#### Recursive Mode (NEW v1.3.0)
+
+**Batch update all projects** under a directory tree.
+
+```bash
+# Update all projects recursively
+/pull-ai-agents-submodule --recursive
+
+# Update all under ./projects/
+/pull-ai-agents-submodule ./projects --recursive
+
+# Short form
+/pull-ai-agents-submodule -r
+```
+
+**What Happens:**
+1. **Scans** directory tree for all `.ai-agents/library/` submodules
+2. **Lists** found projects with current commits
+3. **Prompts** for confirmation (Yes/Select/Cancel)
+4. **Updates** each project independently
+5. **Generates** per-project reports + batch summary
+
+**Example Output:**
+
+```
+🔍 Recursive mode: Scanning for all projects
+
+Found 4 project(s) with AI_agents submodules:
+
+  1. projects/trading-signal-ai
+     Current: master @ a1b2c3d
+  2. projects/portfolio-tracker
+     Current: master @ a1b2c3d (behind)
+  3. projects/market-analyzer
+     Current: master @ e4f5g6h (behind)
+  4. legacy/old-app
+     Current: master @ x7y8z9w
+
+Proceed with batch update?
+- Yes (update all)
+- Select (choose specific projects)
+- Cancel
+```
+
+**Selective Updates:**
+
+```bash
+# You chose: Select
+Select projects to update (comma-separated numbers):
+> 1,2,3
+
+Updating: trading-signal-ai, portfolio-tracker, market-analyzer
+Skipping: old-app
+```
+
+**Safety Features:**
+- ✅ Non-destructive (shows changes before applying)
+- ✅ Conflict detection (warns about local modifications)
+- ✅ Independent updates (one failure doesn't stop others)
+- ✅ Detailed reports (per-project + batch summary)
+- ✅ Rollback support (can revert to previous commit)
+
+**Use Cases:**
+
+```bash
+# Mono-repo: Update all apps at once
+my-company/
+├── apps/
+│   ├── web/.ai-agents/library/
+│   ├── mobile/.ai-agents/library/
+│   └── api/.ai-agents/library/
+
+cd my-company
+/pull-ai-agents-submodule ./apps --recursive
+```
+
+**Batch Summary Report:**
+
+After recursive update, generates comprehensive summary:
+- Overall statistics (updated/skipped/failed)
+- Per-project details (commits, files synced, conflicts)
+- Next steps and recommendations
+- Rollback instructions if needed
+
+Saved to: `{scan_root}/.ai-agents/batch-update-{timestamp}.md`
+
+**When to Use:**
+
+| Scenario | Mode | Command |
+|----------|------|---------|
+| Single project update | Single | `/pull-ai-agents-submodule` |
+| Multiple projects, careful review | Single (each) | Run command per project |
+| Mono-repo, batch sync | Recursive | `/pull-ai-agents-submodule ./projects -r` |
+| Mixed: critical + experimental | Mixed | Single mode for critical, recursive for experiments |
+
+**See:** `.claude/commands/pull-ai-agents-submodule.md` for full documentation
 
 ---
 
