@@ -4,11 +4,12 @@ description: >
   Integration with AppFlowy project management tool for task tracking, database management,
   and workspace organization. Use when working with AppFlowy, managing project tasks,
   creating databases, organizing workspaces, syncing agent work with project tracking,
-  or when the user mentions AppFlowy, project tracking, or task management.
-version: 2.0.0
+  syncing documentation or tasks to AppFlowy, setting up automated sync workflows,
+  or when the user mentions AppFlowy, project tracking, task management, or sync automation.
+version: 2.1.0
 author: AI Agents Team
 category: custom
-token_estimate: ~1200
+token_estimate: ~1300
 ---
 
 # AppFlowy Integration Skill
@@ -43,16 +44,35 @@ Integration with AppFlowy, an open-source collaborative workspace and project ma
 <quick_start>
 **ArkNode-AI Production Configuration:**
 ```bash
-export APPFLOWY_API_URL="http://appflowy.arknode-ai.home"
+export APPFLOWY_API_URL="https://appflowy.ark-node.com"
 export APPFLOWY_WORKSPACE_ID="22bcbccd-9cf3-41ac-aa0b-28fe144ba71d"
 export APPFLOWY_TODOS_DB_ID="bb7a9c66-8088-4f71-a7b7-551f4c1adc5d"
+export APPFLOWY_DATABASE_ID="bb7a9c66-8088-4f71-a7b7-551f4c1adc5d"
 ```
 
 **Access:**
-- Web UI: http://appflowy.arknode-ai.home
+- Web UI: https://appflowy.ark-node.com
 - Admin Email: admin@arknode.local
 - Admin Password: Stored in `/opt/appflowy-cloud/.env` on CT102 (192.168.68.55)
-- WebSocket: ws://appflowy.arknode-ai.home/ws/v2/
+- WebSocket: wss://appflowy.ark-node.com/ws/v2/
+
+**Automated Sync Scripts:**
+```bash
+# Sync AI_agents documentation to AppFlowy
+cd skills/custom/appflowy-integration/scripts/
+python3 sync_docs.py
+
+# Sync AI_agents tasks to AppFlowy Kanban
+python3 sync_tasks.py
+
+# Preview before syncing (dry run)
+python3 sync_docs.py --dry-run
+python3 sync_tasks.py --dry-run
+
+# Force re-sync all items
+python3 sync_docs.py --force
+python3 sync_tasks.py --force
+```
 
 **Python Client Quick Start:**
 ```python
@@ -85,6 +105,9 @@ task = client.create_row(
 ```
 
 For detailed workflows, see:
+- `workflows/sync-documentation.md` - Sync AI_agents docs to AppFlowy
+- `workflows/sync-tasks.md` - Sync AI_agents tasks to Kanban board
+- `workflows/git-sync.md` - Automated sync with git hooks and cron
 - `workflows/task-management.md` - Creating and updating tasks
 - `workflows/workspace-operations.md` - Workspace and database setup
 - `workflows/troubleshooting.md` - Common issues and solutions
@@ -109,7 +132,28 @@ AppFlowy integration follows a standard pattern: authenticate → verify workspa
 <router>
 **Choose your workflow:**
 
-1. **Task Management** → `workflows/task-management.md`
+1. **Documentation Sync** → `workflows/sync-documentation.md`
+   - Sync AI_agents docs to AppFlowy
+   - Incremental sync with hash tracking
+   - Configuration options (dry-run, force)
+   - Hierarchical folder structure
+   - Troubleshooting sync issues
+
+2. **Task Sync** → `workflows/sync-tasks.md`
+   - Sync AI_agents tasks to Kanban board
+   - Multiple data source extraction
+   - Status and priority mapping
+   - Kanban column organization
+   - Task deduplication logic
+
+3. **Git Sync Automation** → `workflows/git-sync.md`
+   - Git post-commit hooks
+   - Cron job scheduling
+   - CI/CD integration (GitHub Actions, GitLab)
+   - Incremental sync strategies
+   - Conflict handling (one-way sync)
+
+4. **Task Management** → `workflows/task-management.md`
    - Create tasks
    - Update task status
    - Query and filter tasks
@@ -117,28 +161,28 @@ AppFlowy integration follows a standard pattern: authenticate → verify workspa
    - Agent task tracking pattern
    - Daily standup summary
 
-2. **Workspace Operations** → `workflows/workspace-operations.md`
+5. **Workspace Operations** → `workflows/workspace-operations.md`
    - Workspace setup
    - Database creation and management
    - Folder structure organization
    - View management
    - Project workspace initialization
 
-3. **Server Management** → `workflows/server-deployment.md`
+6. **Server Management** → `workflows/server-deployment.md`
    - Start/stop AppFlowy backend
    - Monitor server health
    - Backup and restore
    - Container management
    - Auto-start configuration
 
-4. **Troubleshooting** → `workflows/troubleshooting.md`
+7. **Troubleshooting** → `workflows/troubleshooting.md`
    - Environment variables not updating
    - WebSocket connection issues
    - View-database association problems
    - API authentication failures
    - Container restart behavior
 
-5. **API Reference** → `references/api-reference.md`
+8. **API Reference** → `references/api-reference.md`
    - Authentication endpoints
    - Workspace API
    - Database API
@@ -151,7 +195,7 @@ AppFlowy integration follows a standard pattern: authenticate → verify workspa
 **Method 1: JWT Token (Recommended for automation)**
 ```bash
 # Obtain JWT token via API
-curl -X POST "http://appflowy.arknode-ai.home/gotrue/token" \
+curl -X POST "https://appflowy.ark-node.com/gotrue/token" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "your-email@example.com",
@@ -162,7 +206,7 @@ curl -X POST "http://appflowy.arknode-ai.home/gotrue/token" \
 
 **Method 2: Environment Variables**
 ```bash
-export APPFLOWY_API_URL="http://appflowy.arknode-ai.home"
+export APPFLOWY_API_URL="https://appflowy.ark-node.com"
 export APPFLOWY_API_TOKEN="your_jwt_token_here"
 export APPFLOWY_WORKSPACE_ID="your_workspace_id"
 ```
@@ -446,10 +490,10 @@ docker compose up -d
 ✅ **Do:** Test connectivity before running operations
 ```bash
 # Test connectivity
-curl -v http://appflowy.arknode-ai.home/api/workspace
+curl -v https://appflowy.ark-node.com/api/workspace
 
 # Test DNS resolution
-nslookup appflowy.arknode-ai.home
+nslookup appflowy.ark-node.com
 ```
 </pitfall>
 </anti_patterns>
@@ -557,6 +601,9 @@ This skill works well with:
 
 <reference_guides>
 **Documentation:**
+- `workflows/sync-documentation.md` - Sync AI_agents docs to AppFlowy
+- `workflows/sync-tasks.md` - Sync AI_agents tasks to Kanban board
+- `workflows/git-sync.md` - Automated sync with git hooks and cron
 - `workflows/task-management.md` - Creating, updating, and tracking tasks
 - `workflows/workspace-operations.md` - Workspace and database management
 - `workflows/server-deployment.md` - Server setup and operations
@@ -564,7 +611,14 @@ This skill works well with:
 - `references/api-reference.md` - Complete API endpoint documentation
 - `references/setup_guide.md` - Deployment and configuration guide
 
-**Scripts:**
+**Sync Scripts:**
+- `scripts/sync_docs.py` - Documentation sync with incremental updates
+- `scripts/sync_tasks.py` - Task sync from multiple data sources
+- Support for dry-run, force sync, and custom .env files
+- Hash-based change detection for efficient syncing
+- One-way sync: Repository → AppFlowy (source of truth)
+
+**Other Scripts:**
 - `scripts/appflowy_client.py` - Python client library
 - `scripts/task_tracker.py` - Task tracking utilities
 - `scripts/workspace_setup.py` - Workspace initialization
@@ -578,6 +632,18 @@ This skill works well with:
 </reference_guides>
 
 <version_history>
+**Version 2.1.0 (2025-12-08)**
+- Added automated sync capabilities
+- Created sync_docs.py for documentation syncing
+- Created sync_tasks.py for task syncing
+- Added workflows/sync-documentation.md
+- Added workflows/sync-tasks.md
+- Added workflows/git-sync.md
+- Updated HTTPS URL to https://appflowy.ark-node.com
+- Documented git hooks, cron jobs, and CI/CD integration
+- Hash-based incremental sync with change detection
+- One-way sync from repository to AppFlowy
+
 **Version 2.0.0 (2025-12-04)**
 - Migrated to pure XML structure
 - Implemented progressive disclosure

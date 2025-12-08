@@ -1,0 +1,27 @@
+{
+  "last_sync": "2025-12-08T08:37:07.710339Z",
+  "synced_tasks": {
+    "team-communication.json:Validate Credentials & Update Config": "46cb27e7-d3e8-4777-a2d5-6e1c1822fff1",
+    "team-communication.json:Create Documentation Sync Script": "1053b0a2-672b-403f-8f5b-a3805387d576",
+    "team-communication.json:Create Task Sync Script": "555ac4be-6fa8-4f0d-9703-44f2808fa3f5",
+    "team-communication.json:Create Workflow Documentation and Automation": "c2be454e-b61f-422f-875a-0347d36aa6ee",
+    "ROADMAP.md:Phase 01: Documentation Consolidation": "49a63d26-3491-42ad-a5f9-a55d87b372b6",
+    "ROADMAP.md:Phase 02: Skills Deduplication": "f71993ac-4211-4a0f-9a56-ad0afc4783a6",
+    "ROADMAP.md:Phase 03: Submodule Reorganization": "b343d354-bcb5-4a1a-93d2-081c08d942aa",
+    "ROADMAP.md:Phase 04: Claude Code Integration Fix": "62f664fb-fdd2-4795-89e3-3ef370ae3464",
+    "ROADMAP.md:Phase 05: Prompts Consolidation": "6c720d9b-b043-4ef2-85e6-23d303a38dea",
+    "ROADMAP.md:Phase 06: Cleanup Empty Directories": "2b02b6b5-1eff-4d5a-bc34-d7647e067c10"
+  },
+  "task_hashes": {
+    "team-communication.json:Validate Credentials & Update Config": "4098554349eeb24c9290ed0224735b5d",
+    "team-communication.json:Create Documentation Sync Script": "fc5650d792bcea3615ff113c63aa4bef",
+    "team-communication.json:Create Task Sync Script": "d87bf0f34a033f77af23767040106e02",
+    "team-communication.json:Create Workflow Documentation and Automation": "ab7439820705e81d22b322e3f7a9e5c3",
+    "ROADMAP.md:Phase 01: Documentation Consolidation": "c044b69bf7842f97dca00c4e47d47f3d",
+    "ROADMAP.md:Phase 02: Skills Deduplication": "f0658cbc351c87d916421ae7e60393f3",
+    "ROADMAP.md:Phase 03: Submodule Reorganization": "9f323acaed8806ea65062f3731c53c6d",
+    "ROADMAP.md:Phase 04: Claude Code Integration Fix": "e1b9e77aa567dd93278053af4c5a7c62",
+    "ROADMAP.md:Phase 05: Prompts Consolidation": "680f35f8d2330d2129bbb0d3196e7949",
+    "ROADMAP.md:Phase 06: Cleanup Empty Directories": "f3fabd760fc549087bacee43c52a165c"
+  }
+}

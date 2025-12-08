@@ -131,20 +131,53 @@ task_data = {
 task = client.create_row(database_id, task_data)
 ```
 
+## Documentation Sync (NEW!)
+
+Automatically sync AI_agents documentation to AppFlowy:
+
+### Quick Setup
+1. **Create Documentation database** in AppFlowy (see [SETUP_DOCUMENTATION_DATABASE.md](SETUP_DOCUMENTATION_DATABASE.md))
+2. **Add database ID** to `.env`:
+   ```bash
+   APPFLOWY_DOCS_DATABASE_ID=your-database-id-here
+   ```
+3. **Test connection**:
+   ```bash
+   cd scripts/
+   python3 test_connection.py
+   ```
+4. **Sync documentation**:
+   ```bash
+   python3 sync_docs_database.py --dry-run  # Test first
+   python3 sync_docs_database.py            # Sync for real
+   ```
+
+### Features
+- **Auto-detects field IDs** from database schema
+- **Incremental sync** - only syncs changed files
+- **14 documentation files** organized by category
+- **Dry-run mode** for testing
+- **Force sync** to re-sync all files
+
+See [SETUP_DOCUMENTATION_DATABASE.md](SETUP_DOCUMENTATION_DATABASE.md) for detailed setup instructions.
+
 ## Directory Structure
 
 ```
 appflowy-integration/
-├── SKILL.md                    # Main skill documentation
-├── README.md                   # This file
+├── SKILL.md                           # Main skill documentation
+├── README.md                          # This file
+├── SETUP_DOCUMENTATION_DATABASE.md    # Documentation sync setup guide
 ├── scripts/
-│   ├── appflowy_client.py      # Python API client
-│   ├── task_tracker.py         # CLI task tracker
-│   ├── workspace_setup.py      # Workspace setup helper
-│   └── manage_server.sh        # Server management script
+│   ├── appflowy_client.py             # Python API client
+│   ├── sync_docs_database.py          # Documentation sync script (NEW!)
+│   ├── test_connection.py             # Connection test script (NEW!)
+│   ├── task_tracker.py                # CLI task tracker
+│   ├── workspace_setup.py             # Workspace setup helper
+│   └── manage_server.sh               # Server management script
 └── references/
-    ├── docker-compose.yml      # Docker deployment
-    └── setup_guide.md          # Detailed setup guide
+    ├── docker-compose.yml             # Docker deployment
+    └── setup_guide.md                 # Detailed setup guide
 ```
 
 ## Key Features
