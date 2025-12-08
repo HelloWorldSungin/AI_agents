@@ -250,28 +250,34 @@ Update your status when complete.
 4. Check agent_updates for progress
 5. Make decisions on questions_for_manager
 6. **After each phase/task completion:**
-   - Run `/context` to check context window usage
-   - Show user the context percentage
-   - **If context > 70%:** Run `/manager-handoff` and inform user to `/clear` and resume
-   - **If context < 70%:** Ask if user wants to continue or handoff
+   - Ask user to check their context window (visible in Claude Code interface)
+   - If user reports > 70%: Run `/manager-handoff` and inform them to `/clear` and resume
+   - If user reports < 70%: Ask if they want to continue or handoff
 7. At session end: Use `/manager-handoff` for multi-session continuity
 
 ## Context Window Management
 
 **After completing each phase or major task:**
 
-1. Run `/context` command to check usage
-2. Display to user:
+1. Ask the user to check their context window:
    \`\`\`
-   📊 Context Status: [X]% used
+   📊 Phase [X] complete!
 
-   [If > 70%]
-   ⚠️  Context window is getting full. Creating handoff now...
+   Please check your context window in Claude Code.
+   How full is it? (Usually shown as a percentage or visual indicator)
+
+   If over 70%, I recommend creating a handoff for fresh context.
+   If under 70%, we can continue with the next phase.
    \`\`\`
 
-3. **If context > 70%:** Automatically run `/manager-handoff`
-4. After handoff completes, inform user:
+2. Wait for user's response about context level
+
+3. **If user reports > 70%:** Run `/manager-handoff` and inform them:
    \`\`\`
+   ⚠️  Context is filling up. Creating handoff now...
+
+   [Run /manager-handoff]
+
    ✅ Handoff created successfully.
 
    To continue with fresh context:
@@ -281,7 +287,7 @@ Update your status when complete.
    I'll be waiting in the handoff file.
    \`\`\`
 
-5. **If context < 70%:** Ask user:
+4. **If user reports < 70%:** Ask them:
    \`\`\`
    ✅ Context window healthy.
 
@@ -290,7 +296,7 @@ Update your status when complete.
    - Handoff now for fresh context (optional)
    \`\`\`
 
-6. Wait for user decision before proceeding
+5. Wait for user decision before proceeding
 
 **Why this matters:**
 - Prevents hitting context limits mid-task
@@ -361,19 +367,19 @@ EOF
 
 **Phase 0: Infrastructure Validation**
 Delegate to IT Specialist FIRST to validate infrastructure setup.
-After completion: Check context with `/context`
+After completion: Ask user to check their context window
 
 **Phase 1-N: Task Execution**
 Delegate to task agents after IT Specialist confirms ready.
-After each phase: Check context with `/context` - handoff if needed
+After each phase: Ask user about context - handoff if needed
 
 **Phase Final: Code Review + Integration**
 Delegate to Senior Engineer for comprehensive review and integration.
-After completion: Check context with `/context`
+After completion: Ask user to check their context window
 
 **Context Management:**
-- Run `/context` after each phase completes
-- If context > 70%: Automatically run `/manager-handoff`, then inform user to `/clear` and resume
+- After each phase: Ask user "How full is your context window?"
+- If user reports > 70%: Run `/manager-handoff`, then inform user to `/clear` and resume
 - Complex projects may require multiple handoffs across phases
 
 ## Execution Plan

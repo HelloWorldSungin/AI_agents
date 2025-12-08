@@ -126,20 +126,20 @@ Commands for task management, debugging, and handoffs.
 
 ## Manager Workflow Commands
 
-Commands for multi-session manager coordination with persistent agent roles and context monitoring.
+Commands for multi-session manager coordination with persistent agent roles and context awareness.
 
 **Location:** `.claude/commands/`
 
 | Command | Purpose | Usage | Location |
 |---------|---------|-------|----------|
-| `/create-manager-meta-prompt` | Generate manager prompt + create persistent agent file with context monitoring | Before starting project | `.claude/commands/create-manager-meta-prompt.md` |
-| `/manager-handoff` | Create session handoff with auto-numbering and agent tracking | End of session (or auto at 70% context) | `.claude/commands/manager-handoff.md` |
+| `/create-manager-meta-prompt` | Generate manager prompt + create persistent agent file with context awareness | Before starting project | `.claude/commands/create-manager-meta-prompt.md` |
+| `/manager-handoff` | Create session handoff with auto-numbering and agent tracking | End of session (or when user reports high context) | `.claude/commands/manager-handoff.md` |
 | `/manager-resume` | Resume from latest handoff with manager agent verification | Start new session | `.claude/commands/manager-resume.md` |
 | `/pull-ai-agents-submodule` | Sync latest AI_agents updates from submodule to project(s) | When updating from library | `.claude/commands/pull-ai-agents-submodule.md` |
 
 **New in v1.2.0:**
-- ✅ Manager agents now include automatic context monitoring
-- ✅ Auto-runs `/manager-handoff` when context > 70%
+- ✅ Manager agents ask user about context after each phase
+- ✅ Runs `/manager-handoff` when user reports context > 70%
 - ✅ Agent name tracked in handoff files for seamless resume
 - ✅ Submodule sync command for keeping projects updated
 - ✅ Recursive mode for batch updating multiple projects (v1.3.0)

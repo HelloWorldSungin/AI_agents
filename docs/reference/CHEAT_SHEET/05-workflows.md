@@ -295,12 +295,12 @@ For projects spanning multiple sessions, use this workflow to maintain state con
 - Persistent manager agent file (`.claude/agents/project-manager.md`)
 - Session handoffs (`.ai-agents/handoffs/session-XXX.md`)
 - State files (team-communication, session-progress, feature-tracking)
-- Context monitoring (automatic `/context` checks after each phase)
+- Context monitoring (manager asks user after each phase)
 - Resume command (`/manager-resume`)
 
 **New Features (v1.2.0):**
-- ✅ Manager automatically checks context usage after each phase
-- ✅ Auto-runs `/manager-handoff` when context > 70%
+- ✅ Manager asks user about context usage after each phase
+- ✅ Auto-runs `/manager-handoff` when user reports > 70%
 - ✅ Manager agent name tracked in handoff files
 - ✅ Seamless resume with `@manager-name /manager-resume`
 
@@ -326,17 +326,19 @@ mkdir -p .ai-agents/state
 # Manager delegates tasks via Task tool
 # Agents complete work, update state files
 
-# 5. After each phase/task, manager checks context
-# Manager: "📊 Context Status: 45% used"
+# 5. After each phase/task, manager asks about context
+# Manager: "📊 Phase complete! How full is your context window?"
+# You: "About 45%"
 # Manager: "✅ Context window healthy. Continue with next phase?"
 # You: "Yes"
 
 # [Continue working...]
 
-# 6. Manager detects context > 70%
-# Manager: "📊 Context Status: 72% used"
+# 6. User reports context > 70%
+# Manager: "📊 Phase complete! How full is your context window?"
+# You: "Around 72%"
 # Manager: "⚠️ Context window is getting full. Creating handoff now..."
-# Manager automatically runs: /manager-handoff
+# Manager runs: /manager-handoff
 # Manager: "✅ Handoff created successfully.
 #          To continue with fresh context:
 #          1. Run: /clear
@@ -364,17 +366,19 @@ mkdir -p .ai-agents/state
 # Manager picks up where it left off
 # Spawns agents via Task tool
 
-# 3. Manager monitors context after each phase
-# Manager: "📊 Context Status: 55% used"
+# 3. Manager asks about context after each phase
+# Manager: "📊 Phase complete! How full is your context window?"
+# You: "About 55%"
 # Manager: "✅ Continue with next phase?"
 # You: "Yes"
 
 # [Work continues...]
 
-# 4. Manager auto-handoffs when context > 70%
-# Manager: "📊 Context Status: 74% used"
+# 4. User reports context > 70%, manager creates handoff
+# Manager: "📊 Phase complete! How full is your context window?"
+# You: "Around 74%"
 # Manager: "⚠️ Creating handoff now..."
-# Manager runs /manager-handoff automatically
+# Manager runs /manager-handoff
 # Output: Created .ai-agents/handoffs/session-002.md
 
 # 5. Clear context
@@ -386,8 +390,8 @@ mkdir -p .ai-agents/state
 Same pattern repeats for any number of sessions:
 1. `@{manager-name} /manager-resume`
 2. Work (delegate, monitor, coordinate)
-3. Manager checks context after each phase
-4. Manager auto-runs `/manager-handoff` when context > 70%
+3. Manager asks about context after each phase
+4. Manager runs `/manager-handoff` when you report > 70%
 5. You run `/clear` and resume in next session
 
 ### Benefits
@@ -398,8 +402,8 @@ Same pattern repeats for any number of sessions:
 ✅ **Clear handoff docs**: Each handoff documents progress
 ✅ **Auto-numbering**: Session files auto-increment (001, 002, 003...)
 ✅ **Quick resume**: `/manager-resume` provides instant status update
-✅ **Context monitoring**: Manager checks usage after each phase
-✅ **Auto-handoff**: Manager runs `/manager-handoff` when context > 70%
+✅ **Context monitoring**: Manager asks user about context after each phase
+✅ **Handoff workflow**: Manager runs `/manager-handoff` when you report > 70%
 ✅ **Agent tracking**: Handoff remembers which manager to resume
 
 ### State Files
@@ -457,7 +461,7 @@ Same pattern repeats for any number of sessions:
 **Solution**: Agents should update team-communication.json after completing tasks
 
 **Problem**: Context still filling up despite monitoring
-**Solution**: Manager should be checking after each phase. If not, remind manager to run `/context` after task completion
+**Solution**: Manager should be asking user about context after each phase. If not, remind manager to ask "How full is your context window?"
 
 **Problem**: Manager agent name not showing in resume
 **Solution**: Ensure using updated `/manager-handoff` command (v1.2.0+). Older handoffs won't have agent name tracking
