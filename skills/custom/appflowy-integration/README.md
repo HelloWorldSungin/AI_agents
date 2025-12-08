@@ -43,6 +43,8 @@ Create `.env` file:
 APPFLOWY_API_URL=http://localhost:8080
 APPFLOWY_API_TOKEN=your_jwt_token_here
 APPFLOWY_WORKSPACE_ID=your_workspace_id
+APPFLOWY_DOCS_PARENT_ID=parent_page_id  # Optional: Parent page for docs hierarchy
+APPFLOWY_DATABASE_ID=your_database_id   # For task sync
 ```
 
 ### 3. Get API Token
@@ -148,8 +150,8 @@ Automatically sync AI_agents documentation to AppFlowy:
    ```
 4. **Sync documentation**:
    ```bash
-   python3 sync_docs_database.py --dry-run  # Test first
-   python3 sync_docs_database.py            # Sync for real
+   python3 sync_documentation.py --dry-run  # Test first
+   python3 sync_documentation.py            # Sync for real
    ```
 
 ### Features
@@ -161,6 +163,90 @@ Automatically sync AI_agents documentation to AppFlowy:
 
 See [SETUP_DOCUMENTATION_DATABASE.md](SETUP_DOCUMENTATION_DATABASE.md) for detailed setup instructions.
 
+## AppFlowy API: Delta Block Format
+
+### Critical Information
+
+**AppFlowy uses block-based Delta format, NOT raw markdown.** You must create pages first, then append content blocks.
+
+**Correct API Endpoints:**
+
+1. **Create Page (Empty):**
+   ```
+   POST /api/workspace/{workspace_id}/page-view
+   {
+     "name": "Page Title",
+     "layout": 0,
+     "parent_view_id": "parent_id"  // Optional: for nested pages
+   }
+   ```
+
+2. **Append Content Blocks:**
+   ```
+   POST /api/workspace/{workspace_id}/page-view/{page_id}/append-block
+   {
+     "blocks": [
+       {"type": "heading", "data": {"level": 1, "delta": [{"insert": "Title"}]}},
+       {"type": "paragraph", "data": {"delta": [{"insert": "Text"}]}},
+       {"type": "bulleted_list", "data": {"delta": [{"insert": "Item"}]}}
+     ]
+   }
+   ```
+
+3. **Update Metadata Only:**
+   ```
+   PATCH /api/workspace/{workspace_id}/page-view/{page_id}
+   {
+     "name": "Updated Title"
+   }
+   ```
+   **Note:** PATCH does NOT update content. Use append-block for content.
+
+### Markdown to Delta Blocks Converter
+
+The `markdown_to_blocks()` function (in `update_page_content.py` and `sync_docs.py`) converts markdown to AppFlowy Delta blocks:
+
+**Supported Markdown Elements:**
+- ✅ **Headings** (# through ######)
+- ✅ **Bullet lists** (-, *)
+- ✅ **Numbered lists** (1., 2., etc.)
+- ✅ **Code blocks** (``` with language detection)
+- ✅ **Blockquotes** (>)
+- ✅ **Paragraphs** (regular text)
+
+**Usage:**
+```bash
+# Update a single page with markdown content
+cd scripts/
+python3 update_page_content.py README.md
+
+# Test first with dry run
+python3 update_page_content.py README.md --dry-run
+
+# Update all synced pages
+python3 batch_update_all.py
+
+# Verify page content
+python3 verify_page_content.py README.md
+```
+
+**Integration Example:**
+```python
+from update_page_content import markdown_to_blocks, append_blocks_to_page
+
+# Convert markdown to blocks
+blocks = markdown_to_blocks(markdown_content)
+
+# Append to page
+append_blocks_to_page(api_url, workspace_id, page_id, blocks, token)
+```
+
+**Performance:**
+- README.md: 675 blocks successfully converted
+- Processing time: ~1.5 seconds for 52KB file
+- API endpoint: `/api/workspace/{workspace_id}/page-view/{page_id}/append-block`
+- Format: AppFlowy Delta blocks (compatible with Quill.js)
+
 ## Directory Structure
 
 ```
@@ -168,10 +254,15 @@ appflowy-integration/
 ├── SKILL.md                           # Main skill documentation
 ├── README.md                          # This file
 ├── SETUP_DOCUMENTATION_DATABASE.md    # Documentation sync setup guide
+├── MARKDOWN_CONVERTER_REPORT.md       # Converter implementation report (NEW!)
+├── .sync-status.json                  # Page ID mappings
 ├── scripts/
 │   ├── appflowy_client.py             # Python API client
-│   ├── sync_docs_database.py          # Documentation sync script (NEW!)
-│   ├── test_connection.py             # Connection test script (NEW!)
+│   ├── sync_documentation.py          # Documentation sync script
+│   ├── test_connection.py             # Connection test script
+│   ├── update_page_content.py         # Markdown to AppFlowy converter (NEW!)
+│   ├── batch_update_all.py            # Batch page updater (NEW!)
+│   ├── verify_page_content.py         # Page verification tool (NEW!)
 │   ├── task_tracker.py                # CLI task tracker
 │   ├── workspace_setup.py             # Workspace setup helper
 │   └── manage_server.sh               # Server management script

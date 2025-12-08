@@ -6,7 +6,7 @@ description: >
   creating databases, organizing workspaces, syncing agent work with project tracking,
   syncing documentation or tasks to AppFlowy, setting up automated sync workflows,
   or when the user mentions AppFlowy, project tracking, task management, or sync automation.
-version: 2.1.0
+version: 2.2.0
 author: AI Agents Team
 category: custom
 token_estimate: ~1300
@@ -74,6 +74,15 @@ python3 sync_docs.py --force
 python3 sync_tasks.py --force
 ```
 
+**Environment Variables:**
+```bash
+export APPFLOWY_API_URL="https://appflowy.ark-node.com"
+export APPFLOWY_API_TOKEN="your_jwt_token"
+export APPFLOWY_WORKSPACE_ID="22bcbccd-9cf3-41ac-aa0b-28fe144ba71d"
+export APPFLOWY_DOCS_PARENT_ID="parent_page_id"  # Optional: Parent page for docs
+export APPFLOWY_DATABASE_ID="bb7a9c66-8088-4f71-a7b7-551f4c1adc5d"
+```
+
 **Python Client Quick Start:**
 ```python
 from appflowy_client import AppFlowyClient
@@ -124,9 +133,77 @@ For detailed workflows, see:
 - API responses return expected data structures
 </success_criteria>
 
+<api_endpoints>
+**Correct API Endpoints for Page Management:**
+
+AppFlowy uses a **block-based Delta format** for page content, NOT raw markdown. You must create pages first, then append content blocks.
+
+**1. Create Page (Empty):**
+```
+POST /api/workspace/{workspace_id}/page-view
+{
+  "name": "Page Title",
+  "layout": 0,                    // 0 = Document layout
+  "parent_view_id": "parent_id"   // Optional: for nested pages
+}
+```
+Response: `{"data": {"view_id": "...", "database_id": null}, "code": 0}`
+
+**2. Append Content Blocks:**
+```
+POST /api/workspace/{workspace_id}/page-view/{page_id}/append-block
+{
+  "blocks": [
+    {"type": "heading", "data": {"level": 1, "delta": [{"insert": "Title"}]}},
+    {"type": "paragraph", "data": {"delta": [{"insert": "Text content"}]}},
+    {"type": "bulleted_list", "data": {"delta": [{"insert": "List item"}]}},
+    {"type": "numbered_list", "data": {"delta": [{"insert": "Numbered item"}]}},
+    {"type": "code", "data": {"language": "python", "delta": [{"insert": "code"}]}},
+    {"type": "quote", "data": {"delta": [{"insert": "Quote text"}]}}
+  ]
+}
+```
+
+**3. Update Page Metadata (Name/Icon only):**
+```
+PATCH /api/workspace/{workspace_id}/page-view/{page_id}
+{
+  "name": "Updated Title"
+}
+```
+Note: PATCH does NOT update content. Use append-block endpoint for content.
+
+**Delta Block Format:**
+AppFlowy uses Delta format (compatible with Quill.js):
+- Each block has a `type` (heading, paragraph, bulleted_list, numbered_list, code, quote)
+- Each block has `data` containing `delta` array with `{"insert": "text"}` objects
+- Headings have additional `level` field (1-6)
+- Code blocks have additional `language` field
+
+**Markdown to Blocks Converter:**
+Use the `markdown_to_blocks()` function from `update_page_content.py`:
+```python
+from update_page_content import markdown_to_blocks
+
+# Convert markdown to AppFlowy blocks
+blocks = markdown_to_blocks(markdown_content)
+
+# Append to page
+append_blocks_to_page(api_url, workspace_id, page_id, blocks, token)
+```
+
+Supported markdown elements:
+- Headings (# through ######)
+- Bullet lists (-, *)
+- Numbered lists (1., 2., etc.)
+- Code blocks (``` with language detection)
+- Blockquotes (>)
+- Paragraphs (regular text)
+</api_endpoints>
+
 <workflow>
 <overview>
-AppFlowy integration follows a standard pattern: authenticate → verify workspace → list databases → perform operations. The skill provides specialized workflows for different use cases.
+AppFlowy integration follows a standard pattern: authenticate → verify workspace → list databases → perform operations. For page content, use a two-step process: (1) create page, (2) append blocks. The skill provides specialized workflows for different use cases.
 </overview>
 
 <router>
@@ -632,6 +709,16 @@ This skill works well with:
 </reference_guides>
 
 <version_history>
+**Version 2.2.0 (2025-12-08)**
+- Documented correct API endpoints (append-block for content)
+- Added Delta block format documentation
+- Added markdown_to_blocks converter documentation
+- Updated sync_docs.py to use block-based content sync
+- Documented APPFLOWY_DOCS_PARENT_ID environment variable
+- Clarified two-step process: create page then append blocks
+- Added supported markdown elements list
+- Fixed content update workflow (PATCH only updates metadata)
+
 **Version 2.1.0 (2025-12-08)**
 - Added automated sync capabilities
 - Created sync_docs.py for documentation syncing

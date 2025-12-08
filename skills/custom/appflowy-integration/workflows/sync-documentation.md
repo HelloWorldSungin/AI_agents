@@ -2,7 +2,16 @@
 
 ## Overview
 
-The `sync_docs.py` script syncs AI_agents documentation files to your AppFlowy workspace, creating a hierarchical folder structure that mirrors the repository organization. The script supports incremental updates, tracking sync status to avoid redundant syncs.
+The `sync_docs.py` script syncs AI_agents documentation files to your AppFlowy workspace, creating a hierarchical folder structure that mirrors the repository organization. The script uses **AppFlowy's Delta block format** for page content (not raw markdown) and supports incremental updates, tracking sync status to avoid redundant syncs.
+
+### Key Technical Details
+
+**Two-Step Process:**
+1. Create page (empty) using `POST /api/workspace/{id}/page-view`
+2. Append content blocks using `POST /api/workspace/{id}/page-view/{page_id}/append-block`
+
+**Delta Block Format:**
+AppFlowy uses a block-based Delta format (compatible with Quill.js), not raw markdown. The script automatically converts markdown to Delta blocks.
 
 ## Quick Start
 
@@ -30,7 +39,14 @@ The script requires the following environment variables:
 export APPFLOWY_API_URL="https://appflowy.ark-node.com"
 export APPFLOWY_API_TOKEN="your_jwt_token_here"
 export APPFLOWY_WORKSPACE_ID="22bcbccd-9cf3-41ac-aa0b-28fe144ba71d"
+export APPFLOWY_DOCS_PARENT_ID="parent_page_id"  # Optional: Parent page for docs hierarchy
 ```
+
+**Note on APPFLOWY_DOCS_PARENT_ID:**
+- Optional environment variable
+- If set, all documentation folders are created as children of this page
+- If not set, the script will find or create a "Documentation" page automatically
+- Useful for organizing documentation under a specific parent page
 
 ### Python Dependencies
 
@@ -91,6 +107,56 @@ The script syncs the following 14 documentation files:
 - `examples/mobile-app-team/README.md` → Examples/Mobile App Team
 
 ## How It Works
+
+### Content Conversion: Markdown to Delta Blocks
+
+AppFlowy pages use **Delta block format**, not raw markdown. The script includes a `markdown_to_blocks()` converter that transforms markdown into AppFlowy-compatible blocks.
+
+**Supported Markdown Elements:**
+- **Headings:** `#` through `######` → `{"type": "heading", "data": {"level": 1-6, "delta": [...]}}`
+- **Bullet lists:** `- item` or `* item` → `{"type": "bulleted_list", "data": {"delta": [...]}}`
+- **Numbered lists:** `1. item` → `{"type": "numbered_list", "data": {"delta": [...]}}`
+- **Code blocks:** ` ```python` → `{"type": "code", "data": {"language": "python", "delta": [...]}}`
+- **Blockquotes:** `> quote` → `{"type": "quote", "data": {"delta": [...]}}`
+- **Paragraphs:** Regular text → `{"type": "paragraph", "data": {"delta": [...]}}`
+
+**Example Conversion:**
+```markdown
+# My Title
+This is a paragraph.
+- Bullet item
+```
+
+Converts to:
+```json
+[
+  {"type": "heading", "data": {"level": 1, "delta": [{"insert": "My Title"}]}},
+  {"type": "paragraph", "data": {"delta": [{"insert": "This is a paragraph."}]}},
+  {"type": "bulleted_list", "data": {"delta": [{"insert": "Bullet item"}]}}
+]
+```
+
+### Two-Step Page Creation
+
+**Step 1: Create Empty Page**
+```
+POST /api/workspace/{workspace_id}/page-view
+{
+  "name": "Page Title",
+  "layout": 0,
+  "parent_view_id": "parent_id"  // Optional
+}
+```
+
+**Step 2: Append Content Blocks**
+```
+POST /api/workspace/{workspace_id}/page-view/{page_id}/append-block
+{
+  "blocks": [...]  // Delta blocks from markdown_to_blocks()
+}
+```
+
+**Important:** The `PATCH /api/workspace/{id}/page-view/{page_id}` endpoint only updates metadata (name, icon), NOT content. Always use `append-block` for content.
 
 ### Incremental Sync Logic
 

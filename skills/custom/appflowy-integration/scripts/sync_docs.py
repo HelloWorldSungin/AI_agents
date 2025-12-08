@@ -4,6 +4,7 @@ AppFlowy Documentation Sync Script
 
 Syncs AI_agents documentation to AppFlowy workspace with hierarchical folder structure.
 Supports incremental updates by tracking sync status in a local JSON file.
+Uses Delta block format for page content (not raw markdown).
 
 Usage:
     python sync_docs.py [--dry-run] [--force] [--env-file PATH]
@@ -14,12 +15,23 @@ Options:
     --env-file   Path to .env file (default: auto-detect)
 
 Environment Variables:
-    APPFLOWY_API_URL        AppFlowy API base URL
-    APPFLOWY_API_TOKEN      JWT authentication token
-    APPFLOWY_WORKSPACE_ID   Target workspace ID
+    APPFLOWY_API_URL            AppFlowy API base URL
+    APPFLOWY_API_TOKEN          JWT authentication token
+    APPFLOWY_WORKSPACE_ID       Target workspace ID
+    APPFLOWY_DOCS_PARENT_ID     (Optional) Parent page ID for "Documentation"
 
 Author: AI Agents Team
-Version: 1.0.0
+Version: 2.0.0
+
+Changelog:
+  v2.0.0 - Integrated markdown_to_blocks converter
+         - Use append-block endpoint for content (Delta format)
+         - Removed broken PATCH content update
+         - Two-step process: create page, then append blocks
+  v1.1.0 - Added hierarchical nesting inside Documentation page
+         - Added duplicate folder prevention
+         - Added APPFLOWY_DOCS_PARENT_ID environment variable support
+  v1.0.0 - Initial release
 """
 
 import os
@@ -28,9 +40,10 @@ import json
 import argparse
 import logging
 import hashlib
+import re
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 import requests
 from requests.exceptions import RequestException, HTTPError
 
@@ -41,6 +54,116 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger(__name__)
+
+
+def markdown_to_blocks(markdown: str) -> List[Dict[str, Any]]:
+    """
+    Convert markdown content to AppFlowy Delta block format.
+
+    Supports:
+    - Headings (# through ######)
+    - Bullet lists (-, *)
+    - Numbered lists (1., 2., etc.)
+    - Code blocks (```)
+    - Blockquotes (>)
+    - Regular paragraphs
+    """
+    blocks = []
+    lines = markdown.split('\n')
+    i = 0
+
+    while i < len(lines):
+        line = lines[i]
+
+        # Skip empty lines
+        if not line.strip():
+            i += 1
+            continue
+
+        # Headings (# through ######)
+        heading_match = re.match(r'^(#{1,6})\s+(.+)$', line)
+        if heading_match:
+            level = len(heading_match.group(1))
+            text = heading_match.group(2)
+            blocks.append({
+                "type": "heading",
+                "data": {
+                    "level": level,
+                    "delta": [{"insert": text}]
+                }
+            })
+            i += 1
+            continue
+
+        # Bullet lists (-, *)
+        bullet_match = re.match(r'^[\-\*]\s+(.+)$', line)
+        if bullet_match:
+            text = bullet_match.group(1)
+            blocks.append({
+                "type": "bulleted_list",
+                "data": {
+                    "delta": [{"insert": text}]
+                }
+            })
+            i += 1
+            continue
+
+        # Numbered lists (1., 2., etc.)
+        numbered_match = re.match(r'^\d+\.\s+(.+)$', line)
+        if numbered_match:
+            text = numbered_match.group(1)
+            blocks.append({
+                "type": "numbered_list",
+                "data": {
+                    "delta": [{"insert": text}]
+                }
+            })
+            i += 1
+            continue
+
+        # Blockquotes (>)
+        quote_match = re.match(r'^>\s+(.+)$', line)
+        if quote_match:
+            text = quote_match.group(1)
+            blocks.append({
+                "type": "quote",
+                "data": {
+                    "delta": [{"insert": text}]
+                }
+            })
+            i += 1
+            continue
+
+        # Code blocks (```)
+        if line.strip().startswith('```'):
+            lang = line.strip()[3:].strip() or "plain"
+            code_lines = []
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith('```'):
+                code_lines.append(lines[i])
+                i += 1
+
+            code_content = '\n'.join(code_lines)
+            blocks.append({
+                "type": "code",
+                "data": {
+                    "language": lang,
+                    "delta": [{"insert": code_content}]
+                }
+            })
+            i += 1  # Skip closing ```
+            continue
+
+        # Regular paragraph
+        blocks.append({
+            "type": "paragraph",
+            "data": {
+                "delta": [{"insert": line}]
+            }
+        })
+        i += 1
+
+    return blocks
 
 
 class AppFlowyAPIError(Exception):
@@ -99,6 +222,65 @@ class AppFlowyClient:
         """Get workspace folder structure."""
         return self._make_request('GET', f'/api/workspace/{self.workspace_id}/folder')
 
+    def find_page_by_name(self, name: str, folder_structure: Optional[dict] = None) -> Optional[str]:
+        """
+        Find a page/folder by name in the workspace folder structure.
+
+        Returns the view_id if found, None otherwise.
+        """
+        if folder_structure is None:
+            folder_structure = self.get_workspace_folder()
+
+        # Handle both dict (API response) and the data within it
+        if isinstance(folder_structure, dict) and 'data' in folder_structure:
+            folder_structure = folder_structure['data']
+
+        def search_recursive(item: dict) -> Optional[str]:
+            if item.get('name') == name:
+                return item.get('view_id')
+            # Search in children if present
+            children = item.get('children', [])
+            if children:
+                for child in children:
+                    result = search_recursive(child)
+                    if result:
+                        return result
+            return None
+
+        return search_recursive(folder_structure)
+
+    def find_child_by_name(self, parent_id: str, name: str, folder_structure: Optional[dict] = None) -> Optional[str]:
+        """
+        Find a direct child page/folder by name under a specific parent.
+
+        Returns the view_id if found, None otherwise.
+        """
+        if folder_structure is None:
+            folder_structure = self.get_workspace_folder()
+
+        # Handle both dict (API response) and the data within it
+        if isinstance(folder_structure, dict) and 'data' in folder_structure:
+            folder_structure = folder_structure['data']
+
+        def find_parent_and_search(item: dict) -> Optional[str]:
+            if item.get('view_id') == parent_id:
+                # Found the parent, search its children
+                children = item.get('children', [])
+                for child in children:
+                    if child.get('name') == name:
+                        return child.get('view_id')
+                return None
+            # Search recursively in children
+            children = item.get('children', [])
+            if children:
+                for child in children:
+                    result = find_parent_and_search(child)
+                    if result:
+                        return result
+            return None
+
+        return find_parent_and_search(folder_structure)
+
     def create_folder(self, name: str, parent_id: Optional[str] = None) -> dict:
         """Create a folder in the workspace."""
         data = {
@@ -111,7 +293,13 @@ class AppFlowyClient:
         return self._make_request('POST', f'/api/workspace/{self.workspace_id}/page-view', json=data)
 
     def create_page(self, name: str, content: str, parent_id: Optional[str] = None) -> dict:
-        """Create a page/document in the workspace."""
+        """
+        Create a page/document in the workspace with content.
+
+        Uses two-step process:
+        1. Create empty page (POST page-view)
+        2. Append content blocks (POST append-block)
+        """
         data = {
             'name': name,
             'layout': 0  # 0 = Document layout
@@ -119,25 +307,64 @@ class AppFlowyClient:
         if parent_id:
             data['parent_view_id'] = parent_id
 
-        # Create the page first
+        # Step 1: Create the page (empty)
         result = self._make_request('POST', f'/api/workspace/{self.workspace_id}/page-view', json=data)
 
         # Get the created view_id
         view_id = result.get('data', {}).get('view_id')
 
-        # Update the page with content if view_id was returned
+        # Step 2: Append content blocks if view_id was returned and content exists
         if view_id and content:
-            self.update_page(view_id, name, content)
+            try:
+                # Convert markdown to blocks
+                blocks = markdown_to_blocks(content)
+                # Append blocks to page
+                self.append_blocks(view_id, blocks)
+            except Exception as e:
+                logger.warning(f"Failed to append content to page {view_id}: {e}")
 
         return result
 
+    def append_blocks(self, page_id: str, blocks: List[Dict[str, Any]]) -> dict:
+        """
+        Append content blocks to an existing page.
+
+        Args:
+            page_id: Target page view ID
+            blocks: List of Delta block objects
+
+        Returns:
+            API response
+        """
+        data = {'blocks': blocks}
+        return self._make_request('POST', f'/api/workspace/{self.workspace_id}/page-view/{page_id}/append-block', json=data)
+
     def update_page(self, page_id: str, name: str, content: str) -> dict:
-        """Update an existing page with content."""
-        data = {
-            'name': name,
-            'content': content
-        }
-        return self._make_request('PATCH', f'/api/workspace/{self.workspace_id}/page-view/{page_id}', json=data)
+        """
+        Update an existing page with new content.
+
+        Note: PATCH only updates metadata (name, icon). For content, we need to:
+        1. Clear existing blocks (not supported via API)
+        2. Append new blocks
+
+        Current implementation: Appends new blocks without clearing old ones.
+        """
+        # Update metadata (name)
+        try:
+            self._make_request('PATCH', f'/api/workspace/{self.workspace_id}/page-view/{page_id}', json={'name': name})
+        except Exception as e:
+            logger.warning(f"Failed to update page metadata: {e}")
+
+        # Append new content blocks
+        if content:
+            try:
+                blocks = markdown_to_blocks(content)
+                return self.append_blocks(page_id, blocks)
+            except Exception as e:
+                logger.error(f"Failed to append content blocks: {e}")
+                raise
+
+        return {}
 
 
 class DocumentSyncManager:
@@ -173,6 +400,8 @@ class DocumentSyncManager:
         self.force = force
         self.sync_status = self._load_sync_status()
         self.folder_ids: Dict[str, str] = {}
+        self.docs_parent_id: Optional[str] = None
+        self.folder_structure: Optional[dict] = None
 
     def _load_sync_status(self) -> dict:
         """Load sync status from JSON file."""
@@ -230,8 +459,72 @@ class DocumentSyncManager:
 
         return False, "up to date"
 
+    def _get_documentation_parent_id(self) -> str:
+        """
+        Get or discover the Documentation parent page ID.
+
+        Returns the view_id of the Documentation page.
+        """
+        # Check if already cached
+        if self.docs_parent_id:
+            return self.docs_parent_id
+
+        # Check environment variable
+        env_parent_id = os.getenv('APPFLOWY_DOCS_PARENT_ID')
+        if env_parent_id:
+            logger.info(f"Using Documentation parent ID from environment: {env_parent_id}")
+            self.docs_parent_id = env_parent_id
+            return env_parent_id
+
+        # Check sync status
+        if 'docs_parent_id' in self.sync_status:
+            parent_id = self.sync_status['docs_parent_id']
+            logger.info(f"Using Documentation parent ID from sync status: {parent_id}")
+            self.docs_parent_id = parent_id
+            return parent_id
+
+        # Try to find "Documentation" page in workspace
+        if self.dry_run:
+            logger.info("DRY RUN: Would discover or create Documentation parent page")
+            self.docs_parent_id = "dry-run-docs-parent"
+            return self.docs_parent_id
+
+        try:
+            # Get workspace folder structure
+            if not self.folder_structure:
+                self.folder_structure = self.client.get_workspace_folder()
+
+            # Search for "Documentation" page
+            parent_id = self.client.find_page_by_name("Documentation", self.folder_structure)
+
+            if parent_id:
+                logger.info(f"Found existing Documentation page (ID: {parent_id})")
+            else:
+                # Create "Documentation" page at workspace root
+                logger.info("Documentation page not found, creating it...")
+                result = self.client.create_folder("Documentation")
+                parent_id = result.get('data', {}).get('view_id')
+                logger.info(f"Created Documentation page (ID: {parent_id})")
+                # Refresh folder structure
+                self.folder_structure = None
+
+            # Cache it
+            self.docs_parent_id = parent_id
+            self.sync_status['docs_parent_id'] = parent_id
+
+            return parent_id
+
+        except AppFlowyAPIError as e:
+            logger.error(f"Failed to get Documentation parent: {e}")
+            raise
+
     def _ensure_folder(self, folder_name: str) -> str:
-        """Ensure folder exists, create if needed."""
+        """
+        Ensure folder exists inside Documentation parent, create if needed.
+
+        This creates category folders (Getting Started, Guides, Reference, Examples)
+        as children of the Documentation page.
+        """
         # Check cache first
         if folder_name in self.folder_ids:
             return self.folder_ids[folder_name]
@@ -240,22 +533,38 @@ class DocumentSyncManager:
         if folder_name in self.sync_status.get('folder_ids', {}):
             folder_id = self.sync_status['folder_ids'][folder_name]
             self.folder_ids[folder_name] = folder_id
+            logger.info(f"Using cached folder '{folder_name}' (ID: {folder_id})")
             return folder_id
+
+        # Get Documentation parent ID
+        docs_parent_id = self._get_documentation_parent_id()
 
         # Create folder
         if self.dry_run:
-            logger.info(f"DRY RUN: Would create folder '{folder_name}'")
+            logger.info(f"DRY RUN: Would create folder '{folder_name}' inside Documentation (parent: {docs_parent_id})")
             folder_id = f"dry-run-folder-{folder_name}"
         else:
             try:
-                # Get General space ID to use as parent
-                general_space_id = "d6fcad20-8cca-43b5-88b5-2db1bcde2b5b"  # General space in AI Agents workspace
-                result = self.client.create_folder(folder_name, parent_id=general_space_id)
-                # Response format: {"data": {"view_id": "...", "database_id": null}, "code": 0, "message": "..."}
-                folder_id = result.get('data', {}).get('view_id')
-                logger.info(f"Created folder '{folder_name}' (ID: {folder_id})")
+                # Check if folder already exists under Documentation
+                if not self.folder_structure:
+                    self.folder_structure = self.client.get_workspace_folder()
+
+                existing_id = self.client.find_child_by_name(docs_parent_id, folder_name, self.folder_structure)
+
+                if existing_id:
+                    logger.info(f"Found existing folder '{folder_name}' (ID: {existing_id})")
+                    folder_id = existing_id
+                else:
+                    # Create new folder under Documentation
+                    result = self.client.create_folder(folder_name, parent_id=docs_parent_id)
+                    # Response format: {"data": {"view_id": "...", "database_id": null}, "code": 0, "message": "..."}
+                    folder_id = result.get('data', {}).get('view_id')
+                    logger.info(f"Created folder '{folder_name}' inside Documentation (ID: {folder_id})")
+                    # Refresh folder structure to include new folder
+                    self.folder_structure = None
+
             except AppFlowyAPIError as e:
-                logger.error(f"Failed to create folder '{folder_name}': {e}")
+                logger.error(f"Failed to ensure folder '{folder_name}': {e}")
                 raise
 
         self.folder_ids[folder_name] = folder_id
@@ -344,7 +653,7 @@ class DocumentSyncManager:
             Tuple of (synced, skipped, failed) counts
         """
         logger.info("=" * 60)
-        logger.info("AppFlowy Documentation Sync")
+        logger.info("AppFlowy Documentation Sync v2.0.0")
         logger.info("=" * 60)
         logger.info(f"Repository: {self.REPO_ROOT}")
         logger.info(f"Workspace ID: {self.client.workspace_id}")
@@ -352,6 +661,8 @@ class DocumentSyncManager:
         logger.info(f"Mode: {'DRY RUN' if self.dry_run else 'LIVE SYNC'}")
         if self.force:
             logger.info("Force sync: YES")
+        logger.info("")
+        logger.info("Target Structure: Documentation/[Category]/[Page]")
         logger.info("=" * 60)
 
         synced = 0
