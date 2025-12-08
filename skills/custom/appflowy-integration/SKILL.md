@@ -6,10 +6,11 @@ description: >
   creating databases, organizing workspaces, syncing agent work with project tracking,
   syncing documentation or tasks to AppFlowy, setting up automated sync workflows,
   or when the user mentions AppFlowy, project tracking, task management, or sync automation.
-version: 2.2.0
+  Includes generic sync script that works with ANY project.
+version: 2.3.0
 author: AI Agents Team
 category: custom
-token_estimate: ~1300
+token_estimate: ~1500
 ---
 
 # AppFlowy Integration Skill
@@ -56,7 +57,25 @@ export APPFLOWY_DATABASE_ID="bb7a9c66-8088-4f71-a7b7-551f4c1adc5d"
 - Admin Password: Stored in `/opt/appflowy-cloud/.env` on CT102 (192.168.68.55)
 - WebSocket: wss://appflowy.ark-node.com/ws/v2/
 
-**Automated Sync Scripts:**
+**Generic Project Sync (Any Repository):**
+```bash
+# Sync with config file
+python3 sync_project.py --config appflowy-sync.yaml
+
+# Auto-discover and sync documentation
+python3 sync_project.py --auto-discover --parent "Documentation"
+
+# Sync specific folder
+python3 sync_project.py --source docs/ --parent "API Docs"
+
+# Preview before syncing (dry run)
+python3 sync_project.py --config appflowy-sync.yaml --dry-run
+
+# Force re-sync all files
+python3 sync_project.py --config appflowy-sync.yaml --force
+```
+
+**AI_agents Specific Sync Scripts:**
 ```bash
 # Sync AI_agents documentation to AppFlowy
 cd skills/custom/appflowy-integration/scripts/
@@ -651,6 +670,109 @@ def generate_project_dashboard(client, database_id):
 
 See `workflows/task-management.md` for complete implementation.
 </example>
+
+<example name="generic_project_sync">
+**Context:** Sync any project's documentation to AppFlowy using the generic sync script.
+
+**Scenario 1: Using a configuration file**
+```yaml
+# appflowy-sync.yaml
+parent_page: "My Project Docs"
+structure:
+  - folder: "Getting Started"
+    documents:
+      - source: "README.md"
+        name: "Overview"
+      - source: "docs/quickstart.md"
+        name: "Quick Start"
+
+  - folder: "API Reference"
+    documents:
+      - source: "docs/api/**/*.md"  # Glob pattern
+
+  - folder: "Examples"
+    documents:
+      - source: "examples/*/README.md"
+        name_from_path: true  # Use parent folder name
+```
+
+```bash
+# Sync with config
+python sync_project.py --config appflowy-sync.yaml
+
+# Dry run first to preview
+python sync_project.py --config appflowy-sync.yaml --dry-run
+
+# Force re-sync all files
+python sync_project.py --config appflowy-sync.yaml --force
+```
+
+**Scenario 2: Auto-discovery mode (no config needed)**
+```bash
+# Automatically discover and sync all documentation
+python sync_project.py --auto-discover --parent "Documentation"
+
+# Auto-discover with dry run
+python sync_project.py --auto-discover --parent "Docs" --dry-run
+```
+
+**Scenario 3: Sync specific folder**
+```bash
+# Sync only the docs/ folder
+python sync_project.py --source docs/ --parent "API Docs"
+
+# Sync with custom project root
+python sync_project.py --source docs/ --parent "Docs" --project-root /path/to/project
+```
+
+**Scenario 4: Use with custom .env file**
+```bash
+# For projects outside the default credential location
+python sync_project.py \
+  --config appflowy-sync.yaml \
+  --env-file /path/to/project/.env
+```
+
+**Integration with CI/CD:**
+```yaml
+# .github/workflows/sync-docs.yml
+name: Sync Documentation to AppFlowy
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**', 'README.md']
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install requests pyyaml
+
+      - name: Sync to AppFlowy
+        env:
+          APPFLOWY_API_URL: ${{ secrets.APPFLOWY_API_URL }}
+          APPFLOWY_API_TOKEN: ${{ secrets.APPFLOWY_API_TOKEN }}
+          APPFLOWY_WORKSPACE_ID: ${{ secrets.APPFLOWY_WORKSPACE_ID }}
+        run: |
+          python sync_project.py --config appflowy-sync.yaml
+```
+
+**Benefits:**
+- ✅ Works with ANY project, not just AI_agents
+- ✅ No code changes needed - pure configuration
+- ✅ Incremental sync saves time and API calls
+- ✅ Supports complex folder hierarchies
+- ✅ Glob patterns for flexible file matching
+- ✅ Can be integrated into git hooks, cron, or CI/CD
+</example>
 </examples>
 
 <related_skills>
@@ -689,11 +811,25 @@ This skill works well with:
 - `references/setup_guide.md` - Deployment and configuration guide
 
 **Sync Scripts:**
-- `scripts/sync_docs.py` - Documentation sync with incremental updates
-- `scripts/sync_tasks.py` - Task sync from multiple data sources
+- `scripts/sync_project.py` - **Generic sync for any project** (config-driven, YAML/JSON config)
+- `scripts/sync_docs.py` - AI_agents documentation sync (hardcoded mappings)
+- `scripts/sync_tasks.py` - AI_agents task sync from multiple data sources
+- `appflowy-sync.example.yaml` - Example configuration for generic sync
 - Support for dry-run, force sync, and custom .env files
 - Hash-based change detection for efficient syncing
 - One-way sync: Repository → AppFlowy (source of truth)
+
+**Generic Sync Features:**
+The `sync_project.py` script is designed to work with ANY project:
+- **Configuration-driven**: Define document structure in YAML/JSON
+- **Auto-discovery mode**: Automatically find and sync documentation files
+- **Glob pattern support**: Use wildcards to match multiple files (e.g., `docs/**/*.md`)
+- **Hierarchical structure**: Create nested folder organization
+- **Incremental sync**: Track changes via MD5 hashing, only sync what changed
+- **Flexible naming**: Auto-generate page names or specify custom names
+- **Multiple input modes**: Config file, auto-discover, or specific folder sync
+- **Dry-run support**: Preview changes before syncing
+- **Force mode**: Re-sync everything, ignoring cache
 
 **Other Scripts:**
 - `scripts/appflowy_client.py` - Python client library
@@ -709,6 +845,18 @@ This skill works well with:
 </reference_guides>
 
 <version_history>
+**Version 2.3.0 (2025-12-08)**
+- **NEW: Generic sync script for any project** (`sync_project.py`)
+- Added YAML/JSON configuration support for flexible document mapping
+- Auto-discovery mode to find documentation automatically
+- Glob pattern support for matching multiple files (`docs/**/*.md`)
+- Hierarchical folder structure with nested organization
+- Multiple input modes: config file, auto-discover, or specific folder
+- Created `appflowy-sync.example.yaml` with comprehensive examples
+- Added generic sync usage examples and CI/CD integration patterns
+- Updated documentation with generic sync features and benefits
+- Script is now portable and can work with any repository
+
 **Version 2.2.0 (2025-12-08)**
 - Documented correct API endpoints (append-block for content)
 - Added Delta block format documentation

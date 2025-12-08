@@ -1,30 +1,111 @@
 # AppFlowy Integration Sync Scripts
 
-This directory contains scripts for syncing AI_agents documentation and tasks to AppFlowy Cloud.
+This directory contains scripts for syncing documentation and tasks to AppFlowy Cloud.
 
-## AppFlowy Cloud API Limitations
+## 🚀 Quick Start Guide
 
-AppFlowy Cloud's REST API has specific limitations:
+**Want to sync ANY project's documentation to AppFlowy?**
+→ Use `sync_project.py` (Generic, config-driven, works everywhere)
 
-**What Works:**
-- `GET /api/workspace` - List workspaces
-- `GET /api/workspace/{id}/folder` - Get folder structure
-- `GET/POST/PATCH /api/workspace/{id}/database/{db_id}/row` - Database row operations
+**Working with AI_agents repository specifically?**
+→ Use `sync_docs.py` (Hardcoded mappings for AI_agents)
 
-**What Doesn't Work:**
-- `POST /api/workspace/{id}/folder` - Create folders (405 error)
-- `POST /api/workspace/{id}/page` - Create pages (405 error)
+**Syncing tasks to Kanban board?**
+→ Use `sync_tasks.py` (Already configured for AI_agents)
 
-These operations require either:
-1. Using the AppFlowy UI directly
-2. Using WebSocket API (complex, undocumented)
-3. Working with database rows instead
+---
 
 ## Scripts Overview
 
-### Documentation Sync Scripts
+### 🌟 Generic Sync (Works with ANY Project)
 
-#### `sync_docs_report.py` (Start Here)
+#### `sync_project.py` - **Universal Documentation Sync**
+**Status:** ✅ Ready to use
+**Purpose:** Sync any project's documentation to AppFlowy
+
+**Key Features:**
+- Configuration-driven via YAML/JSON
+- Auto-discovery mode (no config needed)
+- Glob pattern support (`docs/**/*.md`)
+- Incremental sync with MD5 hash tracking
+- Hierarchical folder structure
+- Works with page/folder API (correct endpoints)
+- Portable - works with any repository
+
+**Quick Start:**
+```bash
+# Create config file (see ../appflowy-sync.example.yaml)
+cp ../appflowy-sync.example.yaml appflowy-sync.yaml
+
+# Sync with config
+python sync_project.py --config appflowy-sync.yaml
+
+# Or auto-discover (no config needed)
+python sync_project.py --auto-discover --parent "Documentation"
+
+# Dry run to preview
+python sync_project.py --config appflowy-sync.yaml --dry-run
+
+# Force re-sync everything
+python sync_project.py --config appflowy-sync.yaml --force
+```
+
+**Configuration Example:**
+```yaml
+# appflowy-sync.yaml
+parent_page: "Documentation"
+structure:
+  - folder: "Getting Started"
+    documents:
+      - source: "README.md"
+        name: "Overview"
+  - folder: "API Reference"
+    documents:
+      - source: "docs/api/**/*.md"  # Glob pattern
+```
+
+**Benefits:**
+- ✅ Works with ANY project (not just AI_agents)
+- ✅ No code changes needed - pure configuration
+- ✅ Supports complex folder hierarchies
+- ✅ Incremental sync saves time and API calls
+- ✅ Can be integrated into git hooks, cron, or CI/CD
+
+---
+
+## AI_agents Specific Scripts
+
+### Documentation Sync Scripts (AI_agents)
+
+#### `sync_docs.py` - **AI_agents Documentation Sync**
+**Status:** ✅ Working (uses correct page-view API)
+**Purpose:** Sync AI_agents documentation with hardcoded mappings
+
+**Usage:**
+```bash
+# Preview what would be synced
+python sync_docs.py --dry-run
+
+# Sync documentation
+python sync_docs.py
+
+# Force re-sync all files
+python sync_docs.py --force
+```
+
+**Features:**
+- Hardcoded document mappings optimized for AI_agents
+- Creates hierarchical folder structure
+- Uses correct `/api/workspace/{id}/page-view` endpoint
+- Markdown to Delta blocks conversion
+- Incremental sync with hash tracking
+
+**Note:** This is the AI_agents-specific version. For a generic solution that works
+with any project, use `sync_project.py` instead.
+
+---
+
+#### `sync_docs_report.py` (Diagnostic Tool)
 **Status:** Ready to use
 **Purpose:** Reports API limitations and provides sync options
 

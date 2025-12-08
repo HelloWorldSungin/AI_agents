@@ -1,0 +1,204 @@
+# AppFlowy Sync Configuration Example
+#
+# This file defines how to sync your project's documentation to AppFlowy.
+# Copy this file to your project root and customize it for your needs.
+
+# ============================================================================
+# Workspace Configuration
+# ============================================================================
+
+# Parent page name where documentation will be organized
+# This page will be created if it doesn't exist
+parent_page: "Documentation"
+
+# Alternative: Use an existing page ID from environment variable
+# Set APPFLOWY_PARENT_PAGE_ID in your .env file instead
+
+# ============================================================================
+# Document Structure
+# ============================================================================
+
+# Define the hierarchical structure of your documentation
+# Each item represents a folder (category) with its documents
+
+structure:
+  # Getting Started category
+  - folder: "Getting Started"
+    documents:
+      - source: "README.md"
+        name: "Overview"
+
+      - source: "docs/quickstart.md"
+        name: "Quick Start"
+
+      - source: "INSTALLATION.md"
+        name: "Installation"
+
+  # User Guides category
+  - folder: "Guides"
+    documents:
+      - source: "docs/guides/user-guide.md"
+        name: "User Guide"
+
+      - source: "docs/guides/admin-guide.md"
+        name: "Admin Guide"
+
+      # Glob pattern: sync all markdown files in guides folder
+      - source: "docs/guides/*.md"
+        # name_from_path: true uses the file stem as page name
+
+  # API Reference category
+  - folder: "API Reference"
+    documents:
+      # Glob pattern: sync all API docs recursively
+      - source: "docs/api/**/*.md"
+
+      - source: "docs/api-overview.md"
+        name: "API Overview"
+
+  # Examples category
+  - folder: "Examples"
+    documents:
+      # Use parent folder name as page name
+      - source: "examples/*/README.md"
+        name_from_path: true
+
+      - source: "examples/basic-example.md"
+        name: "Basic Example"
+
+      - source: "examples/advanced-example.md"
+        name: "Advanced Example"
+
+  # Developer Documentation
+  - folder: "Developer Docs"
+    documents:
+      - source: "CONTRIBUTING.md"
+        name: "Contributing"
+
+      - source: "DEVELOPMENT.md"
+        name: "Development Setup"
+
+      - source: "docs/dev/*.md"
+
+  # Release Notes
+  - folder: "Release Notes"
+    documents:
+      - source: "CHANGELOG.md"
+        name: "Changelog"
+
+      - source: "docs/releases/**/*.md"
+
+# ============================================================================
+# Document Properties
+# ============================================================================
+
+# Each document can have the following properties:
+#
+# source (required):
+#   - Relative path to markdown file from project root
+#   - Supports glob patterns: *, **, ?, [abc], [!abc]
+#   - Examples:
+#     - "README.md"                 # Single file
+#     - "docs/*.md"                 # All .md files in docs/
+#     - "docs/**/*.md"              # All .md files recursively
+#     - "examples/*/README.md"      # README.md in each example subfolder
+#
+# name (optional):
+#   - Custom page name in AppFlowy
+#   - If not specified, uses file stem (filename without extension)
+#   - Example: "API Overview" instead of "api-overview"
+#
+# name_from_path (optional):
+#   - Boolean flag to use parent folder name as page name
+#   - Useful for organizing example projects
+#   - Example: examples/web-app/README.md -> "Web App"
+
+# ============================================================================
+# Usage Examples
+# ============================================================================
+
+# 1. Sync with this config file:
+#    python sync_project.py --config appflowy-sync.yaml
+
+# 2. Dry run (preview changes):
+#    python sync_project.py --config appflowy-sync.yaml --dry-run
+
+# 3. Force re-sync all files:
+#    python sync_project.py --config appflowy-sync.yaml --force
+
+# 4. Use custom .env file:
+#    python sync_project.py --config appflowy-sync.yaml --env-file /path/to/.env
+
+# 5. Auto-discover mode (no config needed):
+#    python sync_project.py --auto-discover --parent "Documentation"
+
+# 6. Sync specific folder:
+#    python sync_project.py --source docs/ --parent "API Docs"
+
+# ============================================================================
+# Environment Variables
+# ============================================================================
+
+# Required environment variables (set in .env file or shell):
+#
+# APPFLOWY_API_URL - AppFlowy API base URL
+#   Example: https://appflowy.ark-node.com
+#
+# APPFLOWY_API_TOKEN - JWT authentication token
+#   Obtain via: curl -X POST "$APPFLOWY_API_URL/gotrue/token" \
+#               -H "Content-Type: application/json" \
+#               -d '{"email":"user@example.com","password":"pass","grant_type":"password"}'
+#
+# APPFLOWY_WORKSPACE_ID - Target workspace ID
+#   Find via API: curl "$APPFLOWY_API_URL/api/workspace" -H "Authorization: Bearer $TOKEN"
+#
+# Optional:
+# APPFLOWY_PARENT_PAGE_ID - Existing parent page ID (instead of creating new)
+
+# ============================================================================
+# Sync Status Tracking
+# ============================================================================
+
+# The script maintains a sync status file (.appflowy-sync-status.json)
+# to track which files have been synced and detect changes.
+#
+# Features:
+# - Incremental sync: Only syncs changed files
+# - Hash-based change detection (MD5)
+# - Stores page IDs for updates
+# - Tracks folder structure
+#
+# To force re-sync all files:
+#   python sync_project.py --config appflowy-sync.yaml --force
+
+# ============================================================================
+# Advanced Patterns
+# ============================================================================
+
+# Pattern 1: Organize by version
+# - folder: "Version 1.0"
+#   documents:
+#     - source: "docs/v1.0/**/*.md"
+
+# Pattern 2: Multi-language support
+# - folder: "English"
+#   documents:
+#     - source: "docs/en/**/*.md"
+# - folder: "日本語"
+#   documents:
+#     - source: "docs/ja/**/*.md"
+
+# Pattern 3: Separate internal/external docs
+# - folder: "Public Documentation"
+#   documents:
+#     - source: "docs/public/**/*.md"
+# - folder: "Internal Documentation"
+#   documents:
+#     - source: "docs/internal/**/*.md"
+
+# Pattern 4: Tutorial series
+# - folder: "Tutorials"
+#   documents:
+#     - source: "tutorials/01-*.md"
+#     - source: "tutorials/02-*.md"
+#     - source: "tutorials/03-*.md"

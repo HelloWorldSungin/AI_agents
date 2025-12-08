@@ -51,17 +51,124 @@ def load_sync_status() -> Dict[str, Any]:
         return json.load(f)
 
 
+def parse_inline_formatting(text: str) -> List[Dict[str, Any]]:
+    """
+    Parse inline markdown formatting into delta operations.
+
+    Supports:
+    - **bold** or __bold__
+    - *italic* or _italic_
+    - `code`
+    - [text](url)
+    - ~~strikethrough~~
+
+    Returns list of delta objects with attributes.
+    """
+    delta = []
+    pos = 0
+
+    # Pattern order matters - more specific patterns first
+    patterns = [
+        # Links: [text](url)
+        (r'\[([^\]]+)\]\(([^\)]+)\)', lambda m: {"insert": m.group(1), "attributes": {"href": m.group(2)}}),
+        # Bold: **text** or __text__
+        (r'\*\*([^\*]+)\*\*|__([^_]+)__', lambda m: {"insert": m.group(1) or m.group(2), "attributes": {"bold": True}}),
+        # Strikethrough: ~~text~~
+        (r'~~([^~]+)~~', lambda m: {"insert": m.group(1), "attributes": {"strikethrough": True}}),
+        # Italic: *text* or _text_ (but not ** or __)
+        (r'(?<!\*)\*([^\*]+)\*(?!\*)|(?<!_)_([^_]+)_(?!_)', lambda m: {"insert": m.group(1) or m.group(2), "attributes": {"italic": True}}),
+        # Code: `text`
+        (r'`([^`]+)`', lambda m: {"insert": m.group(1), "attributes": {"code": True}}),
+    ]
+
+    while pos < len(text):
+        # Find the earliest match among all patterns
+        earliest_match = None
+        earliest_pos = len(text)
+        matched_pattern = None
+
+        for pattern, formatter in patterns:
+            match = re.search(pattern, text[pos:])
+            if match and match.start() < earliest_pos:
+                earliest_pos = match.start()
+                earliest_match = match
+                matched_pattern = formatter
+
+        if earliest_match:
+            # Add plain text before the match
+            if earliest_pos > 0:
+                plain_text = text[pos:pos + earliest_pos]
+                if plain_text:
+                    delta.append({"insert": plain_text})
+
+            # Add formatted text
+            delta.append(matched_pattern(earliest_match))
+            pos += earliest_pos + len(earliest_match.group(0))
+        else:
+            # No more matches, add remaining text
+            remaining = text[pos:]
+            if remaining:
+                delta.append({"insert": remaining})
+            break
+
+    return delta if delta else [{"insert": text}]
+
+
+def is_table_row(line: str) -> bool:
+    """Check if a line is a markdown table row."""
+    return '|' in line and line.strip().startswith('|') or line.count('|') >= 2
+
+
+def parse_table(lines: List[str], start_idx: int) -> tuple:
+    """
+    Parse a markdown table starting at start_idx.
+
+    Returns:
+        Tuple of (table_lines, next_index)
+    """
+    table_lines = []
+    i = start_idx
+
+    while i < len(lines):
+        line = lines[i]
+        if is_table_row(line):
+            table_lines.append(line)
+            i += 1
+        else:
+            break
+
+    return table_lines, i
+
+
+def table_to_code_block(table_lines: List[str]) -> Dict[str, Any]:
+    """Convert markdown table to a code block for simple display."""
+    return {
+        "type": "code",
+        "data": {
+            "language": "plaintext",
+            "delta": [{"insert": "\n".join(table_lines)}]
+        }
+    }
+
+
 def markdown_to_blocks(markdown: str) -> List[Dict[str, Any]]:
     """
     Convert markdown content to AppFlowy Delta block format.
 
     Supports:
-    - Headings (# through ######)
-    - Bullet lists (-, *)
-    - Numbered lists (1., 2., etc.)
+    - Headings (# through ######) with rich text
+    - Bullet lists (-, *) with rich text
+    - Numbered lists (1., 2., etc.) with rich text
     - Code blocks (```)
-    - Blockquotes (>)
-    - Regular paragraphs
+    - Blockquotes (>) with rich text
+    - Tables (as code blocks)
+    - Regular paragraphs with rich text
+    - Rich text formatting:
+        - **bold** or __bold__
+        - *italic* or _italic_
+        - `code`
+        - [text](url)
+        - ~~strikethrough~~
     """
     blocks = []
     lines = markdown.split('\n')
@@ -75,6 +182,14 @@ def markdown_to_blocks(markdown: str) -> List[Dict[str, Any]]:
             i += 1
             continue
 
+        # Tables - detect and parse
+        if is_table_row(line):
+            table_lines, next_i = parse_table(lines, i)
+            if len(table_lines) >= 2:  # At least header + separator
+                blocks.append(table_to_code_block(table_lines))
+                i = next_i
+                continue
+
         # Headings (# through ######)
         heading_match = re.match(r'^(#{1,6})\s+(.+)$', line)
         if heading_match:
@@ -84,7 +199,7 @@ def markdown_to_blocks(markdown: str) -> List[Dict[str, Any]]:
                 "type": "heading",
                 "data": {
                     "level": level,
-                    "delta": [{"insert": text}]
+                    "delta": parse_inline_formatting(text)
                 }
             })
             i += 1
@@ -97,7 +212,7 @@ def markdown_to_blocks(markdown: str) -> List[Dict[str, Any]]:
             blocks.append({
                 "type": "bulleted_list",
                 "data": {
-                    "delta": [{"insert": text}]
+                    "delta": parse_inline_formatting(text)
                 }
             })
             i += 1
@@ -110,7 +225,7 @@ def markdown_to_blocks(markdown: str) -> List[Dict[str, Any]]:
             blocks.append({
                 "type": "numbered_list",
                 "data": {
-                    "delta": [{"insert": text}]
+                    "delta": parse_inline_formatting(text)
                 }
             })
             i += 1
@@ -123,7 +238,7 @@ def markdown_to_blocks(markdown: str) -> List[Dict[str, Any]]:
             blocks.append({
                 "type": "quote",
                 "data": {
-                    "delta": [{"insert": text}]
+                    "delta": parse_inline_formatting(text)
                 }
             })
             i += 1
@@ -153,7 +268,7 @@ def markdown_to_blocks(markdown: str) -> List[Dict[str, Any]]:
         blocks.append({
             "type": "paragraph",
             "data": {
-                "delta": [{"insert": line}]
+                "delta": parse_inline_formatting(line)
             }
         })
         i += 1
