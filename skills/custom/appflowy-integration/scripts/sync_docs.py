@@ -392,6 +392,7 @@ class DocumentSyncManager:
         'docs/guides/E2E_TESTING.md': ('Guides', 'E2E Testing'),
         'docs/guides/LONG_RUNNING_AGENTS.md': ('Guides', 'Long Running Agents'),
         'starter-templates/README.md': ('Getting Started', 'Starter Templates'),
+        'docs/guides/TEST-PUSHSYNC.md': ('Guides', 'Test PushSync'),
     }
 
     def __init__(self, client: AppFlowyClient, dry_run: bool = False, force: bool = False):
