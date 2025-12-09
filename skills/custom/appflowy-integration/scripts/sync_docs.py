@@ -21,9 +21,14 @@ Environment Variables:
     APPFLOWY_DOCS_PARENT_ID     (Optional) Parent page ID for "Documentation"
 
 Author: AI Agents Team
-Version: 2.1.0
+Version: 2.2.0
 
 Changelog:
+  v2.2.0 - Fixed content append issue: now replaces content instead of appending
+         - Implemented rename-and-recreate strategy for page updates
+         - Old pages are renamed to "[OLD] {name}" before creating new version
+         - Updates now create fresh pages with correct content (no duplication)
+         - Note: Old pages remain in workspace but marked as outdated
   v2.1.0 - Added rich text formatting support (bold, italic, code, links, strikethrough)
          - Added appflowy-mapping.yaml support for explicit page ID mapping
          - Prevents duplicate page creation by using mapping file
@@ -421,32 +426,64 @@ class AppFlowyClient:
         data = {'blocks': blocks}
         return self._make_request('POST', f'/api/workspace/{self.workspace_id}/page-view/{page_id}/append-block', json=data)
 
-    def update_page(self, page_id: str, name: str, content: str) -> dict:
+    def trash_page(self, page_id: str, name: str) -> dict:
+        """
+        Move a page to trash (soft delete).
+
+        Args:
+            page_id: Page view ID to trash
+            name: Current page name (required by PATCH endpoint)
+
+        Returns:
+            API response
+        """
+        # AppFlowy doesn't support DELETE, but PATCH with name + is_deleted works
+        # However, there's no documented is_deleted field, so this may not work
+        # For now, we'll skip deletion and just create new pages with unique names
+        try:
+            return self._make_request(
+                'PATCH',
+                f'/api/workspace/{self.workspace_id}/page-view/{page_id}',
+                json={'name': f"[OLD] {name}"}  # Rename to mark as old
+            )
+        except Exception as e:
+            logger.debug(f"Failed to rename old page: {e}")
+            return {}
+
+    def update_page(self, page_id: str, name: str, content: str, parent_id: str) -> dict:
         """
         Update an existing page with new content.
 
-        Note: PATCH only updates metadata (name, icon). For content, we need to:
-        1. Clear existing blocks (not supported via API)
-        2. Append new blocks
+        Since AppFlowy API doesn't support:
+        - Deleting/clearing content blocks
+        - True page deletion (only soft delete/trash)
 
-        Current implementation: Appends new blocks without clearing old ones.
+        We use this strategy:
+        1. Rename the old page to "[OLD] {name}"
+        2. Create a new page with the original name and new content
+        3. Return the new page_id
+
+        The old page remains in the workspace but is marked as outdated.
+
+        Args:
+            page_id: Existing page view ID to update
+            name: Page name
+            content: New markdown content
+            parent_id: Parent folder/page ID
+
+        Returns:
+            API response with new view_id
         """
-        # Update metadata (name)
+        # Step 1: Rename the old page to mark it as outdated
         try:
-            self._make_request('PATCH', f'/api/workspace/{self.workspace_id}/page-view/{page_id}', json={'name': name})
+            self.trash_page(page_id, name)
+            logger.debug(f"Renamed old page {page_id} to '[OLD] {name}'")
         except Exception as e:
-            logger.warning(f"Failed to update page metadata: {e}")
+            logger.warning(f"Failed to rename old page {page_id}: {e}")
+            # Continue anyway - create new page
 
-        # Append new content blocks
-        if content:
-            try:
-                blocks = markdown_to_blocks(content)
-                return self.append_blocks(page_id, blocks)
-            except Exception as e:
-                logger.error(f"Failed to append content blocks: {e}")
-                raise
-
-        return {}
+        # Step 2: Create new page with original name and new content
+        return self.create_page(name, content, parent_id)
 
 
 class DocumentSyncManager:
@@ -771,9 +808,15 @@ class DocumentSyncManager:
                         page_id = self.sync_status['synced_files'][file_str].get('page_id')
 
                 if page_id:
-                    # Update existing page
-                    result = self.client.update_page(page_id, page_name, content)
-                    logger.info(f"✅ Updated page '{page_name}' (ID: {page_id})")
+                    # Update existing page (delete and recreate)
+                    result = self.client.update_page(page_id, page_name, content, folder_id)
+                    # Get new page ID after recreation
+                    new_page_id = result.get('data', {}).get('view_id')
+                    if new_page_id and new_page_id != page_id:
+                        logger.info(f"✅ Updated page '{page_name}' (old ID: {page_id}, new ID: {new_page_id})")
+                        page_id = new_page_id
+                    else:
+                        logger.info(f"✅ Updated page '{page_name}' (ID: {page_id})")
                 else:
                     # Create new page
                     result = self.client.create_page(page_name, content, folder_id)
@@ -806,7 +849,7 @@ class DocumentSyncManager:
             Tuple of (synced, skipped, failed) counts
         """
         logger.info("=" * 60)
-        logger.info("AppFlowy Documentation Sync v2.0.0")
+        logger.info("AppFlowy Documentation Sync v2.2.0")
         logger.info("=" * 60)
         logger.info(f"Repository: {self.REPO_ROOT}")
         logger.info(f"Workspace ID: {self.client.workspace_id}")
