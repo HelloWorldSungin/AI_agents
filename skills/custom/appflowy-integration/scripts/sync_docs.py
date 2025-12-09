@@ -21,9 +21,13 @@ Environment Variables:
     APPFLOWY_DOCS_PARENT_ID     (Optional) Parent page ID for "Documentation"
 
 Author: AI Agents Team
-Version: 2.0.0
+Version: 2.1.0
 
 Changelog:
+  v2.1.0 - Added rich text formatting support (bold, italic, code, links, strikethrough)
+         - Added appflowy-mapping.yaml support for explicit page ID mapping
+         - Prevents duplicate page creation by using mapping file
+         - Falls back to sync status if mapping file doesn't exist
   v2.0.0 - Integrated markdown_to_blocks converter
          - Use append-block endpoint for content (Delta format)
          - Removed broken PATCH content update
@@ -37,6 +41,7 @@ Changelog:
 import os
 import sys
 import json
+import yaml
 import argparse
 import logging
 import hashlib
@@ -54,6 +59,69 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger(__name__)
+
+
+def parse_inline_formatting(text: str) -> List[Dict[str, Any]]:
+    """
+    Parse inline markdown formatting into delta operations.
+
+    Supports:
+    - **bold** or __bold__
+    - *italic* or _italic_
+    - `code`
+    - [text](url)
+    - ~~strikethrough~~
+
+    Returns list of delta objects with attributes.
+    """
+    delta = []
+    pos = 0
+
+    # Pattern order matters - more specific patterns first
+    patterns = [
+        # Links: [text](url)
+        (r'\[([^\]]+)\]\(([^\)]+)\)', lambda m: {"insert": m.group(1), "attributes": {"href": m.group(2)}}),
+        # Bold: **text** or __text__
+        (r'\*\*([^\*]+)\*\*|__([^_]+)__', lambda m: {"insert": m.group(1) or m.group(2), "attributes": {"bold": True}}),
+        # Strikethrough: ~~text~~
+        (r'~~([^~]+)~~', lambda m: {"insert": m.group(1), "attributes": {"strikethrough": True}}),
+        # Italic: *text* or _text_ (but not ** or __)
+        (r'(?<!\*)\*([^\*]+)\*(?!\*)|(?<!_)_([^_]+)_(?!_)', lambda m: {"insert": m.group(1) or m.group(2), "attributes": {"italic": True}}),
+        # Code: `text`
+        (r'`([^`]+)`', lambda m: {"insert": m.group(1), "attributes": {"code": True}}),
+    ]
+
+    while pos < len(text):
+        # Find the earliest match among all patterns
+        earliest_match = None
+        earliest_pos = len(text)
+        matched_pattern = None
+
+        for pattern, formatter in patterns:
+            match = re.search(pattern, text[pos:])
+            if match and match.start() < earliest_pos:
+                earliest_pos = match.start()
+                earliest_match = match
+                matched_pattern = formatter
+
+        if earliest_match:
+            # Add plain text before the match
+            if earliest_pos > 0:
+                plain_text = text[pos:pos + earliest_pos]
+                if plain_text:
+                    delta.append({"insert": plain_text})
+
+            # Add formatted text
+            delta.append(matched_pattern(earliest_match))
+            pos += earliest_pos + len(earliest_match.group(0))
+        else:
+            # No more matches, add remaining text
+            remaining = text[pos:]
+            if remaining:
+                delta.append({"insert": remaining})
+            break
+
+    return delta if delta else [{"insert": text}]
 
 
 def markdown_to_blocks(markdown: str) -> List[Dict[str, Any]]:
@@ -89,7 +157,7 @@ def markdown_to_blocks(markdown: str) -> List[Dict[str, Any]]:
                 "type": "heading",
                 "data": {
                     "level": level,
-                    "delta": [{"insert": text}]
+                    "delta": parse_inline_formatting(text)
                 }
             })
             i += 1
@@ -102,7 +170,7 @@ def markdown_to_blocks(markdown: str) -> List[Dict[str, Any]]:
             blocks.append({
                 "type": "bulleted_list",
                 "data": {
-                    "delta": [{"insert": text}]
+                    "delta": parse_inline_formatting(text)
                 }
             })
             i += 1
@@ -115,7 +183,7 @@ def markdown_to_blocks(markdown: str) -> List[Dict[str, Any]]:
             blocks.append({
                 "type": "numbered_list",
                 "data": {
-                    "delta": [{"insert": text}]
+                    "delta": parse_inline_formatting(text)
                 }
             })
             i += 1
@@ -128,7 +196,7 @@ def markdown_to_blocks(markdown: str) -> List[Dict[str, Any]]:
             blocks.append({
                 "type": "quote",
                 "data": {
-                    "delta": [{"insert": text}]
+                    "delta": parse_inline_formatting(text)
                 }
             })
             i += 1
@@ -158,7 +226,7 @@ def markdown_to_blocks(markdown: str) -> List[Dict[str, Any]]:
         blocks.append({
             "type": "paragraph",
             "data": {
-                "delta": [{"insert": line}]
+                "delta": parse_inline_formatting(line)
             }
         })
         i += 1
@@ -222,11 +290,18 @@ class AppFlowyClient:
         """Get workspace folder structure."""
         return self._make_request('GET', f'/api/workspace/{self.workspace_id}/folder')
 
+    def get_page_view(self, page_id: str) -> dict:
+        """Get detailed page view including children."""
+        return self._make_request('GET', f'/api/workspace/{self.workspace_id}/page-view/{page_id}')
+
     def find_page_by_name(self, name: str, folder_structure: Optional[dict] = None) -> Optional[str]:
         """
         Find a page/folder by name in the workspace folder structure.
 
         Returns the view_id if found, None otherwise.
+
+        Note: The workspace folder API doesn't return children of spaces,
+        so we need to query each space individually to find pages inside them.
         """
         if folder_structure is None:
             folder_structure = self.get_workspace_folder()
@@ -238,6 +313,7 @@ class AppFlowyClient:
         def search_recursive(item: dict) -> Optional[str]:
             if item.get('name') == name:
                 return item.get('view_id')
+
             # Search in children if present
             children = item.get('children', [])
             if children:
@@ -245,6 +321,24 @@ class AppFlowyClient:
                     result = search_recursive(child)
                     if result:
                         return result
+            else:
+                # If this is a space with no children in the folder API,
+                # query it individually to get its actual children
+                if item.get('is_space'):
+                    try:
+                        space_id = item.get('view_id')
+                        space_view = self.get_page_view(space_id)
+                        space_data = space_view.get('data', {}).get('view', {})
+                        space_children = space_data.get('children', [])
+
+                        # Search in space children
+                        for child in space_children:
+                            result = search_recursive(child)
+                            if result:
+                                return result
+                    except Exception as e:
+                        logger.debug(f"Failed to query space {item.get('name')}: {e}")
+
             return None
 
         return search_recursive(folder_structure)
@@ -255,40 +349,29 @@ class AppFlowyClient:
 
         Returns the view_id if found, None otherwise.
         """
-        if folder_structure is None:
-            folder_structure = self.get_workspace_folder()
+        # Directly query the parent page to get its actual children
+        # (more reliable than using folder_structure which may not have children populated)
+        try:
+            parent_view = self.get_page_view(parent_id)
+            parent_data = parent_view.get('data', {}).get('view', {})
+            children = parent_data.get('children', [])
 
-        # Handle both dict (API response) and the data within it
-        if isinstance(folder_structure, dict) and 'data' in folder_structure:
-            folder_structure = folder_structure['data']
+            for child in children:
+                if child.get('name') == name:
+                    return child.get('view_id')
 
-        def find_parent_and_search(item: dict) -> Optional[str]:
-            if item.get('view_id') == parent_id:
-                # Found the parent, search its children
-                children = item.get('children', [])
-                for child in children:
-                    if child.get('name') == name:
-                        return child.get('view_id')
-                return None
-            # Search recursively in children
-            children = item.get('children', [])
-            if children:
-                for child in children:
-                    result = find_parent_and_search(child)
-                    if result:
-                        return result
             return None
-
-        return find_parent_and_search(folder_structure)
+        except Exception as e:
+            logger.debug(f"Failed to query parent {parent_id}: {e}")
+            return None
 
     def create_folder(self, name: str, parent_id: Optional[str] = None) -> dict:
         """Create a folder in the workspace."""
         data = {
             'name': name,
-            'layout': 0  # 0 = Document layout for folders
+            'layout': 0,  # 0 = Document layout for folders
+            'parent_view_id': parent_id if parent_id else self.workspace_id
         }
-        if parent_id:
-            data['parent_view_id'] = parent_id
 
         return self._make_request('POST', f'/api/workspace/{self.workspace_id}/page-view', json=data)
 
@@ -302,10 +385,9 @@ class AppFlowyClient:
         """
         data = {
             'name': name,
-            'layout': 0  # 0 = Document layout
+            'layout': 0,  # 0 = Document layout
+            'parent_view_id': parent_id if parent_id else self.workspace_id
         }
-        if parent_id:
-            data['parent_view_id'] = parent_id
 
         # Step 1: Create the page (empty)
         result = self._make_request('POST', f'/api/workspace/{self.workspace_id}/page-view', json=data)
@@ -376,6 +458,9 @@ class DocumentSyncManager:
     # Sync status file
     SYNC_STATUS_FILE = REPO_ROOT / 'skills/custom/appflowy-integration/.sync-status.json'
 
+    # Mapping file
+    MAPPING_FILE = REPO_ROOT / 'skills/custom/appflowy-integration/appflowy-mapping.yaml'
+
     # Document mappings: local_path -> (folder_path, page_name)
     DOCUMENTS = {
         'README.md': ('Getting Started', 'README'),
@@ -400,6 +485,7 @@ class DocumentSyncManager:
         self.dry_run = dry_run
         self.force = force
         self.sync_status = self._load_sync_status()
+        self.mapping = self._load_mapping_file()
         self.folder_ids: Dict[str, str] = {}
         self.docs_parent_id: Optional[str] = None
         self.folder_structure: Optional[dict] = None
@@ -417,6 +503,18 @@ class DocumentSyncManager:
             'synced_files': {},
             'folder_ids': {}
         }
+
+    def _load_mapping_file(self) -> Optional[dict]:
+        """Load mapping file if it exists."""
+        if self.MAPPING_FILE.exists():
+            try:
+                with open(self.MAPPING_FILE, 'r') as f:
+                    mapping = yaml.safe_load(f)
+                    logger.info(f"Loaded mapping file: {self.MAPPING_FILE}")
+                    return mapping
+            except Exception as e:
+                logger.warning(f"Failed to load mapping file: {e}")
+        return None
 
     def _save_sync_status(self):
         """Save sync status to JSON file."""
@@ -460,6 +558,35 @@ class DocumentSyncManager:
 
         return False, "up to date"
 
+    def _get_page_id_from_mapping(self, file_path: Path) -> Optional[str]:
+        """Get page ID from mapping file for a given file path."""
+        if not self.mapping or 'pages' not in self.mapping:
+            return None
+
+        file_str = str(file_path.relative_to(self.REPO_ROOT))
+
+        for page in self.mapping['pages']:
+            if page.get('file') == file_str:
+                return page.get('page_id')
+
+        return None
+
+    def _get_general_space_id(self) -> Optional[str]:
+        """
+        Find the General space ID in the workspace.
+
+        Returns the view_id of the General space, or None if not found.
+        """
+        if not self.folder_structure:
+            self.folder_structure = self.client.get_workspace_folder()
+
+        # Look for General space in workspace children
+        for child in self.folder_structure.get('data', {}).get('children', []):
+            if child.get('name') == 'General' and child.get('is_space'):
+                return child.get('view_id')
+
+        return None
+
     def _get_documentation_parent_id(self) -> str:
         """
         Get or discover the Documentation parent page ID.
@@ -469,6 +596,14 @@ class DocumentSyncManager:
         # Check if already cached
         if self.docs_parent_id:
             return self.docs_parent_id
+
+        # Check mapping file first
+        if self.mapping and 'documentation' in self.mapping:
+            parent_id = self.mapping['documentation'].get('parent_id')
+            if parent_id:
+                logger.info(f"Using Documentation parent ID from mapping file: {parent_id}")
+                self.docs_parent_id = parent_id
+                return parent_id
 
         # Check environment variable
         env_parent_id = os.getenv('APPFLOWY_DOCS_PARENT_ID')
@@ -501,11 +636,20 @@ class DocumentSyncManager:
             if parent_id:
                 logger.info(f"Found existing Documentation page (ID: {parent_id})")
             else:
-                # Create "Documentation" page at workspace root
+                # Find General space to use as parent (AppFlowy requires pages inside spaces)
+                general_space_id = self._get_general_space_id()
+                if not general_space_id:
+                    logger.warning("General space not found, creating Documentation at workspace root")
+                    general_space_id = None
+
+                # Create "Documentation" page inside General space
                 logger.info("Documentation page not found, creating it...")
-                result = self.client.create_folder("Documentation")
+                result = self.client.create_folder("Documentation", parent_id=general_space_id)
                 parent_id = result.get('data', {}).get('view_id')
-                logger.info(f"Created Documentation page (ID: {parent_id})")
+                if general_space_id:
+                    logger.info(f"Created Documentation page inside General space (ID: {parent_id})")
+                else:
+                    logger.info(f"Created Documentation page (ID: {parent_id})")
                 # Refresh folder structure
                 self.folder_structure = None
 
@@ -529,6 +673,15 @@ class DocumentSyncManager:
         # Check cache first
         if folder_name in self.folder_ids:
             return self.folder_ids[folder_name]
+
+        # Check mapping file first
+        if self.mapping and 'folders' in self.mapping:
+            if folder_name in self.mapping['folders']:
+                folder_id = self.mapping['folders'][folder_name].get('id')
+                if folder_id:
+                    self.folder_ids[folder_name] = folder_id
+                    logger.info(f"Using folder '{folder_name}' from mapping (ID: {folder_id})")
+                    return folder_id
 
         # Check sync status
         if folder_name in self.sync_status.get('folder_ids', {}):
@@ -608,20 +761,19 @@ class DocumentSyncManager:
             page_id = f"dry-run-page-{page_name}"
         else:
             try:
-                # Check if page already exists
-                file_str = str(file_path.relative_to(self.REPO_ROOT))
-                if file_str in self.sync_status['synced_files']:
-                    page_id = self.sync_status['synced_files'][file_str].get('page_id')
-                    if page_id:
-                        # Update existing page
-                        result = self.client.update_page(page_id, page_name, content)
-                        logger.info(f"✅ Updated page '{page_name}'")
-                    else:
-                        # Create new page
-                        result = self.client.create_page(page_name, content, folder_id)
-                        # Response format: {"data": {"view_id": "...", "database_id": null}, "code": 0, "message": "..."}
-                        page_id = result.get('data', {}).get('view_id')
-                        logger.info(f"✅ Created page '{page_name}' (ID: {page_id})")
+                # Check mapping file first for explicit page ID
+                page_id = self._get_page_id_from_mapping(file_path)
+
+                # If not in mapping, check sync status
+                if not page_id:
+                    file_str = str(file_path.relative_to(self.REPO_ROOT))
+                    if file_str in self.sync_status['synced_files']:
+                        page_id = self.sync_status['synced_files'][file_str].get('page_id')
+
+                if page_id:
+                    # Update existing page
+                    result = self.client.update_page(page_id, page_name, content)
+                    logger.info(f"✅ Updated page '{page_name}' (ID: {page_id})")
                 else:
                     # Create new page
                     result = self.client.create_page(page_name, content, folder_id)

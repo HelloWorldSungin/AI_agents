@@ -1,0 +1,158 @@
+# AppFlowy Sync Mapping Configuration
+# This file provides explicit mapping between repository files and AppFlowy pages
+# to prevent duplicate creation and ensure consistent sync behavior.
+#
+# Purpose:
+#   - Maintains stable page IDs across syncs
+#   - Prevents duplicate page creation
+#   - Documents the AppFlowy workspace structure
+#   - Enables recovery from sync status file loss
+#
+# Usage:
+#   The sync_docs.py script will automatically load this file if it exists
+#   and use the explicit page_ids instead of creating new pages.
+
+# Workspace Configuration
+workspace:
+  id: "c9674d81-6037-4dc3-9aa6-e2d833162b0f"
+  name: "AI Agents"
+
+# Documentation Parent Configuration
+documentation:
+  parent_id: "9a5772b0-005a-4ad7-a4c6-2b4efef21680"
+  parent_name: "Documentation"
+
+# Folder Mappings
+# Maps folder names to their AppFlowy folder IDs
+folders:
+  "Getting Started":
+    id: "80dc3152-7eb5-46b3-ac60-3d5922b0203c"
+    description: "Introductory documentation and quick start guides"
+
+  "Guides":
+    id: "e2028dd9-c91e-4b06-ba0c-879a2d46184c"
+    description: "Comprehensive guides for using the AI agents system"
+
+  "Reference":
+    id: "71265290-71fc-418d-8b41-3493236b52d7"
+    description: "Technical reference documentation and cheat sheets"
+
+  "Examples":
+    id: "b1be566f-a7ec-40c9-81c8-72fd5551d168"
+    description: "Example implementations and use cases"
+
+# Page Mappings
+# Maps repository files to AppFlowy pages
+# Each entry includes:
+#   - file: Repository file path (relative to project root)
+#   - folder: Target folder name in AppFlowy
+#   - name: Display name in AppFlowy
+#   - page_id: AppFlowy page view ID
+pages:
+  # Getting Started Folder
+  - file: "README.md"
+    folder: "Getting Started"
+    name: "README"
+    page_id: "af403dbc-c7a0-4292-8481-b9dd2e7f0149"
+    description: "Main repository README"
+
+  - file: "docs/reference/CHEAT_SHEET/00-quick-start.md"
+    folder: "Getting Started"
+    name: "Quick Start"
+    page_id: "4337b63b-fdb1-4721-9d16-e64ecea47307"
+    description: "Quick start guide for new users"
+
+  - file: "starter-templates/README.md"
+    folder: "Getting Started"
+    name: "Starter Templates"
+    page_id: "6b990ef0-3db0-4a61-8834-a975b51cdee1"
+    description: "Starter templates and examples"
+
+  # Guides Folder
+  - file: "docs/guides/ARCHITECTURE.md"
+    folder: "Guides"
+    name: "Architecture"
+    page_id: "3472443a-eb72-4039-807f-07cb0fc2211c"
+    description: "System architecture documentation"
+
+  - file: "docs/guides/Context_Engineering.md"
+    folder: "Guides"
+    name: "Context Engineering"
+    page_id: "72203ea6-a396-41d3-99ce-b40276a5729c"
+    description: "Guide to context engineering practices"
+
+  - file: "docs/guides/SKILLS_GUIDE.md"
+    folder: "Guides"
+    name: "Skills Guide"
+    page_id: "e2cb0434-bc72-41ec-bfc1-f182d77ced37"
+    description: "Comprehensive skills development guide"
+
+  - file: "docs/guides/PRACTICAL_WORKFLOW_GUIDE.md"
+    folder: "Guides"
+    name: "Practical Workflow"
+    page_id: "5644b3ea-9dd6-435b-9260-51a46532b656"
+    description: "Practical workflow patterns and best practices"
+
+  - file: "docs/guides/E2E_TESTING.md"
+    folder: "Guides"
+    name: "E2E Testing"
+    page_id: "a6f4b1df-167a-446d-aefa-e75fd73f9334"
+    description: "End-to-end testing guide"
+
+  - file: "docs/guides/LONG_RUNNING_AGENTS.md"
+    folder: "Guides"
+    name: "Long Running Agents"
+    page_id: "34cc12bc-8488-4300-9ab3-a765625267bb"
+    description: "Guide for managing long-running agent processes"
+
+  - file: "docs/guides/TEST-PUSHSYNC.md"
+    folder: "Guides"
+    name: "Test PushSync"
+    page_id: "b65103b6-5540-4b2e-bf2a-ad536a3f12eb"
+    description: "Testing and push synchronization guide"
+
+  # Reference Folder
+  - file: "docs/reference/CHEAT_SHEET.md"
+    folder: "Reference"
+    name: "Cheat Sheet Index"
+    page_id: "921dcc68-ef13-48c0-892a-bcb4a03611fd"
+    description: "Index of all cheat sheets"
+
+  - file: "docs/reference/FAQ.md"
+    folder: "Reference"
+    name: "FAQ"
+    page_id: "54265973-0251-4209-bf18-4c3ef5356a70"
+    description: "Frequently asked questions"
+
+  - file: "docs/reference/CHEAT_SHEET/01-state-files.md"
+    folder: "Reference"
+    name: "State Files"
+    page_id: "6f559207-efdd-4ce5-a5b2-4ccfa909ea89"
+    description: "State file management cheat sheet"
+
+  # Examples Folder
+  - file: "examples/web-app-team/README.md"
+    folder: "Examples"
+    name: "Web App Team"
+    page_id: "b6e1bc0d-d8f8-4ae2-9a13-0588eb5c69d1"
+    description: "Web application team example"
+
+  - file: "examples/mobile-app-team/README.md"
+    folder: "Examples"
+    name: "Mobile App Team"
+    page_id: "c03f2f7c-ac51-4fad-a16c-79392c6d5c03"
+    description: "Mobile application team example"
+
+# Sync Configuration
+sync:
+  # Strategy for handling conflicts
+  conflict_resolution: "use_mapping"  # Options: use_mapping, use_status, create_new
+
+  # Whether to validate page IDs before syncing
+  validate_ids: true
+
+  # Whether to create missing pages automatically
+  auto_create_missing: true
+
+  # Backup sync status file before major operations
+  backup_status: true
