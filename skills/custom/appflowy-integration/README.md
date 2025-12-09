@@ -6,6 +6,8 @@ Integration skill for AppFlowy, an open-source project management and collaborat
 
 This skill enables AI agents to:
 - ✅ Create and update tasks in AppFlowy databases
+- ✅ Sync documentation with rich text formatting (bold, italic, code, links, strikethrough)
+- ✅ Automated `git pushsync` workflow - push to GitHub + sync to AppFlowy in one command
 - ✅ Set up new project workspaces automatically
 - ✅ Manage and monitor self-hosted AppFlowy servers
 - ✅ Track project progress and generate dashboards
@@ -13,6 +15,30 @@ This skill enables AI agents to:
 - ✅ Backup and restore AppFlowy data
 
 ## Quick Start
+
+### Current Configuration (AI Agents Workspace)
+
+**Workspace Info:**
+- Workspace ID: `c9674d81-6037-4dc3-9aa6-e2d833162b0f`
+- Documentation Parent: `c7f9f933-ca10-4206-8be4-a2967f1085aa`
+- Credentials: `/Users/sunginkim/GIT2/ArkNode-AI/projects/appflowy-deployment/.env`
+- Web UI: https://appflowy.ark-node.com
+
+**Recommended Workflow:**
+```bash
+# Make changes to documentation
+git add .
+git commit -m "docs: update"
+git pushsync  # Push to GitHub + auto-sync to AppFlowy
+```
+
+**Mapping File:**
+Create `appflowy-mapping.yaml` in project root to prevent duplicate pages:
+```yaml
+mappings:
+  README.md: existing-page-id
+  docs/guide.md: another-page-id
+```
 
 ### 1. Deploy AppFlowy
 
@@ -213,6 +239,13 @@ The `markdown_to_blocks()` function (in `update_page_content.py` and `sync_docs.
 - ✅ **Code blocks** (``` with language detection)
 - ✅ **Blockquotes** (>)
 - ✅ **Paragraphs** (regular text)
+- ✅ **Rich text formatting:**
+  - **Bold** (`**text**`)
+  - *Italic* (`*text*`)
+  - `Code` (`` `text` ``)
+  - [Links](url) (`[text](url)`)
+  - ~~Strikethrough~~ (`~~text~~`)
+- ✅ **Tables** (rendered as code blocks)
 
 **Usage:**
 ```bash
@@ -273,12 +306,23 @@ appflowy-integration/
 
 ## Key Features
 
+- 🚀 **Git PushSync Workflow** - Push to GitHub + auto-sync to AppFlowy in one command
+- 📝 **Rich Text Support** - Bold, italic, code, links, strikethrough formatting
+- 🗺️ **Mapping File** - Prevent duplicate pages with explicit page ID tracking
+- 🔄 **Content Updates** - Rename-and-recreate strategy for clean updates
 - 🚀 **Workspace Setup Automation** - Initialize project workspaces with one command
 - 🔧 **Server Management** - Complete lifecycle management (start, stop, monitor, backup, update)
 - 📋 **Task Tracking** - Create and manage tasks from command line or Python
 - 📊 **Project Dashboards** - Generate status reports and team summaries
 - 🏠 **Self-Hosted Support** - Full support for Synology NAS, Docker, home servers
 - 🔐 **Secure** - JWT authentication with token refresh support
+
+## Current Stats (AI Agents Workspace)
+
+- 15 documentation pages synced
+- 10 tasks synced to Kanban board
+- Rich text formatting working end-to-end
+- Git pushsync automation active
 
 ## Requirements
 

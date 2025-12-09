@@ -6,8 +6,9 @@ description: >
   creating databases, organizing workspaces, syncing agent work with project tracking,
   syncing documentation or tasks to AppFlowy, setting up automated sync workflows,
   or when the user mentions AppFlowy, project tracking, task management, or sync automation.
-  Includes generic sync script that works with ANY project.
-version: 2.3.0
+  Includes generic sync script that works with ANY project. Supports rich text formatting
+  (bold, italic, code, links, strikethrough) and git pushsync workflow for automated syncing.
+version: 2.4.0
 author: AI Agents Team
 category: custom
 token_estimate: ~1500
@@ -43,23 +44,41 @@ Integration with AppFlowy, an open-source collaborative workspace and project ma
 </context>
 
 <quick_start>
-**ArkNode-AI Production Configuration:**
+**AI Agents Workspace Configuration:**
 ```bash
 export APPFLOWY_API_URL="https://appflowy.ark-node.com"
-export APPFLOWY_WORKSPACE_ID="22bcbccd-9cf3-41ac-aa0b-28fe144ba71d"
-export APPFLOWY_TODOS_DB_ID="bb7a9c66-8088-4f71-a7b7-551f4c1adc5d"
-export APPFLOWY_DATABASE_ID="bb7a9c66-8088-4f71-a7b7-551f4c1adc5d"
+export APPFLOWY_WORKSPACE_ID="c9674d81-6037-4dc3-9aa6-e2d833162b0f"
+export APPFLOWY_DOCS_PARENT_ID="c7f9f933-ca10-4206-8be4-a2967f1085aa"
 ```
+
+**Credentials Location:**
+- Stored in: `/Users/sunginkim/GIT2/ArkNode-AI/projects/appflowy-deployment/.env`
+- Workspace: AI Agents
+- Documentation parent: c7f9f933-ca10-4206-8be4-a2967f1085aa
 
 **Access:**
 - Web UI: https://appflowy.ark-node.com
-- Admin Email: admin@arknode.local
-- Admin Password: Stored in `/opt/appflowy-cloud/.env` on CT102 (192.168.68.55)
 - WebSocket: wss://appflowy.ark-node.com/ws/v2/
+
+**Git PushSync Workflow (Recommended):**
+```bash
+# Push to GitHub and auto-sync to AppFlowy
+git add .
+git commit -m "docs: update documentation"
+git pushsync  # Push + sync to AppFlowy in one command
+```
+
+**Mapping File:**
+Create `appflowy-mapping.yaml` to prevent duplicate pages:
+```yaml
+mappings:
+  README.md: page-id-here
+  docs/guide.md: another-page-id
+```
 
 **Generic Project Sync (Any Repository):**
 ```bash
-# Sync with config file
+# Sync with config file (uses mapping file if present)
 python3 sync_project.py --config appflowy-sync.yaml
 
 # Auto-discover and sync documentation
@@ -218,6 +237,8 @@ Supported markdown elements:
 - Code blocks (``` with language detection)
 - Blockquotes (>)
 - Paragraphs (regular text)
+- Rich text formatting: **bold**, *italic*, `code`, [links](url), ~~strikethrough~~
+- Tables (rendered as code blocks)
 </api_endpoints>
 
 <workflow>
@@ -845,6 +866,17 @@ The `sync_project.py` script is designed to work with ANY project:
 </reference_guides>
 
 <version_history>
+**Version 2.4.0 (2025-12-08)**
+- **NEW: Rich text formatting support** (bold, italic, code, links, strikethrough)
+- **NEW: git pushsync workflow** - Push to GitHub + auto-sync to AppFlowy
+- **NEW: Mapping file support** (`appflowy-mapping.yaml`) for explicit page IDs
+- **NEW: Rename-and-recreate strategy** for content updates (AppFlowy API limitation)
+- Updated to AI Agents workspace (c9674d81-6037-4dc3-9aa6-e2d833162b0f)
+- Fixed duplicate page creation issues with mapping files
+- Enhanced markdown parser with inline formatting attributes
+- 15 documentation pages synced successfully
+- 10 tasks synced to Kanban board
+
 **Version 2.3.0 (2025-12-08)**
 - **NEW: Generic sync script for any project** (`sync_project.py`)
 - Added YAML/JSON configuration support for flexible document mapping
