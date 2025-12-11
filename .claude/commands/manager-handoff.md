@@ -106,6 +106,54 @@ Check current file size:
 wc -c .ai-agents/state/team-communication.json | awk '{print "~" int($1/4) " tokens"}'
 ```
 
+### Step 2.5: Discover Active Branches
+
+**CRITICAL:** Discover all feature branches to prevent duplicate work in next session.
+
+```bash
+# Get current branch
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+echo "Current branch: $current_branch"
+
+# Determine base branch (main or master)
+if git show-ref --verify --quiet refs/heads/main; then
+  base_branch="main"
+elif git show-ref --verify --quiet refs/heads/master; then
+  base_branch="master"
+else
+  base_branch=$(git rev-parse --abbrev-ref HEAD)
+fi
+echo "Base branch: $base_branch"
+
+# Find all local branches (excluding current and base)
+echo ""
+echo "📊 Branch Status:"
+echo ""
+
+git branch --list | while read branch; do
+  branch=$(echo "$branch" | sed 's/^[\* ]*//')
+
+  # Skip base branch
+  if [ "$branch" = "$base_branch" ]; then
+    continue
+  fi
+
+  # Count commits ahead of base
+  commits_ahead=$(git rev-list --count $base_branch..$branch 2>/dev/null || echo "0")
+
+  if [ "$commits_ahead" -gt 0 ]; then
+    last_commit=$(git log -1 --format="%h %s" $branch 2>/dev/null)
+    files_changed=$(git diff --stat $base_branch..$branch 2>/dev/null | tail -1)
+    echo "  - $branch: $commits_ahead commits ahead"
+    echo "    Last: $last_commit"
+    echo "    Changes: $files_changed"
+    echo ""
+  fi
+done
+```
+
+Store the branch information for inclusion in handoff document and session-progress.json.
+
 ### Step 3: Detect Manager Agent File
 
 Detect which manager agent file is being used:
@@ -322,6 +370,47 @@ This command will:
 2. {next logical step}
 3. {follow-up actions}
 
+## Git Branch Status
+
+**Current Branch:** {current_branch}
+**Base Branch:** {base_branch}
+
+### ⚠️ Unmerged Feature Branches
+
+{For each branch with commits ahead of base:}
+
+| Branch | Commits Ahead | Last Commit | Status |
+|--------|---------------|-------------|--------|
+| `{branch_name}` | {N} | {short_hash} {message} | {in-progress/completed/unknown} |
+
+{If no unmerged branches:}
+✅ No unmerged feature branches - all work is on {base_branch}
+
+### Action Required for Next Manager
+
+**Before starting new work, review these branches:**
+
+1. **Check if work is complete** - Review the commits and changes
+2. **Merge if ready** - `git checkout {base_branch} && git merge {branch_name}`
+3. **Continue if incomplete** - `git checkout {branch_name}` and continue work
+4. **Delete if abandoned** - `git branch -d {branch_name}`
+
+### Useful Commands
+
+\`\`\`bash
+# View all branches with details
+git branch -vv
+
+# See what's in a feature branch
+git log {base_branch}..{branch_name} --oneline
+
+# Compare branch to base
+git diff {base_branch}..{branch_name} --stat
+
+# Merge a completed branch
+git checkout {base_branch} && git merge {branch_name} && git branch -d {branch_name}
+\`\`\`
+
 ## Context for Next Manager
 
 {Important context that new manager session should know}
@@ -329,6 +418,7 @@ This command will:
 - Any technical decisions to remember
 - Known issues or considerations
 - Integration points established
+- **Branch context**: Why each branch exists, what it contains
 
 ---
 
@@ -345,12 +435,24 @@ Key content to include:
 
 ### Step 7: Update session-progress.json
 
-Add handoff reference and manager agent name to session-progress.json:
+Add handoff reference, manager agent name, and **active branches** to session-progress.json:
 
 ```json
 {
   ...existing fields...,
   "manager_agent": "@{agent_name}",
+  "current_branch": "{current_branch}",
+  "base_branch": "{base_branch}",
+  "active_branches": [
+    {
+      "name": "{branch_name}",
+      "commits_ahead": {N},
+      "last_commit": "{short_hash}",
+      "last_commit_message": "{commit message}",
+      "status": "in-progress|completed|unknown",
+      "created_by": "{task_id or agent if known}"
+    }
+  ],
   "last_handoff": {
     "session_id": "{session_num}",
     "file": ".ai-agents/handoffs/session-{session_num}.md",
@@ -359,6 +461,8 @@ Add handoff reference and manager agent name to session-progress.json:
   }
 }
 ```
+
+**Important:** The `active_branches` array enables the next manager to immediately see all unmerged work.
 
 Update next_session_priority if not already set (infer from current state).
 

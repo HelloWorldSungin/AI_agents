@@ -73,6 +73,9 @@ From state files, extract:
   - active_tasks
   - blocked_tasks
   - next_session_priority
+  - current_branch
+  - base_branch
+  - active_branches (array of unmerged feature branches)
 
 - **team-communication.json:**
   - Last 3-5 agent_updates (most recent first)
@@ -155,6 +158,29 @@ Most recent:
 {If has items}
 ❓ Pending:
 - {question from agent}
+
+## ⚠️ Git Branch Status
+
+{From session-progress.json: current_branch, base_branch, active_branches}
+
+**Current Branch:** {current_branch}
+**Base Branch:** {base_branch}
+
+### Unmerged Feature Branches
+
+{If active_branches array exists and has items:}
+
+| Branch | Commits Ahead | Last Commit | Status |
+|--------|---------------|-------------|--------|
+| `{name}` | {commits_ahead} | {last_commit} {last_commit_message} | {status} |
+
+**⚠️ ACTION REQUIRED:** Review these branches before starting new work!
+- Merge completed branches: `git checkout {base_branch} && git merge {branch_name}`
+- Continue incomplete work: `git checkout {branch_name}`
+- Delete abandoned: `git branch -d {branch_name}`
+
+{If active_branches is empty or not present:}
+✅ No unmerged feature branches - all work is on {base_branch}
 
 ## Verification Status
 

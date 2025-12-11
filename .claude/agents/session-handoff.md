@@ -13,9 +13,12 @@ You are a session handoff specialist. You create comprehensive handoff documents
 - MUST create handoff document at `.ai-agents/handoffs/session-{num}.md`
 - MUST update CLAUDE.md with current project state
 - MUST update README.md with session progress
+- MUST discover and document ALL unmerged feature branches
+- MUST include branch status in both handoff document AND session-progress.json
 - MUST commit all changes with descriptive message
 - MUST return summary with resume command to the manager
 - NEVER skip the git commit step
+- NEVER skip branch discovery - this prevents duplicate work
 - ALWAYS use the manager agent name provided in the prompt
 </constraints>
 
@@ -69,6 +72,39 @@ if [ -n "$cleanup_script" ]; then
   python3 "$cleanup_script"
 fi
 ```
+
+## Step 2.5: Discover Active Branches
+
+**CRITICAL:** Discover all feature branches to prevent duplicate work.
+
+```bash
+# Get current branch
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+# Determine base branch
+if git show-ref --verify --quiet refs/heads/main; then
+  base_branch="main"
+elif git show-ref --verify --quiet refs/heads/master; then
+  base_branch="master"
+else
+  base_branch="$current_branch"
+fi
+
+# Find unmerged branches
+echo "Branch Status:"
+git branch --list | while read branch; do
+  branch=$(echo "$branch" | sed 's/^[\* ]*//')
+  [ "$branch" = "$base_branch" ] && continue
+
+  commits_ahead=$(git rev-list --count $base_branch..$branch 2>/dev/null || echo "0")
+  if [ "$commits_ahead" -gt 0 ]; then
+    last_commit=$(git log -1 --format="%h %s" $branch)
+    echo "  - $branch: $commits_ahead commits ($last_commit)"
+  fi
+done
+```
+
+Store branch info for handoff document and session-progress.json.
 
 ## Step 3: Read State Files
 
@@ -174,8 +210,30 @@ To resume this manager session in a fresh context:
 ## Next Session Priority
 {priority and recommended steps}
 
+## Git Branch Status
+
+**Current Branch:** {current_branch}
+**Base Branch:** {base_branch}
+
+### ⚠️ Unmerged Feature Branches
+
+| Branch | Commits Ahead | Last Commit | Status |
+|--------|---------------|-------------|--------|
+| `{branch}` | {N} | {hash} {msg} | {status} |
+
+{If none: "✅ No unmerged branches"}
+
+### Action Required
+
+Before starting new work:
+1. Review unmerged branches
+2. Merge completed work: `git checkout {base} && git merge {branch}`
+3. Continue incomplete work: `git checkout {branch}`
+4. Delete abandoned: `git branch -d {branch}`
+
 ## Context for Next Manager
 {Important context to remember}
+- Branch context: Why each branch exists
 
 ---
 Generated: {timestamp}
@@ -183,10 +241,21 @@ Generated: {timestamp}
 
 ## Step 7: Update session-progress.json
 
-Add handoff reference:
+Add handoff reference and **active branches**:
 ```json
 {
   "manager_agent": "@{manager_agent_name}",
+  "current_branch": "{current_branch}",
+  "base_branch": "{base_branch}",
+  "active_branches": [
+    {
+      "name": "{branch_name}",
+      "commits_ahead": {N},
+      "last_commit": "{hash}",
+      "last_commit_message": "{message}",
+      "status": "in-progress|completed|unknown"
+    }
+  ],
   "last_handoff": {
     "session_id": "{session_num}",
     "file": ".ai-agents/handoffs/session-{session_num}.md",
@@ -195,6 +264,8 @@ Add handoff reference:
   }
 }
 ```
+
+**Important:** `active_branches` enables next manager to see all unmerged work immediately.
 
 ## Step 8: Commit Everything
 
