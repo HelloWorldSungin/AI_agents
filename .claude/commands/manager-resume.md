@@ -38,6 +38,7 @@ Read $latest_handoff
 Read .ai-agents/state/team-communication.json
 Read .ai-agents/state/session-progress.json
 Read .ai-agents/state/feature-tracking.json
+Read .ai-agents/state/manager-context.json
 ```
 
 Verify files exist. If any are missing, show warning but continue with available files.
@@ -114,6 +115,35 @@ Present the following structured summary:
 
 **Phase:** {session-progress.current_phase}
 **Progress:** {completed_phases_count} of {total_phases} phases complete
+
+## Original Plan Context
+
+{If .ai-agents/state/manager-context.json exists:}
+
+**Project:** {plan_summary.project}
+**Objective:** {plan_summary.objective}
+**Mode:** {plan_summary.mode}
+
+### Phases Overview
+
+{For each phase in plan_summary.phases:}
+- **{phase.name}:** {phase.description}
+
+### Success Criteria
+
+{For each criterion in plan_summary.success_criteria:}
+- [ ] {criterion}
+
+**Plan Source:** {plan_source}
+
+{If manager-context.json does NOT exist:}
+
+⚠️ No original plan context available (manager-context.json not found).
+
+This manager session was created before plan context tracking was added,
+or was started without using `/create-manager-meta-prompt`.
+
+You can still continue - use the handoff document and state files for context.
 
 ## Recent Agent Updates
 
@@ -308,5 +338,19 @@ Always use the latest (sort -V ensures proper version sorting).
 - If `next_session_priority` is set in session-progress.json: use it
 - Else if handoff contains next priority: use it
 - Else infer from current_phase: "Continue with {current_phase}"
+
+**Extracting Plan Context from manager-context.json:**
+- Check if `.ai-agents/state/manager-context.json` exists
+- If exists: Extract `plan_summary.project`, `plan_summary.objective`, `plan_summary.mode`
+- Extract phases array and format each as "Phase Name: Description"
+- Extract success_criteria array and format as checklist items
+- Include `plan_source` to show where the plan came from
+- If file doesn't exist: Show backward compatibility message
+
+**Why Plan Context Matters:**
+- New managers immediately understand the bigger picture
+- Success criteria provide clear targets to track progress against
+- Phases overview shows where the project started and where it's going
+- Prevents managers from losing sight of original objectives
 
 Proceed with resume now.

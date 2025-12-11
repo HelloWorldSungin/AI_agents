@@ -577,6 +577,69 @@ description: {Description from above}
 
 **Important:** The manager prompt written to the file should be the EXACT prompt generated in Step 4 (including all setup commands, execution plan, etc.)
 
+### Create Manager Context File
+
+**IMPORTANT:** Also create `.ai-agents/state/manager-context.json` to store the original plan context for `/manager-resume`.
+
+This enables future managers to understand the bigger picture when resuming.
+
+```bash
+# Ensure state directory exists
+mkdir -p .ai-agents/state
+
+# Create manager-context.json
+cat > .ai-agents/state/manager-context.json << 'EOF'
+{
+  "created": "{ISO-8601 timestamp}",
+  "manager_agent": {
+    "file": ".claude/agents/{agent-name}.md",
+    "name": "@{agent-name}"
+  },
+  "plan_source": "{path to original plan file or 'description provided'}",
+  "plan_summary": {
+    "project": "{project name extracted from plan}",
+    "objective": "{main objective from plan - 1-2 sentences}",
+    "mode": "{simple|complex|automated}",
+    "phases": [
+      {
+        "name": "Phase 0: Infrastructure",
+        "description": "{brief description}"
+      },
+      {
+        "name": "Phase 1: ...",
+        "description": "{brief description}"
+      }
+    ],
+    "estimated_agents": {N},
+    "success_criteria": [
+      "{criterion 1 from plan}",
+      "{criterion 2 from plan}",
+      "{criterion 3 from plan}"
+    ]
+  }
+}
+EOF
+```
+
+**Extraction Guidelines:**
+
+- **project**: Extract project name from plan title or objective
+- **objective**: Summarize the main goal in 1-2 sentences
+- **mode**: Use the mode recommended/selected in Step 2
+- **phases**: Extract phase names and brief descriptions from plan
+- **estimated_agents**: Use agent count from Step 2 analysis
+- **success_criteria**: Extract 3-5 success criteria from plan (or infer if not explicit)
+
+**Why This Matters:**
+
+When a new manager runs `/manager-resume`, they will see:
+- The original project objective
+- All planned phases at a glance
+- Success criteria to track progress
+- Reference to the full manager agent file
+
+This prevents new managers from losing sight of the bigger picture.
+
 ### Output Agent File Confirmation
 
 After creating the agent file, show this confirmation to the user:
@@ -586,7 +649,9 @@ After creating the agent file, show this confirmation to the user:
 
 ## Manager Agent File Created ✓
 
-**File:** `.claude/agents/{agent-name}.md`
+**Files Created:**
+- `.claude/agents/{agent-name}.md` - Manager agent prompt
+- `.ai-agents/state/manager-context.json` - Original plan context for resume
 
 ### How to Use This Manager
 
