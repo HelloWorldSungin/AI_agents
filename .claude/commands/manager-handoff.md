@@ -122,6 +122,70 @@ Update the README.md to reflect:
 
 Focus on high-level project status, not implementation details.
 
+### Step 5.5: Update CLAUDE.md
+
+CLAUDE.md is automatically read by Claude Code at session start. Update it with current project state so the next session has immediate context.
+
+```bash
+Read CLAUDE.md  # Read existing if present
+```
+
+Create or update CLAUDE.md with this structure:
+
+```markdown
+# AI_agents - Project Context
+
+This file is automatically read by Claude Code at session start.
+
+## Current Project State
+
+**Manager Agent:** `@{agent_name}`
+**Last Session:** {session_num}
+**Current Phase:** {session-progress.current_phase}
+**Last Updated:** {ISO-8601 timestamp}
+
+## Quick Resume
+
+To continue manager work from the last handoff:
+```
+@{agent_name} /manager-resume
+```
+
+## Active Work
+
+{From session-progress.active_tasks and team-communication.manager_instructions}
+- Phase: {current_phase}
+- Active tasks: {list or "None - ready for next phase"}
+- Blocked tasks: {list or "None"}
+
+## Recent Progress
+
+{From session-progress.completed_tasks - last 5 items}
+- ✓ {task_id}: {description}
+- ✓ {task_id}: {description}
+
+## Next Priority
+
+{session-progress.next_session_priority}
+
+## State Files
+
+- `.ai-agents/handoffs/session-{session_num}.md` - Latest handoff
+- `.ai-agents/state/team-communication.json` - Agent coordination
+- `.ai-agents/state/session-progress.json` - Progress tracking
+- `.ai-agents/state/feature-tracking.json` - Feature status
+
+## Important Notes
+
+{Any critical context from this session - blockers, decisions, technical notes}
+```
+
+**Key sections to maintain:**
+- **Current Project State**: Always update with latest session number and phase
+- **Quick Resume**: Always include the correct manager agent command
+- **Active Work**: Clear what's in progress vs complete
+- **Next Priority**: What the next session should focus on
+
 ### Step 6: Create Enhanced Handoff Document
 
 Create handoff at `.ai-agents/handoffs/session-{session_num}.md` with the following comprehensive structure:
@@ -263,7 +327,7 @@ Update next_session_priority if not already set (infer from current state).
 
 Stage all changes:
 ```bash
-git add .ai-agents/handoffs/session-{session_num}.md .ai-agents/state/ README.md
+git add .ai-agents/handoffs/session-{session_num}.md .ai-agents/state/ README.md CLAUDE.md
 ```
 
 Create commit:
@@ -275,7 +339,8 @@ Session summary:
 - Tasks completed: {count}
 - Tasks active: {count}
 - Communication file: ~{X} tokens (cleaned)
-- README updated with current status
+- README.md updated with current status
+- CLAUDE.md updated with project context
 
 Next session: {next_session_priority or immediate action}"
 ```
@@ -290,10 +355,14 @@ Manager handoff created:
 - Communication file: .ai-agents/state/team-communication.json (~{X} tokens)
 - Session progress: .ai-agents/state/session-progress.json
 - Feature tracking: .ai-agents/state/feature-tracking.json
+- CLAUDE.md updated with project context (auto-loaded on session start)
 - README.md updated with session progress
 
 To resume in a fresh context:
   @{agent_name} /manager-resume
+
+Note: When you /clear and start a new session, Claude Code will automatically
+read CLAUDE.md, giving you immediate context about the project state.
 ```
 
 Proceed with handoff creation now.
