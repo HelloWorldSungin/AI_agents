@@ -4,3 +4,6 @@
 [submodule "external/taches-cc-resources"]
 	path = external/taches-cc-resources
 	url = https://github.com/glittercowboy/taches-cc-resources.git
+[submodule "external/Linear-Coding-Agent-Harness"]
+	path = external/Linear-Coding-Agent-Harness
+	url = https://github.com/coleam00/Linear-Coding-Agent-Harness
