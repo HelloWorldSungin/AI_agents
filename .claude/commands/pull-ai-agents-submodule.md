@@ -70,44 +70,69 @@ fi
 
 ```bash
 if [ "$recursive_mode" = true ]; then
-  # Find all directories containing .ai-agents/library/
-  echo "Scanning for projects with AI_agents submodules..."
+  # Find all directories containing .ai-agents/
+  echo "Scanning for projects with .ai-agents/ directories..."
 
-  # Use find to locate all .ai-agents/library directories
+  # Use find to locate all .ai-agents directories (excluding nested ones)
   found_projects=()
-  while IFS= read -r submodule_path; do
+  while IFS= read -r ai_agents_path; do
     # Get parent directory of .ai-agents
-    project_dir=$(dirname $(dirname "$submodule_path"))
-    found_projects+=("$project_dir")
-  done < <(find "$project_path" -type d -name "library" -path "*/.ai-agents/library" 2>/dev/null)
+    project_dir=$(dirname "$ai_agents_path")
+
+    # Skip if this is the AI_agents repo itself (has .ai-agents at root with specific structure)
+    if [ -d "$ai_agents_path/state" ] && [ -d "$ai_agents_path/handoffs" ]; then
+      # This looks like the AI_agents repo structure, check for submodule
+      if [ -d "$ai_agents_path/library" ]; then
+        found_projects+=("$project_dir")
+      elif [ -d "$project_dir/.claude/commands" ]; then
+        # Has .claude/commands but no library - still a valid project to update
+        found_projects+=("$project_dir")
+      fi
+    else
+      # Simple .ai-agents directory - include if it has .claude/commands
+      if [ -d "$project_dir/.claude/commands" ]; then
+        found_projects+=("$project_dir")
+      fi
+    fi
+  done < <(find "$project_path" -type d -name ".ai-agents" -not -path "*/.ai-agents/*" 2>/dev/null)
+
+  # Remove duplicates
+  found_projects=($(printf '%s\n' "${found_projects[@]}" | sort -u))
 
   # Count projects found
   project_count=${#found_projects[@]}
 
   if [ $project_count -eq 0 ]; then
-    echo "❌ No projects found with AI_agents submodules under $project_path"
+    echo "❌ No projects found with .ai-agents/ directories under $project_path"
     echo ""
-    echo "Looking for directories with .ai-agents/library/"
+    echo "Looking for directories with .ai-agents/ and .claude/commands/"
     exit 1
   fi
 
   # Show found projects
   echo ""
-  echo "Found $project_count project(s) with AI_agents submodules:"
+  echo "Found $project_count project(s) with .ai-agents/ directories:"
   echo ""
   for i in "${!found_projects[@]}"; do
     proj="${found_projects[$i]}"
     rel_path=$(realpath --relative-to="$project_path" "$proj" 2>/dev/null || echo "$proj")
 
-    # Get current commit for this project
-    if [ -d "$proj/.ai-agents/library/.git" ]; then
+    # Get current status for this project
+    if [ -d "$proj/.ai-agents/library/.git" ] || [ -f "$proj/.ai-agents/library/.git" ]; then
+      # Has submodule
       current_commit=$(cd "$proj/.ai-agents/library" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")
       current_branch=$(cd "$proj/.ai-agents/library" && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
       echo "  $((i+1)). $rel_path"
-      echo "     Current: $current_branch @ $current_commit"
+      echo "     Submodule: $current_branch @ $current_commit"
+    elif [ -d "$proj/.claude/commands" ]; then
+      # Has .claude/commands but no submodule - count commands
+      cmd_count=$(ls "$proj/.claude/commands/"*.md 2>/dev/null | wc -l | tr -d ' ')
+      agent_count=$(ls "$proj/.claude/agents/"*.md 2>/dev/null | wc -l | tr -d ' ')
+      echo "  $((i+1)). $rel_path"
+      echo "     Commands: $cmd_count, Agents: $agent_count (no submodule)"
     else
       echo "  $((i+1)). $rel_path"
-      echo "     ⚠️  Not a git submodule"
+      echo "     ⚠️  No .claude/commands/ found"
     fi
   done
 
@@ -507,28 +532,55 @@ For each file recommended to sync:
 # Create commands directory if needed
 mkdir -p "$project_path/.claude/commands"
 
-# For each changed command file
-for cmd_file in {changed_command_files}; do
-  source="$project_path/.ai-agents/library/.claude/commands/$cmd_file"
+# Determine source directory (submodule or current repo)
+if [ -d "$project_path/.ai-agents/library/.claude/commands" ]; then
+  source_commands="$project_path/.ai-agents/library/.claude/commands"
+else
+  # No submodule - use current AI_agents repo as source
+  source_commands="$(pwd)/.claude/commands"
+fi
+
+# Sync ALL commands from source (both new and updated)
+echo ""
+echo "📂 Syncing commands from: $source_commands"
+echo ""
+
+new_count=0
+updated_count=0
+skipped_count=0
+conflict_count=0
+
+for source_file in "$source_commands"/*.md; do
+  [ -f "$source_file" ] || continue  # Skip if no .md files
+
+  cmd_file=$(basename "$source_file")
   dest="$project_path/.claude/commands/$cmd_file"
 
   # Check if file exists locally
   if [ -f "$dest" ]; then
     # Compare files
-    if diff -q "$source" "$dest" > /dev/null; then
+    if diff -q "$source_file" "$dest" > /dev/null 2>&1; then
       echo "  ✓ $cmd_file - already up to date"
+      ((skipped_count++))
     else
-      # Files differ - check if local has custom modifications
-      echo "  ⚠️  $cmd_file - local version differs"
-      echo "     Show diff? (y/n)"
-      # If yes, show diff and ask to overwrite/keep/merge
+      # Files differ - report conflict
+      echo "  ⚠️  $cmd_file - local version differs (conflict)"
+      ((conflict_count++))
+      # Store conflict for later resolution
     fi
   else
     # New file - copy it
-    cp "$source" "$dest"
-    echo "  ✓ $cmd_file - copied (new)"
+    cp "$source_file" "$dest"
+    echo "  ✓ $cmd_file - created (new)"
+    ((new_count++))
   fi
 done
+
+echo ""
+echo "Commands sync summary:"
+echo "  - New commands created: $new_count"
+echo "  - Already up to date: $skipped_count"
+echo "  - Conflicts (need review): $conflict_count"
 ```
 
 ### Agents Sync
@@ -537,29 +589,63 @@ done
 # Create agents directory if needed
 mkdir -p "$project_path/.claude/agents"
 
-# For each changed agent file
-for agent_file in {changed_agent_files}; do
-  source="$project_path/.ai-agents/library/.claude/agents/$agent_file"
+# Determine source directory (submodule or current repo)
+if [ -d "$project_path/.ai-agents/library/.claude/agents" ]; then
+  source_agents="$project_path/.ai-agents/library/.claude/agents"
+else
+  # No submodule - use current AI_agents repo as source
+  source_agents="$(pwd)/.claude/agents"
+fi
+
+# Sync ALL agents from source (both new and updated)
+echo ""
+echo "📂 Syncing agents from: $source_agents"
+echo ""
+
+new_agent_count=0
+skipped_agent_count=0
+conflict_agent_count=0
+project_specific_count=0
+
+for source_file in "$source_agents"/*.md; do
+  [ -f "$source_file" ] || continue  # Skip if no .md files
+
+  agent_file=$(basename "$source_file")
   dest="$project_path/.claude/agents/$agent_file"
 
-  # Check if this is a project-specific agent (e.g., appflowy-manager.md)
-  # Skip syncing project-specific agents
-  if [[ "$agent_file" == *"manager.md" ]] && [ -f "$dest" ]; then
-    echo "  ⏭️  $agent_file - skipped (project-specific agent)"
-    continue
-  fi
-
-  # Sync generic/template agents
+  # Check if this is a project-specific agent (custom managers, etc.)
+  # Skip syncing if local version exists and contains project-specific content
   if [ -f "$dest" ]; then
-    if ! diff -q "$source" "$dest" > /dev/null; then
-      echo "  ⚠️  $agent_file - local version differs"
-      # Show diff and ask
+    # Check if local file has project-specific markers
+    if grep -q "project-specific\|custom\|local" "$dest" 2>/dev/null; then
+      echo "  ⏭️  $agent_file - skipped (project-specific agent)"
+      ((project_specific_count++))
+      continue
+    fi
+
+    # Compare files
+    if diff -q "$source_file" "$dest" > /dev/null 2>&1; then
+      echo "  ✓ $agent_file - already up to date"
+      ((skipped_agent_count++))
+    else
+      # Files differ - report conflict
+      echo "  ⚠️  $agent_file - local version differs (conflict)"
+      ((conflict_agent_count++))
     fi
   else
-    cp "$source" "$dest"
-    echo "  ✓ $agent_file - copied (new)"
+    # New file - copy it
+    cp "$source_file" "$dest"
+    echo "  ✓ $agent_file - created (new)"
+    ((new_agent_count++))
   fi
 done
+
+echo ""
+echo "Agents sync summary:"
+echo "  - New agents created: $new_agent_count"
+echo "  - Already up to date: $skipped_agent_count"
+echo "  - Project-specific (skipped): $project_specific_count"
+echo "  - Conflicts (need review): $conflict_agent_count"
 ```
 
 ### Prompts Sync
@@ -567,9 +653,76 @@ done
 ```bash
 # Create prompts directory if needed
 mkdir -p "$project_path/prompts"
+mkdir -p "$project_path/prompts/roles"
 
-# Sync prompts with same logic
-# Handle prompts/roles/, prompts/*.md
+# Determine source directory (submodule or current repo)
+if [ -d "$project_path/.ai-agents/library/prompts" ]; then
+  source_prompts="$project_path/.ai-agents/library/prompts"
+else
+  # No submodule - use current AI_agents repo as source
+  source_prompts="$(pwd)/prompts"
+fi
+
+# Sync ALL prompts from source (both new and updated)
+echo ""
+echo "📂 Syncing prompts from: $source_prompts"
+echo ""
+
+new_prompt_count=0
+skipped_prompt_count=0
+conflict_prompt_count=0
+
+# Sync root-level prompts
+for source_file in "$source_prompts"/*.md; do
+  [ -f "$source_file" ] || continue
+
+  prompt_file=$(basename "$source_file")
+  dest="$project_path/prompts/$prompt_file"
+
+  if [ -f "$dest" ]; then
+    if diff -q "$source_file" "$dest" > /dev/null 2>&1; then
+      echo "  ✓ $prompt_file - already up to date"
+      ((skipped_prompt_count++))
+    else
+      echo "  ⚠️  $prompt_file - local version differs (conflict)"
+      ((conflict_prompt_count++))
+    fi
+  else
+    cp "$source_file" "$dest"
+    echo "  ✓ $prompt_file - created (new)"
+    ((new_prompt_count++))
+  fi
+done
+
+# Sync prompts/roles/ directory
+if [ -d "$source_prompts/roles" ]; then
+  for source_file in "$source_prompts/roles"/*.md; do
+    [ -f "$source_file" ] || continue
+
+    prompt_file=$(basename "$source_file")
+    dest="$project_path/prompts/roles/$prompt_file"
+
+    if [ -f "$dest" ]; then
+      if diff -q "$source_file" "$dest" > /dev/null 2>&1; then
+        echo "  ✓ roles/$prompt_file - already up to date"
+        ((skipped_prompt_count++))
+      else
+        echo "  ⚠️  roles/$prompt_file - local version differs (conflict)"
+        ((conflict_prompt_count++))
+      fi
+    else
+      cp "$source_file" "$dest"
+      echo "  ✓ roles/$prompt_file - created (new)"
+      ((new_prompt_count++))
+    fi
+  done
+fi
+
+echo ""
+echo "Prompts sync summary:"
+echo "  - New prompts created: $new_prompt_count"
+echo "  - Already up to date: $skipped_prompt_count"
+echo "  - Conflicts (need review): $conflict_prompt_count"
 ```
 
 ### Scripts Sync
@@ -578,8 +731,52 @@ mkdir -p "$project_path/prompts"
 # Create scripts directory if needed
 mkdir -p "$project_path/scripts"
 
-# For scripts, be more careful
-# Ask user confirmation for each script since they may have local modifications
+# Determine source directory (submodule or current repo)
+if [ -d "$project_path/.ai-agents/library/scripts" ]; then
+  source_scripts="$project_path/.ai-agents/library/scripts"
+else
+  # No submodule - use current AI_agents repo as source
+  source_scripts="$(pwd)/scripts"
+fi
+
+# Sync scripts (be more careful - these can have local modifications)
+echo ""
+echo "📂 Syncing scripts from: $source_scripts"
+echo ""
+
+new_script_count=0
+skipped_script_count=0
+conflict_script_count=0
+
+# Sync .py and .sh files
+for ext in py sh; do
+  for source_file in "$source_scripts"/*."$ext"; do
+    [ -f "$source_file" ] || continue
+
+    script_file=$(basename "$source_file")
+    dest="$project_path/scripts/$script_file"
+
+    if [ -f "$dest" ]; then
+      if diff -q "$source_file" "$dest" > /dev/null 2>&1; then
+        echo "  ✓ $script_file - already up to date"
+        ((skipped_script_count++))
+      else
+        echo "  ⚠️  $script_file - local version differs (conflict)"
+        ((conflict_script_count++))
+      fi
+    else
+      cp "$source_file" "$dest"
+      echo "  ✓ $script_file - created (new)"
+      ((new_script_count++))
+    fi
+  done
+done
+
+echo ""
+echo "Scripts sync summary:"
+echo "  - New scripts created: $new_script_count"
+echo "  - Already up to date: $skipped_script_count"
+echo "  - Conflicts (need review): $conflict_script_count"
 ```
 
 ## Step 8: Update State File Schemas
@@ -1043,14 +1240,19 @@ Edit the sync logic in Step 7 to add files to skip list.
 
 ## "No projects found" (Recursive Mode)
 
-Recursive mode can't find any projects with AI_agents submodules:
+Recursive mode can't find any projects with .ai-agents/ directories:
 
 ```bash
-# Check if submodules exist in expected locations
-find . -type d -name "library" -path "*/.ai-agents/library"
+# Check if .ai-agents directories exist
+find . -type d -name ".ai-agents" -not -path "*/.ai-agents/*"
 
-# Initialize submodules if needed
+# Check for projects with .claude/commands/
+find . -type d -name ".claude" -exec test -d {}/commands \; -print
+
+# Initialize AI_agents in a project
 cd ./projects/my-app
+mkdir -p .ai-agents .claude/commands .claude/agents prompts
+# Optionally add as submodule:
 git submodule add https://github.com/HelloWorldSungin/AI_agents.git .ai-agents/library
 ```
 
