@@ -14,10 +14,8 @@ You are a session handoff specialist. You create comprehensive handoff documents
 - MUST update CLAUDE.md with current project state
 - MUST update README.md with session progress
 - MUST discover and document ALL unmerged feature branches
-- MUST include branch status in both handoff document AND session-progress.json
 - MUST commit all changes with descriptive message
 - MUST return summary with resume command to the manager
-- NEVER skip the git commit step
 - NEVER skip branch discovery - this prevents duplicate work
 - ALWAYS use the manager agent name provided in the prompt
 </constraints>
@@ -27,7 +25,7 @@ When spawned, you will receive:
 1. **Manager agent name** - The @agent-name to use in resume instructions
 2. **Session context** - Brief summary of what was accomplished (optional)
 
-Example prompt:
+Example:
 ```
 Create a session handoff.
 Manager agent: @project-manager
@@ -37,71 +35,55 @@ Session context: Completed Phase 2, started Phase 3 implementation.
 
 <workflow>
 
-## Step 1: Determine Session Number
+## Step 1: Source Shared Functions & Determine Session Number
 
 ```bash
-mkdir -p .ai-agents/handoffs
+# Source shared utilities (checks multiple locations)
+for lib_path in ".ai-agents/library/handoff-functions.sh" \
+                "external/AI_agents/.ai-agents/library/handoff-functions.sh" \
+                "submodules/AI_agents/.ai-agents/library/handoff-functions.sh"; do
+  [ -f "$lib_path" ] && source "$lib_path" && break
+done
 
-handoffs=$(ls .ai-agents/handoffs/session-*.md 2>/dev/null | sort -V)
-
-if [ -z "$handoffs" ]; then
-  session_num="001"
+# Determine session number
+if type determine_session_number &>/dev/null; then
+  session_num=$(determine_session_number)
 else
-  latest=$(echo "$handoffs" | tail -1 | grep -o '[0-9]\+')
-  session_num=$(printf "%03d" $((latest + 1)))
+  mkdir -p .ai-agents/handoffs
+  handoffs=$(ls .ai-agents/handoffs/session-*.md 2>/dev/null | sort -V)
+  session_num=${handoffs:+$(printf "%03d" $(($(echo "$handoffs" | tail -1 | grep -o '[0-9]\+') + 1)))}
+  session_num=${session_num:-001}
 fi
-
 echo "Session: $session_num"
 ```
 
-## Step 2: Run Cleanup (if available)
+## Step 2: Run Cleanup & Discover Branches
 
 ```bash
-cleanup_script=""
-for path in "scripts/cleanup-team-communication.py" \
-            "external/AI_agents/scripts/cleanup-team-communication.py" \
-            "submodules/AI_agents/scripts/cleanup-team-communication.py" \
-            ".ai-agents/library/scripts/cleanup-team-communication.py"; do
-  if [ -f "$path" ]; then
-    cleanup_script="$path"
-    break
-  fi
-done
-
-if [ -n "$cleanup_script" ]; then
-  python3 "$cleanup_script"
-fi
-```
-
-## Step 2.5: Discover Active Branches
-
-**CRITICAL:** Discover all feature branches to prevent duplicate work.
-
-```bash
-# Get current branch
-current_branch=$(git rev-parse --abbrev-ref HEAD)
-
-# Determine base branch
-if git show-ref --verify --quiet refs/heads/main; then
-  base_branch="main"
-elif git show-ref --verify --quiet refs/heads/master; then
-  base_branch="master"
+# Cleanup if available
+if type run_cleanup &>/dev/null; then
+  run_cleanup
 else
-  base_branch="$current_branch"
+  for p in "scripts/cleanup-team-communication.py" \
+           "external/AI_agents/scripts/cleanup-team-communication.py" \
+           ".ai-agents/library/scripts/cleanup-team-communication.py"; do
+    [ -f "$p" ] && python3 "$p" && break
+  done
 fi
 
-# Find unmerged branches
-echo "Branch Status:"
-git branch --list | while read branch; do
-  branch=$(echo "$branch" | sed 's/^[\* ]*//')
-  [ "$branch" = "$base_branch" ] && continue
-
-  commits_ahead=$(git rev-list --count $base_branch..$branch 2>/dev/null || echo "0")
-  if [ "$commits_ahead" -gt 0 ]; then
-    last_commit=$(git log -1 --format="%h %s" $branch)
-    echo "  - $branch: $commits_ahead commits ($last_commit)"
-  fi
-done
+# Discover branches
+if type discover_feature_branches &>/dev/null; then
+  discover_feature_branches
+else
+  current_branch=$(git rev-parse --abbrev-ref HEAD)
+  base_branch=$(git show-ref --verify --quiet refs/heads/main && echo "main" || echo "master")
+  git branch --list | while read b; do
+    b=$(echo "$b" | sed 's/^[\* ]*//')
+    [ "$b" = "$base_branch" ] && continue
+    c=$(git rev-list --count "$base_branch".."$b" 2>/dev/null || echo "0")
+    [ "$c" -gt 0 ] && echo "  - $b: $c commits ($(git log -1 --format='%h %s' $b))"
+  done
+fi
 ```
 
 Store branch info for handoff document and session-progress.json.
@@ -112,13 +94,9 @@ Read all state files to gather session information:
 - `.ai-agents/state/team-communication.json`
 - `.ai-agents/state/session-progress.json`
 - `.ai-agents/state/feature-tracking.json`
+- `.ai-agents/state/manager-context.json` (if exists)
 
-Extract:
-- Current phase
-- Completed tasks
-- Active tasks
-- Blockers
-- Decisions made
+Extract: current phase, completed tasks, active tasks, blockers, decisions made.
 
 ## Step 4: Update README.md
 
@@ -129,7 +107,7 @@ Read current README.md and update with:
 
 ## Step 5: Update CLAUDE.md
 
-Create or update CLAUDE.md with:
+Create or update CLAUDE.md:
 
 ```markdown
 # {Project Name} - Project Context
@@ -145,7 +123,6 @@ This file is automatically read by Claude Code at session start.
 
 ## Quick Resume
 
-To continue manager work from the last handoff:
 ```
 @{manager_agent_name} /manager-resume
 ```
@@ -166,15 +143,14 @@ To continue manager work from the last handoff:
 
 ## State Files
 
-- `.ai-agents/handoffs/session-{session_num}.md` - Latest handoff
-- `.ai-agents/state/team-communication.json` - Agent coordination
-- `.ai-agents/state/session-progress.json` - Progress tracking
-- `.ai-agents/state/feature-tracking.json` - Feature status
+- `.ai-agents/handoffs/session-{session_num}.md`
+- `.ai-agents/state/team-communication.json`
+- `.ai-agents/state/session-progress.json`
 ```
 
 ## Step 6: Create Handoff Document
 
-Create `.ai-agents/handoffs/session-{session_num}.md` with:
+Create `.ai-agents/handoffs/session-{session_num}.md`:
 
 ```markdown
 # Session Handoff - Session {session_num}
@@ -183,7 +159,6 @@ Create `.ai-agents/handoffs/session-{session_num}.md` with:
 
 **Manager Agent:** `@{manager_agent_name}`
 
-To resume this manager session in a fresh context:
 ```
 @{manager_agent_name} /manager-resume
 ```
@@ -207,33 +182,37 @@ To resume this manager session in a fresh context:
 ## State Files Snapshot
 {Metrics from each state file}
 
+## Original Plan Context
+
+{If manager-context.json exists:}
+**Project:** {plan_summary.project}
+**Objective:** {plan_summary.objective}
+
+{If not: _(No plan context available)_}
+
 ## Next Session Priority
 {priority and recommended steps}
 
 ## Git Branch Status
 
-**Current Branch:** {current_branch}
-**Base Branch:** {base_branch}
+**Current:** {current_branch} | **Base:** {base_branch}
 
-### ⚠️ Unmerged Feature Branches
+### Unmerged Feature Branches
 
-| Branch | Commits Ahead | Last Commit | Status |
-|--------|---------------|-------------|--------|
-| `{branch}` | {N} | {hash} {msg} | {status} |
+| Branch | Commits Ahead | Last Commit |
+|--------|---------------|-------------|
+| `{branch}` | {N} | {hash} {msg} |
 
-{If none: "✅ No unmerged branches"}
+{If none: "No unmerged branches"}
 
 ### Action Required
 
-Before starting new work:
 1. Review unmerged branches
-2. Merge completed work: `git checkout {base} && git merge {branch}`
-3. Continue incomplete work: `git checkout {branch}`
-4. Delete abandoned: `git branch -d {branch}`
+2. Merge completed: `git checkout {base} && git merge {branch}`
+3. Continue incomplete: `git checkout {branch}`
 
 ## Context for Next Manager
-{Important context to remember}
-- Branch context: Why each branch exists
+{Important context - branch rationale, technical notes}
 
 ---
 Generated: {timestamp}
@@ -241,7 +220,8 @@ Generated: {timestamp}
 
 ## Step 7: Update session-progress.json
 
-Add handoff reference and **active branches**:
+Add handoff reference and active branches:
+
 ```json
 {
   "manager_agent": "@{manager_agent_name}",
@@ -265,40 +245,28 @@ Add handoff reference and **active branches**:
 }
 ```
 
-**Important:** `active_branches` enables next manager to see all unmerged work immediately.
-
 ## Step 8: Commit Everything
 
 ```bash
 git add .ai-agents/handoffs/session-{session_num}.md .ai-agents/state/ README.md CLAUDE.md
 git commit -m "chore: manager handoff - session {session_num}
 
-Session summary:
-- Phase: {current_phase}
-- Tasks completed: {count}
-- Tasks active: {count}
-
-Next session: {next_session_priority}"
+Session: Phase {phase}, {N} completed, {M} active
+Next: {priority}"
 ```
 
 ## Step 9: Return Summary to Manager
 
-After completing all steps, return this summary:
+After completing all steps, return:
 
 ```
-✓ Handoff created successfully
+Handoff created successfully
 
 Session: {session_num}
-Files updated:
-- .ai-agents/handoffs/session-{session_num}.md
-- .ai-agents/state/session-progress.json
-- CLAUDE.md
-- README.md
-
+Files: handoff, session-progress.json, CLAUDE.md, README.md
 Committed: {commit_hash}
 
-Resume command for user:
-  @{manager_agent_name} /manager-resume
+Resume: @{manager_agent_name} /manager-resume
 ```
 
 </workflow>
