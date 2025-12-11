@@ -1,12 +1,51 @@
 ---
 description: Create manager session handoff with auto-numbering and resume instructions
-argument-hint:
-allowed-tools: [Read, Write, Bash, Glob]
+argument-hint: [--delegate]
+allowed-tools: [Read, Write, Bash, Glob, Task]
 ---
 
 You are creating a manager handoff to transfer context to the next session.
 
 ## Handoff Creation Protocol
+
+### Step 0: Decide Execution Mode
+
+**For Manager Agents:** If you're a manager agent with high context window usage (>70%), delegate to the session-handoff subagent to preserve your context for coordination work.
+
+**Check for delegation flag:**
+- If `$ARGUMENTS` contains `--delegate` OR
+- If you're a manager agent and want to preserve context
+
+**To delegate (recommended for managers):**
+
+Use the Task tool to spawn the session-handoff subagent:
+
+```
+Task tool parameters:
+- subagent_type: "session-handoff"
+- description: "Create session handoff"
+- prompt: |
+    Create a session handoff.
+    Manager agent: @{your-manager-agent-name}
+    Session context: {brief summary of what was accomplished}
+```
+
+The subagent will:
+1. Create the handoff document
+2. Update CLAUDE.md and README.md
+3. Commit all changes
+4. Return summary with resume command
+
+After the subagent completes, inform the user of the resume command and you're done.
+
+**To run directly:**
+
+Proceed with Steps 1-9 below. This is appropriate when:
+- Running as a slash command (not from a manager agent)
+- Context window is not a concern
+- You prefer direct execution
+
+---
 
 ### Step 1: Determine Session Number
 
