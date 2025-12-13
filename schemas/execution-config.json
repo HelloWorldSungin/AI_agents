@@ -1,0 +1,268 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Execution Configuration Schema",
+  "description": "Configuration schema for agent execution modes and checkpoints",
+  "version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["autonomous", "interactive", "supervised"],
+      "default": "interactive",
+      "description": "Execution mode determining overall autonomy level"
+    },
+    "checkpoints": {
+      "type": "object",
+      "description": "Checkpoint configuration for pausing agent execution",
+      "properties": {
+        "turn_interval": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Pause every N turns (0 = disabled)"
+        },
+        "before_new_issue": {
+          "type": "boolean",
+          "default": false,
+          "description": "Pause before starting each new task/issue"
+        },
+        "after_issue_complete": {
+          "type": "boolean",
+          "default": false,
+          "description": "Pause after completing a task (before marking Done)"
+        },
+        "on_regression_failure": {
+          "type": "boolean",
+          "default": true,
+          "description": "Pause when regression tests fail"
+        },
+        "on_blocker": {
+          "type": "boolean",
+          "default": true,
+          "description": "Pause when agent reports being blocked"
+        },
+        "on_uncertainty": {
+          "type": "boolean",
+          "default": false,
+          "description": "Pause when agent confidence is low"
+        },
+        "on_context_high": {
+          "type": "boolean",
+          "default": true,
+          "description": "Pause when context usage exceeds warning threshold"
+        },
+        "before_file_delete": {
+          "type": "boolean",
+          "default": false,
+          "description": "Pause before file deletion operations"
+        },
+        "before_git_push": {
+          "type": "boolean",
+          "default": false,
+          "description": "Pause before pushing to remote repository"
+        },
+        "before_deploy": {
+          "type": "boolean",
+          "default": false,
+          "description": "Pause before any deployment action"
+        },
+        "before_schema_change": {
+          "type": "boolean",
+          "default": false,
+          "description": "Pause before database schema changes"
+        }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "description": "Settings for checkpoint approval handling",
+      "properties": {
+        "timeout_minutes": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 60,
+          "description": "Minutes to wait for approval (0 = wait forever)"
+        },
+        "default_action": {
+          "type": "string",
+          "enum": ["pause", "continue", "abort"],
+          "default": "pause",
+          "description": "Action to take on timeout"
+        },
+        "notification": {
+          "type": "object",
+          "description": "Notification channels for checkpoints",
+          "properties": {
+            "cli": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show checkpoint in terminal"
+            },
+            "slack_webhook": {
+              "type": "string",
+              "description": "Slack webhook URL for notifications"
+            },
+            "email": {
+              "type": "string",
+              "format": "email",
+              "description": "Email address for notifications"
+            },
+            "linear_comment": {
+              "type": "boolean",
+              "default": false,
+              "description": "Add checkpoint as comment on META issue"
+            }
+          }
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "description": "Safety limits for agent execution",
+      "properties": {
+        "max_turns_per_session": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 500,
+          "description": "Maximum turns before forced session end"
+        },
+        "max_files_modified": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 50,
+          "description": "Maximum files modified per session"
+        },
+        "max_lines_changed": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 5000,
+          "description": "Maximum lines of code changed per session"
+        },
+        "context_warning_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.7,
+          "description": "Context usage level to warn (0.7 = 70%)"
+        },
+        "context_pause_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.85,
+          "description": "Context usage level to pause (0.85 = 85%)"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "checkpoint": {
+      "type": "object",
+      "description": "A checkpoint event",
+      "required": ["type", "triggered_at"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "turn_interval",
+            "before_new_issue",
+            "after_issue_complete",
+            "regression_failure",
+            "blocker",
+            "uncertainty",
+            "context_high",
+            "file_delete",
+            "git_push",
+            "deploy",
+            "schema_change"
+          ]
+        },
+        "triggered_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "turn_number": {
+          "type": "integer"
+        },
+        "context": {
+          "type": "object",
+          "description": "Context data for the checkpoint",
+          "properties": {
+            "task_id": { "type": "string" },
+            "task_title": { "type": "string" },
+            "action_description": { "type": "string" },
+            "files_affected": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "progress_summary": { "type": "object" },
+            "error_details": { "type": "string" }
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected", "timed_out"],
+          "default": "pending"
+        },
+        "resolved_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resolved_by": {
+          "type": "string",
+          "description": "User who approved/rejected or 'timeout'"
+        },
+        "resolution_notes": {
+          "type": "string"
+        }
+      }
+    },
+    "modePreset": {
+      "type": "object",
+      "description": "Predefined mode configuration",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "config": { "$ref": "#" }
+      }
+    }
+  },
+  "presets": {
+    "autonomous_overnight": {
+      "mode": "autonomous",
+      "checkpoints": {
+        "turn_interval": 0,
+        "on_regression_failure": true
+      },
+      "limits": {
+        "max_turns_per_session": 1000
+      }
+    },
+    "interactive_standard": {
+      "mode": "interactive",
+      "checkpoints": {
+        "turn_interval": 50,
+        "before_new_issue": true,
+        "on_regression_failure": true,
+        "on_blocker": true
+      },
+      "approval": {
+        "timeout_minutes": 60
+      }
+    },
+    "supervised_production": {
+      "mode": "supervised",
+      "checkpoints": {
+        "turn_interval": 10,
+        "before_new_issue": true,
+        "after_issue_complete": true,
+        "before_git_push": true,
+        "before_deploy": true
+      },
+      "approval": {
+        "timeout_minutes": 0,
+        "default_action": "pause"
+      }
+    }
+  }
+}

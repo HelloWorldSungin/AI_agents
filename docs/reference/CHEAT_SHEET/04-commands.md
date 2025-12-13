@@ -2,6 +2,9 @@
 
 Custom commands and thinking models for systematic decision-making.
 
+**Version:** 1.4.0
+**Last Updated:** 2025-12-12
+
 ---
 
 ## Overview
@@ -11,13 +14,14 @@ Custom commands and thinking models for systematic decision-making.
 | Thinking Models | 12 | Mental models for systematic thinking |
 | Workflow Commands | 4 | Task management and debugging |
 | Manager Workflow | 5 | Multi-session manager coordination + project sync |
+| Session Commands | 4 | State provider and session management (NEW) |
 | Discovery | 1 | Tool discovery across projects |
 
-**Total Commands:** 22
+**Total Commands:** 26
 
 **Location:** `.claude/commands/`
 
-**Latest:** v1.3.0 - Recursive mode for `/pull-ai-agents-submodule` (batch update multiple projects)
+**Latest:** v1.4.0 - External state provider commands (`/start-project`, `/continue-project`, `/pause-agent`, `/resume-agent`)
 
 ---
 
@@ -715,6 +719,180 @@ Saved to: `{scan_root}/.ai-agents/batch-update-{timestamp}.md`
 | Mixed: critical + experimental | Mixed | Single mode for critical, recursive for experiments |
 
 **See:** `.claude/commands/pull-ai-agents-submodule.md` for full documentation
+
+---
+
+## Session Commands (NEW v1.4.0)
+
+Commands for external state provider integration and session management.
+
+**Location:** `.claude/commands/`
+
+| Command | Purpose | Usage |
+|---------|---------|-------|
+| `/start-project` | Initialize project with state provider | New projects with Linear/GitHub integration |
+| `/continue-project` | Resume from external state | Resuming after context reset |
+| `/pause-agent` | Pause session with state preservation | Mid-session pause |
+| `/resume-agent` | Resume paused session | Continuing paused work |
+
+### /start-project
+
+**Purpose:** Initialize a new autonomous development project with external state tracking
+
+**When to Use:**
+- Starting a new project with Linear integration
+- Setting up session continuity for the first time
+- Migrating existing project to external state
+
+**What It Does:**
+1. Detects or creates state provider configuration
+2. Creates META issue for project tracking
+3. Initializes session state
+4. Creates marker file for session detection
+5. Provides status summary
+
+**Usage:**
+```bash
+# Interactive initialization
+/start-project
+
+# With requirements file
+/start-project @requirements.md
+```
+
+**Output:**
+```
+✓ Project initialized with Linear state provider
+  Team: Arknode-AI
+  META Issue: ARK-1
+  Session: 20251212-093000
+
+Ready to create tasks. Use /continue-project to resume after reset.
+```
+
+### /continue-project
+
+**Purpose:** Resume an existing autonomous development project from last session
+
+**When to Use:**
+- After context reset
+- Starting new work session
+- Checking project status
+
+**What It Does:**
+1. Reads state from external provider (Linear/GitHub)
+2. Loads META issue content
+3. Gets pending/completed tasks
+4. Provides comprehensive status summary
+5. Suggests next actions
+
+**Usage:**
+```bash
+# Resume with full context
+/continue-project
+
+# Status check only (no state modification)
+/continue-project --status-only
+```
+
+**Output:**
+```
+## Project Status
+
+**Session:** Resuming from 20251212-093000
+**Provider:** Linear (AI-Agents project)
+
+### Progress
+- Total: 12 tasks
+- Done: 8 (67%)
+- In Progress: 2
+- Blocked: 1
+
+### Active Tasks
+- ARK-5: Implement login form (in_progress)
+- ARK-6: Add validation (in_progress)
+
+### Blocked
+- ARK-7: Waiting for API endpoint (blocked by ARK-5)
+
+### Next Priority
+Continue with ARK-5 (login form implementation)
+```
+
+### /pause-agent
+
+**Purpose:** Pause the current agent session with state preservation
+
+**When to Use:**
+- Need to stop mid-task
+- Switching to different work
+- Preserving context for later
+
+**What It Does:**
+1. Saves current state to external provider
+2. Records pause reason and context
+3. Updates META issue with pause status
+4. Provides resume instructions
+
+**Usage:**
+```bash
+# Pause with automatic summary
+/pause-agent
+
+# Pause with custom summary
+/pause-agent --summary "Completed login UI, need API review"
+```
+
+**Output:**
+```
+✓ Session paused
+
+State saved to Linear META issue ARK-1
+Resume with: /resume-agent
+
+Summary:
+- Completed: 3 tasks
+- In Progress: 1 task (ARK-5)
+- Pause reason: User requested pause
+```
+
+### /resume-agent
+
+**Purpose:** Resume a paused agent session with full state restoration
+
+**When to Use:**
+- Continuing from `/pause-agent`
+- Returning to paused work
+- Checking pause state
+
+**Usage:**
+```bash
+# Resume with full context
+/resume-agent
+
+# Status check only
+/resume-agent --status-only
+```
+
+**Output:**
+```
+## Resuming Paused Session
+
+**Paused:** 2025-12-12T15:30:00Z
+**Duration:** 2 hours ago
+
+### Context Restored
+- Working on: ARK-5 (Implement login form)
+- Files modified: src/auth/login.tsx, src/auth/styles.css
+- Branch: feature/auth-login
+
+### Next Steps
+1. Complete login form validation
+2. Add error handling
+3. Write unit tests
+
+Ready to continue.
+```
 
 ---
 

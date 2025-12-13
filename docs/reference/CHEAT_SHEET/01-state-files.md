@@ -1,6 +1,95 @@
 # State Files System
 
-The system uses three complementary JSON files for state management and coordination.
+The system uses three complementary JSON files for state management and coordination, with optional external state providers for session continuity.
+
+**Version:** 1.4.0
+**Last Updated:** 2025-12-12
+
+---
+
+## External State Providers (NEW v1.4.0)
+
+Persist agent state in external systems to survive context resets.
+
+### Why External State?
+
+File-based state has limitations:
+- ❌ Lost when agent context resets
+- ❌ Not visible to humans during execution
+- ❌ Multiple agents can't coordinate easily
+- ❌ No integration with team workflows
+
+External providers solve this:
+- ✅ State survives context resets
+- ✅ Visible in Linear/GitHub dashboards
+- ✅ Multi-agent coordination
+- ✅ Integrates with existing workflows
+
+### Available Providers
+
+| Provider | Best For | Configuration |
+|----------|----------|---------------|
+| **Linear** | Teams using Linear for project management | `type: "linear"` |
+| **GitHub** | Projects using GitHub Issues | `type: "github"` |
+| **File** | Local development, offline work | `type: "file"` |
+
+### Linear Provider (Recommended)
+
+```yaml
+# .ai-agents/config.yml
+state_provider:
+  type: "linear"
+  api_key_env: "LINEAR_API_KEY"
+  team_id: "${LINEAR_TEAM_ID}"      # Optional, auto-detected
+  project_name: "My Project"        # Auto-created if needed
+  meta_issue_label: "meta"
+```
+
+**Features:**
+- Tasks → Linear Issues with acceptance criteria
+- Sessions → Comments on META issue
+- Progress → Real-time in Linear dashboard
+- Labels → Task categories and priorities
+
+**Setup:**
+```bash
+# 1. Get API key from Linear Settings → API → Personal API Keys
+export LINEAR_API_KEY="lin_api_xxxxx"
+
+# 2. Initialize project
+/start-project
+```
+
+### GitHub Provider
+
+```yaml
+state_provider:
+  type: "github"
+  api_key_env: "GITHUB_TOKEN"
+  repo: "owner/repo"
+  meta_issue_label: "meta"
+```
+
+### File Provider (Fallback)
+
+```yaml
+state_provider:
+  type: "file"
+  state_dir: ".ai-agents/state"
+```
+
+### Usage Commands
+
+```bash
+# Initialize new project with state provider
+/start-project
+
+# Resume from external state
+/continue-project
+
+# Check current state
+/continue-project --status-only
+```
 
 ---
 
@@ -322,6 +411,8 @@ EOF
 
 ## See Also
 
+- **External State Pattern:** `prompts/patterns/external-state-provider.md`
+- **Session Continuity Pattern:** `prompts/patterns/session-continuity.md`
 - **Complete Guide:** [docs/guides/LONG_RUNNING_AGENTS.md](../guides/LONG_RUNNING_AGENTS.md)
 - **Workflow Examples:** [05-workflows.md](05-workflows.md)
 - **Schemas:** [08-schemas.md](08-schemas.md)

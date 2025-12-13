@@ -2,8 +2,8 @@
 
 Quick reference for all features, commands, skills, and agents in this repository.
 
-**Version:** 1.3.0
-**Last Updated:** 2025-12-04
+**Version:** 1.4.0
+**Last Updated:** 2025-12-12
 
 ---
 
@@ -33,25 +33,36 @@ This cheat sheet is organized into focused components for easy reference:
 
 ---
 
-## What's New in This Update? 🎉
+## What's New in v1.4.0? 🎉
 
-### Comprehensive Coverage
-- ✅ **All new schemas documented** (session-progress, feature-tracking, security-policy)
-- ✅ **All new docs referenced** (E2E_TESTING.md, LONG_RUNNING_AGENTS.md, SECURITY.md)
-- ✅ **All new scripts included** (security_validator.py, init-scripts templates)
-- ✅ **Session continuity examples** (examples/session-continuity/)
+### External State Providers (NEW)
+- ✅ **Linear integration** - Persist agent state in Linear.app issues
+- ✅ **GitHub Issues support** - Use GitHub Issues as state backend
+- ✅ **File provider fallback** - Local file-based state for offline work
+- ✅ **Session continuity** - Survive context resets with external state
 
-### Better Organization
-- 📁 **Modular structure** - 11 focused components vs. 820-line monolith
+### Execution Modes (NEW)
+- ✅ **Autonomous mode** - Minimal human intervention with checkpoints
+- ✅ **Interactive mode** - Human approval at key decision points
+- ✅ **Supervised mode** - Human approval for every action
+- ✅ **Configurable checkpoints** - Turn-based, event-based, and context-aware
+
+### New Slash Commands
+- ✅ `/start-project` - Initialize project with state provider
+- ✅ `/continue-project` - Resume from external state
+- ✅ `/pause-agent` - Pause with state preservation
+- ✅ `/resume-agent` - Resume paused session
+
+### New Scripts & Patterns
+- ✅ **State providers** - `scripts/state_providers/` (Linear, File providers)
+- ✅ **Execution control** - `scripts/execution/` (checkpoints, turn counter)
+- ✅ **Progress tracking** - `scripts/progress/` (real-time metrics, Slack)
+- ✅ **Pattern docs** - `prompts/patterns/` (5 new architecture patterns)
+
+### Previous Updates (v1.3.0)
+- 📁 **Modular structure** - 11 focused components
 - 🔍 **Easy to find** - Clear separation of concerns
 - 🔗 **Cross-referenced** - Links between related topics
-- 🎯 **Targeted reading** - Read only what you need
-
-### Enhanced Navigation
-- Each component is 60-150 lines (much more readable)
-- Previous/Next navigation at bottom of each page
-- Quick decision guides for common questions
-- Complete index for fast lookup
 
 ---
 
@@ -143,7 +154,38 @@ Large-scale or CI/CD (7+ agents)
 
 ## Featured Topics
 
-### ⭐ Three-File State System (NEW)
+### ⭐ External State Providers (NEW v1.4.0)
+
+Persist agent state in external systems for session continuity:
+
+**[01-state-files.md](01-state-files.md#external-state-providers)** covers:
+- Linear.app integration (recommended)
+- GitHub Issues provider
+- File-based fallback
+- Provider configuration
+
+**Key Benefits:**
+- Survive context resets
+- Human-visible progress in Linear/GitHub
+- Multi-agent coordination
+- Automatic session tracking
+
+### 🔄 Execution Modes (NEW v1.4.0)
+
+Configure agent autonomy levels:
+
+**[06-scripts-tools.md](06-scripts-tools.md#execution-control)** covers:
+- Autonomous, Interactive, Supervised modes
+- Turn-based and event-based checkpoints
+- Approval handling (CLI, Slack, Linear)
+- Context usage monitoring
+
+**Use Cases:**
+- Autonomous: CI/CD pipelines, trusted operations
+- Interactive: Development work, learning
+- Supervised: Security-sensitive, production
+
+### ⭐ Three-File State System
 
 The breakthrough pattern for long-running agent projects:
 
@@ -168,21 +210,6 @@ Token reduction and cost efficiency patterns:
 - Deferred Skill Loading (85% reduction)
 - Prompt Caching (cost savings)
 - Programmatic Tool Calling (37% reduction)
-
-**Impact:**
-- ~85% token reduction with deferred loading
-- ~37% token reduction with programmatic tools
-- 50-90% API cost reduction with caching
-
-### 🛠️ Tool Selector (NEW v1.3.0)
-
-Access AI_agents tools from any project:
-
-**[06-scripts-tools.md](06-scripts-tools.md#tool-selector-new-v130)** covers:
-- Installation (local or global)
-- Usage from other projects
-- Token impact (~50 tokens at-rest)
-- 30 wrapper commands available
 
 ### 🎯 Manager Workflow
 
@@ -338,6 +365,6 @@ File locations, key documentation, repository statistics, decision guides, versi
 
 ---
 
-**Last Updated:** 2025-12-04
-**Version:** 1.3.0
+**Last Updated:** 2025-12-12
+**Version:** 1.4.0
 **Components:** 11 focused reference files

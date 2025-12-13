@@ -1,0 +1,251 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "State Provider Configuration Schema",
+  "description": "Configuration schema for external state providers in AI_agents",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["file", "linear", "github", "notion"],
+      "description": "Type of state provider to use",
+      "default": "file"
+    },
+    "api_key_env": {
+      "type": "string",
+      "description": "Environment variable name containing API key (for external providers)",
+      "examples": ["LINEAR_API_KEY", "GITHUB_TOKEN", "NOTION_API_KEY"]
+    },
+    "team_id": {
+      "type": "string",
+      "description": "Team/organization ID for the external service"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "Project/board ID to use (optional, auto-created if not specified)"
+    },
+    "project_name": {
+      "type": "string",
+      "description": "Project name to create if project_id not specified"
+    },
+    "meta_issue_label": {
+      "type": "string",
+      "description": "Label to use for META tracking issue",
+      "default": "meta"
+    },
+    "state_dir": {
+      "type": "string",
+      "description": "Directory for file-based state storage",
+      "default": ".ai-agents/state"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "type": { "const": "linear" } }
+      },
+      "then": {
+        "required": ["api_key_env"],
+        "properties": {
+          "api_key_env": {
+            "default": "LINEAR_API_KEY"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "type": { "const": "github" } }
+      },
+      "then": {
+        "required": ["api_key_env"],
+        "properties": {
+          "api_key_env": {
+            "default": "GITHUB_TOKEN"
+          },
+          "repo": {
+            "type": "string",
+            "description": "Repository in owner/repo format",
+            "pattern": "^[\\w-]+/[\\w.-]+$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "type": { "const": "notion" } }
+      },
+      "then": {
+        "required": ["api_key_env", "database_id"],
+        "properties": {
+          "api_key_env": {
+            "default": "NOTION_API_KEY"
+          },
+          "database_id": {
+            "type": "string",
+            "description": "Notion database ID for task storage"
+          }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "task": {
+      "type": "object",
+      "required": ["id", "title", "status"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique task identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "Task title",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed task description (markdown supported)"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["todo", "in_progress", "blocked", "in_review", "done", "cancelled"],
+          "description": "Current task status"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4,
+          "description": "Priority level (1=urgent, 4=low)",
+          "default": 3
+        },
+        "category": {
+          "type": "string",
+          "enum": ["functional", "style", "infrastructure", "documentation", "testing", "bugfix"],
+          "description": "Task category for organization",
+          "default": "functional"
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of acceptance criteria (checkboxes)"
+        },
+        "test_steps": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Ordered test steps to verify completion"
+        },
+        "assigned_to": {
+          "type": "string",
+          "description": "Agent or user assigned to this task"
+        },
+        "labels": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Additional labels for filtering"
+        },
+        "parent_id": {
+          "type": "string",
+          "description": "Parent task ID for subtasks"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional task metadata"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "sessionMeta": {
+      "type": "object",
+      "description": "Cross-session knowledge tracking (META issue equivalent)",
+      "properties": {
+        "project_id": {
+          "type": "string",
+          "description": "Project identifier"
+        },
+        "total_sessions": {
+          "type": "integer",
+          "description": "Total number of sessions"
+        },
+        "last_session_start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "last_session_end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_task_count": {
+          "type": "integer",
+          "description": "Total tasks completed across all sessions"
+        },
+        "current_focus": {
+          "type": "string",
+          "description": "Current work focus area"
+        },
+        "known_issues": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Known problems and blockers"
+        },
+        "architecture_decisions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "decision": { "type": "string" },
+              "rationale": { "type": "string" },
+              "date": { "type": "string", "format": "date-time" }
+            }
+          },
+          "description": "Key architecture decisions made"
+        },
+        "regression_status": {
+          "type": "string",
+          "enum": ["passing", "failing", "unknown"],
+          "description": "Current regression test status"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes for context"
+        }
+      }
+    },
+    "progressSummary": {
+      "type": "object",
+      "description": "Progress summary for display",
+      "properties": {
+        "total": { "type": "integer" },
+        "todo": { "type": "integer" },
+        "in_progress": { "type": "integer" },
+        "blocked": { "type": "integer" },
+        "in_review": { "type": "integer" },
+        "done": { "type": "integer" },
+        "cancelled": { "type": "integer" },
+        "completion_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Completion rate as decimal (0.75 = 75%)"
+        },
+        "active": {
+          "type": "integer",
+          "description": "In progress + in review count"
+        },
+        "blocked_count": {
+          "type": "integer",
+          "description": "Number of blocked tasks"
+        }
+      }
+    }
+  }
+}

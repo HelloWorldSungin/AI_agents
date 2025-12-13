@@ -2,6 +2,9 @@
 
 JSON schemas for structured communication and state management.
 
+**Version:** 1.4.0
+**Last Updated:** 2025-12-12
+
 ---
 
 ## Overview
@@ -11,8 +14,9 @@ JSON schemas for structured communication and state management.
 | Communication | 2 | Inter-agent messaging |
 | State Management | 3 | Project and session state |
 | Configuration | 2 | Agent and project config |
+| Execution (NEW) | 3 | State providers, execution modes, security |
 
-**Total Schemas:** 7
+**Total Schemas:** 10
 
 **Location:** `schemas/`
 
@@ -474,6 +478,191 @@ Schemas for agent and project configuration.
 ```
 
 **Used by:** `compose-agent.py`, `generate-template.py`
+
+---
+
+## Execution Schemas (NEW v1.4.0)
+
+Schemas for external state providers, execution modes, and security configuration.
+
+### state-provider.json
+
+**Purpose:** External state provider configuration
+
+**New in:** v1.4.0
+
+**Location:** `schemas/state-provider.json`
+
+**Structure:**
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["linear", "github", "notion", "file"]
+    },
+    "api_key_env": {
+      "type": "string",
+      "description": "Environment variable name for API key"
+    },
+    "team_id": {"type": "string"},
+    "project_id": {"type": "string"},
+    "project_name": {"type": "string"},
+    "meta_issue_label": {
+      "type": "string",
+      "default": "meta"
+    },
+    "state_dir": {
+      "type": "string",
+      "description": "For file provider only"
+    },
+    "cache_enabled": {"type": "boolean"},
+    "fallback_to_file": {"type": "boolean"}
+  }
+}
+```
+
+**Example:**
+```yaml
+state_provider:
+  type: "linear"
+  api_key_env: "LINEAR_API_KEY"
+  project_name: "My Project"
+  meta_issue_label: "meta"
+  fallback_to_file: true
+```
+
+### execution-config.json
+
+**Purpose:** Execution mode and checkpoint configuration
+
+**New in:** v1.4.0
+
+**Location:** `schemas/execution-config.json`
+
+**Structure:**
+```json
+{
+  "type": "object",
+  "required": ["mode"],
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["autonomous", "interactive", "supervised"]
+    },
+    "checkpoints": {
+      "type": "object",
+      "properties": {
+        "turn_interval": {"type": "integer", "minimum": 0},
+        "before_new_issue": {"type": "boolean"},
+        "after_issue_complete": {"type": "boolean"},
+        "on_regression_failure": {"type": "boolean"},
+        "on_blocker": {"type": "boolean"},
+        "on_uncertainty": {"type": "boolean"}
+      }
+    },
+    "approval": {
+      "type": "object",
+      "properties": {
+        "timeout_minutes": {"type": "integer"},
+        "default_action": {
+          "type": "string",
+          "enum": ["pause", "continue", "abort"]
+        },
+        "notification": {
+          "type": "object",
+          "properties": {
+            "cli": {"type": "boolean"},
+            "slack_webhook": {"type": "string"},
+            "linear_comment": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "max_turns_per_session": {"type": "integer"},
+        "max_files_modified": {"type": "integer"},
+        "context_warning_threshold": {"type": "number"},
+        "context_pause_threshold": {"type": "number"}
+      }
+    }
+  }
+}
+```
+
+**Presets:**
+
+| Preset | Mode | Turn Interval | Use Case |
+|--------|------|---------------|----------|
+| `minimal` | autonomous | 0 | Trusted CI/CD |
+| `balanced` | interactive | 50 | Development |
+| `cautious` | supervised | 10 | Production |
+| `learning` | interactive | 25 | New users |
+
+### security-config.json
+
+**Purpose:** Configurable command validation
+
+**New in:** v1.4.0
+
+**Location:** `schemas/security-config.json`
+
+**Structure:**
+```json
+{
+  "type": "object",
+  "required": ["allowed_commands"],
+  "properties": {
+    "allowed_commands": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "blocked_commands": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "blocked_patterns": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "allow_network": {"type": "boolean"},
+    "log_blocked": {"type": "boolean"}
+  }
+}
+```
+
+**Example:**
+```yaml
+security:
+  allowed_commands:
+    - "git"
+    - "npm"
+    - "node"
+    - "python"
+  blocked_commands:
+    - "rm -rf /"
+    - "sudo"
+    - "git push --force"
+  blocked_patterns:
+    - "curl.*\\|.*bash"
+    - "wget.*\\|.*sh"
+  allow_network: true
+  log_blocked: true
+```
+
+**Presets:**
+
+| Preset | Allowed Commands | Use Case |
+|--------|-----------------|----------|
+| `minimal` | git, ls, cat | Read-only exploration |
+| `development` | git, npm, node, python, docker | Standard development |
+| `ci_cd` | All + deployment commands | CI/CD pipelines |
+| `paranoid` | Explicit allowlist only | High-security |
 
 ---
 

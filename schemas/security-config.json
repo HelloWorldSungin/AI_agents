@@ -1,0 +1,162 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Security Configuration Schema",
+  "description": "Configuration schema for command validation and security policies",
+  "version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "allowed_commands": {
+      "type": "array",
+      "description": "List of commands allowed to execute",
+      "items": { "type": "string" },
+      "examples": [["git", "npm", "node", "python"]]
+    },
+    "blocked_commands": {
+      "type": "array",
+      "description": "Explicit command strings to block",
+      "items": { "type": "string" },
+      "examples": [["rm -rf /", "sudo", "git push --force"]]
+    },
+    "blocked_patterns": {
+      "type": "array",
+      "description": "Regex patterns that block commands",
+      "items": { "type": "string" },
+      "examples": [["curl.*\\|.*bash", "wget.*\\|.*sh"]]
+    },
+    "warning_patterns": {
+      "type": "array",
+      "description": "Regex patterns that trigger warnings but allow execution",
+      "items": { "type": "string" },
+      "examples": [["rm\\s+.*\\*", "chmod\\s+[0-7]{3}"]]
+    },
+    "allow_network": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to allow network operations"
+    },
+    "strict_mode": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, only allowed_commands are permitted (no defaults)"
+    },
+    "log_blocked": {
+      "type": "boolean",
+      "default": true,
+      "description": "Log blocked commands to security log"
+    },
+    "log_warnings": {
+      "type": "boolean",
+      "default": true,
+      "description": "Log warning-level commands to security log"
+    },
+    "filesystem": {
+      "type": "object",
+      "description": "Filesystem restriction settings",
+      "properties": {
+        "restricted_to_project": {
+          "type": "boolean",
+          "default": true,
+          "description": "Restrict operations to project directory"
+        },
+        "allow_temp": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow operations in /tmp and /var/tmp"
+        },
+        "additional_paths": {
+          "type": "array",
+          "description": "Additional paths allowed for operations",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "git": {
+      "type": "object",
+      "description": "Git-specific security settings",
+      "properties": {
+        "allow_force_push": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow git push --force"
+        },
+        "allow_hard_reset": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow git reset --hard"
+        },
+        "protected_branches": {
+          "type": "array",
+          "description": "Branches that cannot be force-pushed or deleted",
+          "items": { "type": "string" },
+          "default": ["main", "master", "production"]
+        }
+      }
+    },
+    "docker": {
+      "type": "object",
+      "description": "Docker-specific security settings",
+      "properties": {
+        "allow_privileged": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow --privileged flag"
+        },
+        "allow_host_network": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow --network=host"
+        },
+        "allowed_images": {
+          "type": "array",
+          "description": "Allowed Docker image prefixes",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "preset": {
+      "type": "string",
+      "enum": ["minimal", "development", "ci_cd", "paranoid"],
+      "description": "Predefined security configuration presets"
+    }
+  },
+  "presets": {
+    "minimal": {
+      "description": "Most restrictive - only read operations",
+      "allowed_commands": ["git", "ls", "cat", "grep", "pwd"],
+      "strict_mode": true,
+      "allow_network": false
+    },
+    "development": {
+      "description": "Standard development workflow",
+      "allowed_commands": [
+        "git", "npm", "node", "npx", "yarn",
+        "python", "python3", "pip", "pip3",
+        "ls", "cat", "grep", "find", "head", "tail",
+        "mkdir", "cp", "mv", "touch", "rm"
+      ],
+      "blocked_commands": ["rm -rf", "sudo"],
+      "allow_network": true
+    },
+    "ci_cd": {
+      "description": "CI/CD pipeline operations",
+      "allowed_commands": [
+        "git", "npm", "node", "yarn",
+        "docker", "docker-compose",
+        "kubectl", "helm",
+        "ls", "cat", "grep"
+      ],
+      "blocked_commands": ["git push --force", "rm -rf /"],
+      "strict_mode": true,
+      "allow_network": true
+    },
+    "paranoid": {
+      "description": "Extremely restrictive - minimal operations",
+      "allowed_commands": ["ls", "cat", "pwd", "git status"],
+      "blocked_patterns": ["rm\\s+", "mv\\s+", ">\\s*", "\\|\\s*"],
+      "strict_mode": true,
+      "allow_network": false
+    }
+  }
+}

@@ -235,3 +235,92 @@ features:
     appflowy_url: "${APPFLOWY_API_URL}"  # e.g., http://localhost:8080
     appflowy_workspace_id: "${APPFLOWY_WORKSPACE_ID}"
     sync_interval: "daily"  # How often to sync with AppFlowy (daily, hourly, on_task_complete)
+
+# External State Provider Configuration
+# Enables session continuity across context resets
+state_provider:
+  type: "linear"  # linear, github, notion, file
+  api_key_env: "LINEAR_API_KEY"
+  team_id: "${LINEAR_TEAM_ID}"  # Optional, auto-detected if not set
+  project_name: "E-Commerce Web App"
+  meta_issue_label: "meta"
+
+# Execution Modes Configuration
+# Configure agent autonomy level
+execution:
+  mode: "interactive"  # autonomous, interactive, supervised
+  checkpoints:
+    turn_interval: 50  # Pause every 50 turns (0 = disabled)
+    before_new_issue: true
+    after_issue_complete: false
+    on_regression_failure: true
+    on_blocker: true
+    on_uncertainty: true
+  approval:
+    timeout_minutes: 60
+    default_action: "pause"
+    notification:
+      cli: true
+      slack_webhook: "${SLACK_WEBHOOK_URL}"
+      linear_comment: true
+  limits:
+    max_turns_per_session: 500
+    max_files_modified: 50
+    context_warning_threshold: 0.7
+    context_pause_threshold: 0.85
+
+# Session Management
+session:
+  continuity_enabled: true
+  meta_issue_enabled: true
+  regression_testing: "required"  # required, recommended, disabled
+
+# Security Configuration
+security:
+  allowed_commands:
+    - "git"
+    - "npm"
+    - "node"
+    - "npx"
+    - "yarn"
+    - "docker"
+    - "docker-compose"
+  blocked_commands:
+    - "rm -rf /"
+    - "sudo"
+    - "git push --force"
+  blocked_patterns:
+    - "curl.*\\|.*bash"
+    - "wget.*\\|.*sh"
+  allow_network: true
+  log_blocked: true
+
+# Visual Verification (for UI tasks)
+visual_verification:
+  requirement: "required"  # required, recommended, disabled
+  browser_tool: "puppeteer"
+  viewports:
+    - name: "mobile"
+      width: 375
+      height: 667
+    - name: "tablet"
+      width: 768
+      height: 1024
+    - name: "desktop"
+      width: 1920
+      height: 1080
+  evidence_dir: ".ai-agents/evidence"
+
+# Regression Testing Configuration
+regression:
+  on_session_start: true
+  before_new_task: "smoke"  # smoke, standard, full, none
+  after_implementation: "standard"
+  before_push: "full"
+  commands:
+    smoke: "npm test -- --grep '@smoke'"
+    standard: "npm test"
+    full: "npm run test:all"
+  on_failure:
+    priority: 1
+    block_new_work: true

@@ -756,3 +756,156 @@ Next session can read communication file and continue where you left off.
 
 **Remember: You are a coordinator, not a doer. Delegate everything. Trust the process.**
 </quick_start>
+
+<session_continuity_integration>
+## External State Provider Integration
+
+When working on long-running projects or multiple sessions, integrate with external state providers for persistent task tracking.
+
+**Configuration:**
+```yaml
+# .ai-agents/config.yml
+state_provider:
+  type: "linear"  # or "github", "file"
+  api_key_env: "LINEAR_API_KEY"
+```
+
+**Usage:**
+- Tasks created via state provider persist across sessions
+- META issue tracks cross-session knowledge
+- No state lost on context reset
+
+**Session Commands:**
+- `/start-project` - Initialize project with external tracking
+- `/continue-project` - Resume from external state
+- `/pause-agent` - Pause with state preservation
+- `/resume-agent` - Resume from pause
+
+See: `prompts/patterns/session-continuity.md`
+</session_continuity_integration>
+
+<execution_modes_integration>
+## Execution Modes
+
+Configure agent autonomy level based on task risk and team confidence.
+
+**Modes:**
+- **Autonomous**: Runs continuously until completion
+- **Interactive**: Pauses at configured checkpoints
+- **Supervised**: Pauses before every significant action
+
+**Checkpoint Configuration:**
+```yaml
+# .ai-agents/config.yml
+execution:
+  mode: "interactive"
+  checkpoints:
+    turn_interval: 50
+    before_new_issue: true
+    on_regression_failure: true
+```
+
+**Key Checkpoints:**
+- Turn-based: Pause every N turns
+- Task-based: Pause before/after tasks
+- Event-based: Pause on failures, blockers, uncertainty
+
+See: `prompts/patterns/execution-modes.md`
+</execution_modes_integration>
+
+<regression_first_protocol>
+## Regression-First Protocol
+
+Before delegating new tasks, verify prior work hasn't regressed.
+
+**Protocol:**
+```
+Session Start:
+  1. Check META.regression_status
+  2. If FAILING: Delegate regression fix as P1
+  3. If UNKNOWN: Delegate regression test run
+  4. If PASSING: Proceed with new tasks
+
+After Each Task:
+  1. Agent runs tests before marking complete
+  2. Agent reports test status
+  3. On failure: Stop new work, fix regression
+```
+
+**Manager Enforcement:**
+```markdown
+Before delegating any task:
+
+IF regression_status == "failing":
+  DELEGATE: "Fix regression before new features"
+  PRIORITY: 1 (urgent)
+  BLOCK: All feature work
+
+ELSE:
+  PROCEED with normal delegation
+```
+
+See: `prompts/patterns/regression-first.md`
+</regression_first_protocol>
+
+<visual_verification_protocol>
+## Visual Verification (UI Tasks)
+
+For tasks with `category: "frontend"`, `"ui"`, or `"style"`:
+
+**Requirements:**
+- Screenshot evidence required before task completion
+- Mobile viewport screenshot required
+- Console error check (must be 0 errors)
+
+**Agent Delegation Addition:**
+```markdown
+## Visual Verification Required
+
+This is a UI task. Before marking complete:
+
+1. Capture screenshot at desktop viewport (1920x1080)
+2. Capture screenshot at mobile viewport (375x667)
+3. Verify console has 0 errors
+4. Save evidence to `.ai-agents/evidence/{TASK-ID}/`
+5. Include verification report in completion message
+
+Task cannot be marked complete without visual evidence.
+```
+
+See: `skills/testing/browser-verification/SKILL.md`
+</visual_verification_protocol>
+
+<issue_as_requirements_protocol>
+## Structured Task Requirements
+
+All tasks must include acceptance criteria and test steps.
+
+**Task Structure:**
+```json
+{
+  "task_id": "TASK-001",
+  "title": "Implement user authentication",
+  "priority": 2,
+  "category": "functional",
+  "acceptance_criteria": [
+    "POST /auth/login accepts email and password",
+    "Valid credentials return JWT token",
+    "Invalid credentials return 401"
+  ],
+  "test_steps": [
+    "POST /auth/login with valid credentials",
+    "Verify JWT token in response",
+    "Test protected route with token"
+  ]
+}
+```
+
+**Completion Validation:**
+- All acceptance criteria must be checked off
+- All test steps must pass
+- Regression tests must pass
+- Visual verification (if UI task)
+
+See: `prompts/patterns/issue-as-requirements.md`
+</issue_as_requirements_protocol>

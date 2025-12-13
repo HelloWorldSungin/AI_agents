@@ -2,6 +2,9 @@
 
 Automation scripts, starter templates, and development tools.
 
+**Version:** 1.4.0
+**Last Updated:** 2025-12-12
+
 ---
 
 ## Core Scripts
@@ -14,6 +17,15 @@ Essential scripts for agent composition and project setup.
 | `generate-template.py` | Generate starter templates for existing projects | `starter-templates/generate-template.py` |
 | `setup-commands.py` | Install tool selector wrappers to other projects | `scripts/setup-commands.py` |
 | `security_validator.py` | Security validation for autonomous execution | `scripts/security_validator.py` |
+
+### New in v1.4.0
+
+| Module | Purpose | Location |
+|--------|---------|----------|
+| `state_providers/` | External state provider abstraction (Linear, File) | `scripts/state_providers/` |
+| `execution/` | Execution control (checkpoints, turns, approval) | `scripts/execution/` |
+| `progress/` | Real-time progress tracking and notifications | `scripts/progress/` |
+| `security/` | Configurable command validation | `scripts/security/` |
 
 ### compose-agent.py
 
@@ -125,6 +137,183 @@ else:
 **Config:** `schemas/security-policy.json`
 
 **See:** `docs/guides/SECURITY.md` for complete guide
+
+---
+
+## State Providers (NEW v1.4.0)
+
+External state provider abstraction for session continuity.
+
+**Location:** `scripts/state_providers/`
+
+| File | Purpose |
+|------|---------|
+| `__init__.py` | Provider interface, dataclasses, factory function |
+| `linear_provider.py` | Linear.app API integration |
+| `file_provider.py` | Local file-based fallback |
+
+### Usage
+
+```python
+from scripts.state_providers import get_provider
+
+# Initialize from config
+provider = get_provider()
+
+# Or create directly
+from scripts.state_providers.linear_provider import LinearStateProvider
+provider = LinearStateProvider()
+provider.initialize({'api_key_env': 'LINEAR_API_KEY'})
+
+# Create task
+task_id = provider.create_task({
+    'title': 'Implement login',
+    'priority': 2,
+    'acceptance_criteria': ['Form displays', 'Validation works']
+})
+
+# Track session
+session_id = provider.start_session()
+# ... work ...
+provider.end_session('Completed login implementation')
+
+# Get progress
+summary = provider.get_progress_summary()
+print(f"Done: {summary['done']}/{summary['total']}")
+```
+
+### Provider Interface
+
+```python
+class StateProvider(ABC):
+    def create_task(task_data: Dict) -> str
+    def get_task(task_id: str) -> Optional[Task]
+    def update_task(task_id: str, updates: Dict) -> bool
+    def get_tasks(**filters) -> List[Task]
+    def get_meta() -> Optional[SessionMeta]
+    def update_meta(updates: Dict) -> bool
+    def start_session() -> str
+    def end_session(summary: str) -> bool
+    def get_progress_summary() -> Dict
+```
+
+**See:** `prompts/patterns/external-state-provider.md` for full documentation
+
+---
+
+## Execution Control (NEW v1.4.0)
+
+Configurable execution modes with checkpoints and approval handling.
+
+**Location:** `scripts/execution/`
+
+| File | Purpose |
+|------|---------|
+| `checkpoint_manager.py` | Checkpoint triggering and approval flow |
+| `turn_counter.py` | Turn tracking across sessions |
+| `approval_handler.py` | Multi-channel approval (CLI, Slack, Linear) |
+| `__init__.py` | Module exports |
+
+### Execution Modes
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| `autonomous` | Minimal intervention, checkpoint on events | CI/CD, trusted workflows |
+| `interactive` | Approval at key decisions | Development, learning |
+| `supervised` | Approval for every action | Security-sensitive, production |
+
+### Checkpoint Configuration
+
+```yaml
+# .ai-agents/config.yml
+execution:
+  mode: "interactive"
+  checkpoints:
+    turn_interval: 50        # Pause every 50 turns
+    before_new_issue: true   # Pause before creating issues
+    on_regression_failure: true
+    on_blocker: true
+    on_uncertainty: true
+  approval:
+    timeout_minutes: 60
+    default_action: "pause"
+    notification:
+      cli: true
+      slack_webhook: "${SLACK_WEBHOOK_URL}"
+      linear_comment: true
+  limits:
+    max_turns_per_session: 500
+    context_warning_threshold: 0.7
+    context_pause_threshold: 0.85
+```
+
+### Usage
+
+```python
+from scripts.execution import CheckpointManager, TurnCounter
+
+# Initialize
+checkpoint_mgr = CheckpointManager(config)
+turn_counter = TurnCounter()
+
+# Track turns
+turn_counter.increment()
+
+# Check if checkpoint needed
+if checkpoint_mgr.should_checkpoint(turn_counter.count):
+    checkpoint_mgr.trigger_checkpoint("turn_interval")
+```
+
+**See:** `prompts/patterns/execution-modes.md` for full documentation
+
+---
+
+## Progress Tracking (NEW v1.4.0)
+
+Real-time progress tracking with notifications.
+
+**Location:** `scripts/progress/`
+
+| File | Purpose |
+|------|---------|
+| `progress_tracker.py` | Metrics, events, display, notifications |
+| `__init__.py` | Module exports |
+
+### Features
+
+- Real-time progress metrics
+- Event logging with timestamps
+- CLI display with progress bars
+- Slack webhook notifications
+- Rate limiting for notifications
+
+### Usage
+
+```python
+from scripts.progress import create_progress_tracker
+
+# Create with Slack notifications
+tracker = create_progress_tracker(
+    provider=state_provider,
+    slack_webhook="https://hooks.slack.com/..."
+)
+
+# Track events
+tracker.task_started("TASK-001", "Implement login")
+tracker.task_completed("TASK-001", "Implement login")
+tracker.blocker_detected("TASK-002", "Waiting for API")
+
+# Get CLI display
+print(tracker.get_cli_display())
+
+# Output:
+# ╔══════════════════════════════════════╗
+# ║         PROJECT PROGRESS             ║
+# ╠══════════════════════════════════════╣
+# ║ Total: 10  Done: 6  Active: 2        ║
+# ║ [██████████████░░░░░░] 60%           ║
+# ╚══════════════════════════════════════╝
+```
 
 ---
 
