@@ -569,6 +569,7 @@ Ensure each task is independently completable within a few hours."""
         created_ids = []
 
         for i, parsed in enumerate(parsed_tasks):
+            now = datetime.now()
             task = Task(
                 id=f"task-{i+1}",  # Will be replaced by provider
                 title=parsed.title,
@@ -578,7 +579,9 @@ Ensure each task is independently completable within a few hours."""
                 category=parsed.category,
                 acceptance_criteria=parsed.acceptance_criteria,
                 test_steps=parsed.test_steps,
-                labels=parsed.labels
+                labels=parsed.labels,
+                created_at=now,
+                updated_at=now
             )
 
             try:
@@ -648,6 +651,7 @@ Created by Initializer Agent on {datetime.now().strftime('%Y-%m-%d %H:%M')}.
 </details>
 """
 
+        now = datetime.now()
         meta_task = Task(
             id="meta",
             title=f"META: {project_name}",
@@ -655,7 +659,9 @@ Created by Initializer Agent on {datetime.now().strftime('%Y-%m-%d %H:%M')}.
             status=TaskStatus.IN_PROGRESS,  # META is always in progress
             priority=TaskPriority.URGENT,
             category=TaskCategory.DOCUMENTATION,
-            labels=["meta", "tracking"]
+            labels=["meta", "tracking"],
+            created_at=now,
+            updated_at=now
         )
 
         try:
