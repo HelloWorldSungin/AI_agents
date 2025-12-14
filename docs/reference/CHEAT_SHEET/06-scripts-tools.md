@@ -2,8 +2,8 @@
 
 Automation scripts, starter templates, and development tools.
 
-**Version:** 1.4.0
-**Last Updated:** 2025-12-12
+**Version:** 1.5.0
+**Last Updated:** 2025-12-14
 
 ---
 
@@ -17,6 +17,12 @@ Essential scripts for agent composition and project setup.
 | `generate-template.py` | Generate starter templates for existing projects | `starter-templates/generate-template.py` |
 | `setup-commands.py` | Install tool selector wrappers to other projects | `scripts/setup-commands.py` |
 | `security_validator.py` | Security validation for autonomous execution | `scripts/security_validator.py` |
+
+### New in v1.5.0
+
+| Module | Purpose | Location |
+|--------|---------|----------|
+| `autonomous/` | **Autonomous runner with Claude API** | `scripts/autonomous/` |
 
 ### New in v1.4.0
 
@@ -137,6 +143,128 @@ else:
 **Config:** `schemas/security-policy.json`
 
 **See:** `docs/guides/SECURITY.md` for complete guide
+
+---
+
+## Autonomous Runner (NEW v1.5.0)
+
+Fully autonomous task execution using the Anthropic Claude API.
+
+**Location:** `scripts/autonomous/`
+
+| File | Purpose |
+|------|---------|
+| `runner.py` | Main autonomous runner with Claude API integration |
+| `cli.py` | Command-line interface (start, stop, status, logs) |
+| `config.yml` | Default configuration template |
+| `README.md` | Detailed documentation |
+
+### Quick Start
+
+```bash
+# 1. Verify Claude Code CLI is installed (uses your subscription!)
+claude --version
+
+# 2. Start runner
+python -m scripts.autonomous start
+
+# 3. Monitor status
+python -m scripts.autonomous status
+```
+
+**Note:** By default, uses Claude Code CLI (subscription-based) - no extra API costs!
+
+### CLI Commands
+
+```bash
+# Start runner
+python -m scripts.autonomous start [--config CONFIG] [--resume]
+
+# Check status
+python -m scripts.autonomous status
+
+# Stop gracefully
+python -m scripts.autonomous stop
+
+# View logs
+python -m scripts.autonomous logs [--tail N]
+
+# View tasks
+python -m scripts.autonomous tasks
+
+# Validate configuration
+python -m scripts.autonomous config [--config CONFIG]
+```
+
+### Configuration
+
+```yaml
+# .ai-agents/config.yml
+autonomous:
+  # Backend: "claude-code" (subscription) or "anthropic-sdk" (API)
+  backend: "claude-code"  # Uses your Claude Code subscription!
+  model: "sonnet"  # sonnet, opus, haiku
+  max_tokens: 8192
+  system_prompt_path: "prompts/roles/software-developer.md"
+  max_turns_per_task: 50
+  max_tasks_per_session: 10
+  rate_limit_rpm: 50
+
+execution:
+  mode: "autonomous"
+  checkpoints:
+    turn_interval: 25
+    on_regression_failure: true
+    on_blocker: true
+```
+
+**Alternative (Anthropic SDK):**
+```yaml
+autonomous:
+  backend: "anthropic-sdk"  # Uses API credits
+  api_key_env: "ANTHROPIC_API_KEY"
+  model: "claude-sonnet-4-20250514"
+  cost_limit_per_session: 10.0
+```
+
+### Programmatic Usage
+
+```python
+from scripts.autonomous.runner import AutonomousRunner, RunnerConfig
+
+config = RunnerConfig(
+    model="claude-sonnet-4-20250514",
+    max_tasks_per_session=5,
+    cost_limit_per_session=5.0
+)
+
+runner = AutonomousRunner(config)
+runner.start()
+
+# Check status
+status = runner.get_status()
+print(f"Tasks: {status['tasks_completed']}, Cost: {status['total_cost']}")
+```
+
+### Execution Flow
+
+1. **Start Session**: Initialize provider, load state
+2. **Get Task**: Fetch highest-priority TODO task
+3. **Execute**: Call Claude API with task prompt
+4. **Parse Response**: Check for completion/blocker signals
+5. **Update Status**: Mark task done, blocked, or in-progress
+6. **Check Limits**: Cost, tasks, turns
+7. **Repeat** until complete
+
+### Safety Features
+
+- **Cost Limits**: Stop when session cost exceeds limit
+- **Rate Limiting**: Respect API rate limits
+- **Turn Limits**: Maximum turns per task
+- **Graceful Shutdown**: Signal handlers for clean exit
+- **State Persistence**: Resume from where you left off
+
+**See:** `scripts/autonomous/README.md` for complete documentation
 
 ---
 

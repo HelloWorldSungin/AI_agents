@@ -1,0 +1,172 @@
+# Autonomous Runner Configuration
+# ================================
+# Default configuration for the autonomous runner.
+# Copy this file to .ai-agents/config.yml and customize.
+
+# State Provider Configuration
+# ----------------------------
+# Options: "linear", "github", "file"
+state_provider:
+  type: "file"
+  # For Linear:
+  # type: "linear"
+  # api_key_env: "LINEAR_API_KEY"
+  # team_id: "${LINEAR_TEAM_ID}"  # Optional, auto-detected
+  # project_name: "My Project"
+  # meta_issue_label: "meta"
+
+  # For GitHub:
+  # type: "github"
+  # api_key_env: "GITHUB_TOKEN"
+  # repo: "owner/repo"
+  # meta_issue_label: "meta"
+
+  # For File (default):
+  state_dir: ".ai-agents/state"
+
+# Autonomous Runner Settings
+# --------------------------
+autonomous:
+  # Backend: "claude-code" (subscription) or "anthropic-sdk" (API)
+  # claude-code: Uses Claude Code CLI with your subscription - no extra API costs
+  # anthropic-sdk: Uses Anthropic Python SDK - requires API key and incurs usage costs
+  backend: "claude-code"
+
+  # Model to use (applies to both backends)
+  # For claude-code: sonnet, opus, haiku (simplified names)
+  # For anthropic-sdk: claude-sonnet-4-20250514, claude-opus-4-20250514
+  model: "sonnet"
+
+  # Maximum tokens per response
+  max_tokens: 8192
+
+  # Environment variable containing API key (only for anthropic-sdk backend)
+  api_key_env: "ANTHROPIC_API_KEY"
+
+  # Path to system prompt
+  system_prompt_path: "prompts/roles/software-developer.md"
+
+  # Maximum turns per task before giving up
+  max_turns_per_task: 50
+
+  # Maximum tasks to complete per session
+  max_tasks_per_session: 10
+
+  # Seconds to pause between tasks
+  pause_between_tasks: 5
+
+  # Rate limiting (requests per minute)
+  rate_limit_rpm: 50
+
+  # Cost limit per session in USD
+  cost_limit_per_session: 10.0
+
+  # Logging
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  log_file: ".ai-agents/logs/autonomous.log"
+
+# Execution Control
+# -----------------
+execution:
+  # Mode: autonomous, interactive, supervised
+  mode: "autonomous"
+
+  # Checkpoint settings
+  checkpoints:
+    # Trigger checkpoint every N turns (0 to disable)
+    turn_interval: 25
+
+    # Checkpoint before starting new issue
+    before_new_issue: false
+
+    # Checkpoint after completing issue
+    after_issue_complete: false
+
+    # Checkpoint on regression failure
+    on_regression_failure: true
+
+    # Checkpoint when blocker detected
+    on_blocker: true
+
+    # Checkpoint on uncertainty
+    on_uncertainty: false
+
+    # Checkpoint when context usage high
+    on_context_high: true
+
+  # Approval settings (for interactive/supervised modes)
+  approval:
+    # Timeout in minutes (0 for no timeout)
+    timeout_minutes: 60
+
+    # Default action on timeout: continue, pause, abort
+    default_action: "pause"
+
+    # Notification channels
+    notification:
+      slack_webhook: "${SLACK_WEBHOOK_URL}"
+      email: ""
+      linear_comment: true
+
+  # Limits
+  limits:
+    # Maximum turns in a session
+    max_turns: 500
+
+    # Context usage threshold for pause (0.0-1.0)
+    context_pause_threshold: 0.85
+
+# Progress Tracking
+# -----------------
+progress:
+  # Notification interval in seconds (0 to disable)
+  notification_interval: 300
+
+  # Slack webhook for progress updates
+  slack_webhook: "${SLACK_WEBHOOK_URL}"
+
+  # Notify on task completion
+  notify_on_complete: true
+
+  # Notify on blocker
+  notify_on_blocked: true
+
+# Session Settings
+# ----------------
+session:
+  # Session marker file
+  marker_file: ".ai-agents/state/session.marker"
+
+  # Generate handoff on session end
+  auto_handoff: true
+
+  # Handoff directory
+  handoff_dir: ".ai-agents/handoffs"
+
+# Security Settings
+# -----------------
+security:
+  # Command validation preset: minimal, development, ci_cd, paranoid
+  preset: "development"
+
+  # Additional allowed commands (beyond preset)
+  allowed_commands: []
+
+  # Blocked commands
+  blocked_commands:
+    - "rm -rf /"
+    - "sudo"
+    - "chmod 777"
+
+  # Allowed patterns (regex)
+  allowed_patterns:
+    - "npm .*"
+    - "yarn .*"
+    - "pip .*"
+    - "pytest .*"
+    - "git .*"
+
+  # Blocked patterns (regex)
+  blocked_patterns:
+    - "curl .* | bash"
+    - "wget .* | sh"

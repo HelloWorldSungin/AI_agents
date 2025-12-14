@@ -2,8 +2,8 @@
 
 Custom commands and thinking models for systematic decision-making.
 
-**Version:** 1.4.0
-**Last Updated:** 2025-12-12
+**Version:** 1.5.0
+**Last Updated:** 2025-12-14
 
 ---
 
@@ -14,14 +14,15 @@ Custom commands and thinking models for systematic decision-making.
 | Thinking Models | 12 | Mental models for systematic thinking |
 | Workflow Commands | 4 | Task management and debugging |
 | Manager Workflow | 5 | Multi-session manager coordination + project sync |
-| Session Commands | 4 | State provider and session management (NEW) |
+| Session Commands | 4 | State provider and session management |
+| Autonomous Runner | 6 | CLI for autonomous task execution (NEW v1.5.0) |
 | Discovery | 1 | Tool discovery across projects |
 
-**Total Commands:** 26
+**Total Commands:** 32
 
-**Location:** `.claude/commands/`
+**Location:** `.claude/commands/` (slash commands), `scripts/autonomous/` (CLI)
 
-**Latest:** v1.4.0 - External state provider commands (`/start-project`, `/continue-project`, `/pause-agent`, `/resume-agent`)
+**Latest:** v1.5.0 - Autonomous Runner CLI (`python -m scripts.autonomous start/status/stop/logs/tasks/config`)
 
 ---
 
@@ -893,6 +894,252 @@ Summary:
 
 Ready to continue.
 ```
+
+---
+
+## Autonomous Runner CLI (NEW v1.5.0)
+
+Command-line interface for fully autonomous task execution using Claude API.
+
+**Location:** `scripts/autonomous/`
+
+**Prerequisites:**
+```bash
+# Verify Claude Code CLI (uses your subscription - no extra costs!)
+claude --version
+```
+
+| Command | Purpose | Usage |
+|---------|---------|-------|
+| `start` | Start autonomous runner | `python -m scripts.autonomous start [--config CONFIG] [--resume]` |
+| `status` | Show runner status | `python -m scripts.autonomous status` |
+| `stop` | Stop runner gracefully | `python -m scripts.autonomous stop` |
+| `logs` | View runner logs | `python -m scripts.autonomous logs [--tail N]` |
+| `tasks` | Show tasks from state provider | `python -m scripts.autonomous tasks` |
+| `config` | Validate configuration | `python -m scripts.autonomous config [--config CONFIG]` |
+
+### start
+
+**Purpose:** Start the autonomous runner to execute tasks
+
+**Usage:**
+```bash
+# Start with default config (.ai-agents/config.yml)
+python -m scripts.autonomous start
+
+# Start with custom config
+python -m scripts.autonomous start --config my-config.yml
+
+# Resume from previous session
+python -m scripts.autonomous start --resume
+```
+
+**What It Does:**
+1. Initializes state provider (Linear/GitHub/File)
+2. Loads system prompt from `prompts/roles/software-developer.md`
+3. Fetches tasks in priority order
+4. Executes each task using Claude API
+5. Updates task status based on results
+6. Respects checkpoints and cost limits
+
+**Output:**
+```
+Starting autonomous runner with config: .ai-agents/config.yml
+Resume mode: False
+--------------------------------------------------
+Model: claude-sonnet-4-20250514
+Execution mode: autonomous
+Max tasks per session: 10
+Cost limit: $10.0
+--------------------------------------------------
+Starting task: ARK-5 - Implement login form
+...
+```
+
+### status
+
+**Purpose:** Show current runner status and progress
+
+**Usage:**
+```bash
+python -m scripts.autonomous status
+```
+
+**Output:**
+```
+==================================================
+AUTONOMOUS RUNNER STATUS
+==================================================
+
+Runner State: RUNNING
+Session ID: 20251214-103000
+Tasks Completed: 3
+Total Cost: $1.25
+Current Turn: 47
+
+--------------------------------------------------
+PROGRESS
+--------------------------------------------------
+
+Total Tasks: 12
+Completed: 8 (67%)
+In Progress: 2
+Blocked: 1
+Session Tasks: 3
+Tasks/Hour: 4.2
+Regression: passing
+
+--------------------------------------------------
+RECENT EVENTS
+--------------------------------------------------
+  2025-12-14T10:45:00 [task_completed] ARK-5
+  2025-12-14T10:30:00 [task_started] ARK-5
+  2025-12-14T10:28:00 [session_start]
+
+==================================================
+```
+
+### stop
+
+**Purpose:** Stop the runner gracefully
+
+**Usage:**
+```bash
+python -m scripts.autonomous stop
+```
+
+**What It Does:**
+- Sets runner state to STOPPED
+- Runner stops at next checkpoint
+- State preserved for resume
+
+### logs
+
+**Purpose:** View runner execution logs
+
+**Usage:**
+```bash
+# Show last 50 lines (default)
+python -m scripts.autonomous logs
+
+# Show last 100 lines
+python -m scripts.autonomous logs --tail 100
+```
+
+**Log Location:** `.ai-agents/logs/autonomous.log`
+
+### tasks
+
+**Purpose:** Show tasks from configured state provider
+
+**Usage:**
+```bash
+python -m scripts.autonomous tasks
+```
+
+**Output:**
+```
+============================================================
+TASKS FROM STATE PROVIDER
+============================================================
+
+TODO (3)
+----------------------------------------
+  [ARK-8] Add password validation
+    Priority: HIGH
+  [ARK-9] Implement logout
+    Priority: NORMAL
+  [ARK-10] Add session timeout
+    Priority: LOW
+
+IN_PROGRESS (1)
+----------------------------------------
+  [ARK-7] Implement password reset
+    Priority: HIGH
+
+DONE (4)
+----------------------------------------
+  [ARK-5] Implement login form
+  [ARK-6] Add form validation
+  ... and 2 more
+
+============================================================
+```
+
+### config
+
+**Purpose:** Validate runner configuration
+
+**Usage:**
+```bash
+# Validate default config
+python -m scripts.autonomous config
+
+# Validate specific config
+python -m scripts.autonomous config --config my-config.yml
+```
+
+**Output:**
+```
+==================================================
+RUNNER CONFIGURATION
+==================================================
+
+Config file: .ai-agents/config.yml
+
+Model: claude-sonnet-4-20250514
+Max tokens: 8192
+API key env: ANTHROPIC_API_KEY
+System prompt: prompts/roles/software-developer.md
+
+Execution mode: autonomous
+Max turns per task: 50
+Max tasks per session: 10
+Pause between tasks: 5s
+
+Rate limit: 50 RPM
+Cost limit: $10.0
+
+--------------------------------------------------
+VALIDATION
+--------------------------------------------------
+
+Configuration valid!
+
+==================================================
+```
+
+### Configuration Example
+
+```yaml
+# .ai-agents/config.yml
+state_provider:
+  type: "linear"
+  api_key_env: "LINEAR_API_KEY"
+  project_name: "My Project"
+
+autonomous:
+  backend: "claude-code"  # Uses subscription - no extra API costs!
+  model: "sonnet"
+  max_tokens: 8192
+  system_prompt_path: "prompts/roles/software-developer.md"
+  max_turns_per_task: 50
+  max_tasks_per_session: 10
+  rate_limit_rpm: 50
+
+execution:
+  mode: "autonomous"
+  checkpoints:
+    turn_interval: 25
+    on_regression_failure: true
+    on_blocker: true
+```
+
+**Backends:**
+- `claude-code` (default): Uses Claude Code CLI with your subscription - no extra costs!
+- `anthropic-sdk`: Uses Anthropic API directly - requires API key and incurs usage costs
+
+**See:** `scripts/autonomous/README.md` for complete documentation
 
 ---
 

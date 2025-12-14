@@ -2,8 +2,8 @@
 
 Quick commands to get started with the AI Agents Library.
 
-**Version:** 1.3.0
-**Last Updated:** 2025-12-04
+**Version:** 1.5.0
+**Last Updated:** 2025-12-14
 
 ---
 
@@ -251,6 +251,72 @@ orchestrator.py
 - Detailed comparison: [05-workflows.md](05-workflows.md)
 - Orchestration guide: `scripts/orchestration/COMPLETE_GUIDE.md`
 - Advanced patterns: [07-advanced.md](07-advanced.md)
+
+**Autonomous Runner (NEW v1.5.0):**
+
+Fully autonomous task execution using Claude Code CLI with state provider integration.
+
+```bash
+# 1. Verify Claude Code CLI (uses your subscription!)
+claude --version
+
+# 2. Start runner
+python -m scripts.autonomous start
+
+# 3. Monitor
+python -m scripts.autonomous status
+```
+
+**No extra API costs!** Uses your Claude Code subscription by default.
+
+**How It Works:**
+```
+State Provider (Linear/GitHub/File)
+        │
+        │ Tasks
+        ▼
+┌─────────────────────────┐
+│   Autonomous Runner     │
+│                         │
+│  Task Queue → Claude → Result Handler
+│       │          │           │
+│       ▼          ▼           ▼
+│  Checkpoint   Progress    Status
+│   Manager     Tracker     Update
+└─────────────────────────┘
+        │
+        ▼
+   Notifications (Slack/CLI)
+```
+
+**Features:**
+- ✅ Executes tasks from Linear/GitHub/file-based queues
+- ✅ Cost and rate limiting
+- ✅ Checkpoint-based safety controls
+- ✅ State persistence for resume
+- ✅ Progress tracking with notifications
+
+**Configuration:**
+```yaml
+# .ai-agents/config.yml
+autonomous:
+  backend: "claude-code"  # Uses your subscription!
+  model: "sonnet"
+  max_tasks_per_session: 10
+
+execution:
+  mode: "autonomous"
+  checkpoints:
+    turn_interval: 25
+```
+
+**When to Use:**
+- Autonomous task execution without human intervention
+- Integration with issue trackers (Linear, GitHub)
+- Cost-controlled batch processing
+- CI/CD automation with Claude
+
+**See:** [06-scripts-tools.md](06-scripts-tools.md#autonomous-runner-new-v150) for complete documentation
 
 ---
 
