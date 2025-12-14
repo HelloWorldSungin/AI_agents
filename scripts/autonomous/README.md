@@ -1,16 +1,45 @@
-# Autonomous Runner
+# Autonomous Runner (Two-Agent Pattern)
 
-A fully autonomous execution system for AI development tasks using Claude Code CLI.
+A fully autonomous execution system for AI development tasks using Claude Code CLI, implementing Anthropic's recommended **two-agent pattern** for optimal context window management.
 
 ## Overview
 
-The autonomous runner executes development tasks without human intervention by:
+The autonomous runner implements the two-agent pattern:
 
-1. **Fetching tasks** from a state provider (Linear, GitHub, or file-based)
-2. **Executing tasks** using Claude Code CLI (uses your subscription - no extra API costs!)
-3. **Updating status** based on results (done, blocked, in-progress)
-4. **Respecting checkpoints** for safety control
-5. **Tracking progress** with notifications and logging
+1. **Initializer Agent (Phase 1)** - Analyzes requirements and creates structured tasks
+2. **Coding Agent (Phase 2)** - Executes tasks with fresh context per task
+
+This separation ensures optimal context window usage:
+- Initializer uses full context for planning/decomposition
+- Each coding session starts fresh, maximizing working memory
+- Communication happens via external state provider (Linear, GitHub, File)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    INITIALIZER AGENT                         │
+│  (Session 1 - Fresh Context)                                │
+│                                                             │
+│  1. Read requirements/spec file                             │
+│  2. Analyze and break down into tasks                       │
+│  3. Create tasks in state provider (Linear/GitHub/File)     │
+│  4. Create META tracking task                               │
+│  5. Write .project_state.json marker                        │
+│  6. Exit (context discarded)                                │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    CODING AGENT(S)                           │
+│  (Sessions 2+ - Fresh Context Each)                         │
+│                                                             │
+│  1. Query state provider for next TODO task                 │
+│  2. Claim task (status → In Progress)                       │
+│  3. Implement with FRESH context                            │
+│  4. Test/verify                                             │
+│  5. Update status + add implementation notes                │
+│  6. Exit (context discarded, next agent starts fresh)       │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Quick Start
 
@@ -36,7 +65,65 @@ The autonomous runner executes development tasks without human intervention by:
      mode: "autonomous"
    ```
 
-### Alternative: Anthropic SDK Backend
+### Phase 1: Initialize Project
+
+```bash
+# Create tasks from a requirements/spec file
+python -m scripts.autonomous init --spec requirements.md
+
+# With custom project name
+python -m scripts.autonomous init --spec spec.md --project-name "My App"
+
+# Force re-initialization
+python -m scripts.autonomous init --spec requirements.md --force
+```
+
+**What happens:**
+1. Claude analyzes your spec file
+2. Creates structured tasks in state provider
+3. Creates META tracking task
+4. Writes `.project_state.json` marker
+
+### Phase 2: Run Coding Agent
+
+```bash
+# Start the coding agent
+python -m scripts.autonomous start
+
+# Resume from previous session
+python -m scripts.autonomous start --resume
+```
+
+**What happens:**
+1. Fetches next TODO task from provider
+2. Claims task (status → In Progress)
+3. Implements with full fresh context
+4. Tests and verifies
+5. Updates status and continues
+
+### Other Commands
+
+```bash
+# Show session recovery context
+python -m scripts.autonomous resume
+
+# Check status
+python -m scripts.autonomous status
+
+# View tasks
+python -m scripts.autonomous tasks
+
+# Stop gracefully
+python -m scripts.autonomous stop
+
+# View logs
+python -m scripts.autonomous logs --tail 100
+
+# Validate configuration
+python -m scripts.autonomous config
+```
+
+## Alternative: Anthropic SDK Backend
 
 If you prefer to use the Anthropic API directly (incurs usage costs):
 
@@ -50,25 +137,6 @@ autonomous:
   backend: "anthropic-sdk"  # Uses API credits
   model: "claude-opus-4-20250514"
   cost_limit_per_session: 10.0
-```
-
-### Running
-
-```bash
-# Start the runner
-python -m scripts.autonomous start
-
-# Check status
-python -m scripts.autonomous status
-
-# Stop gracefully
-python -m scripts.autonomous stop
-
-# View logs
-python -m scripts.autonomous logs
-
-# Validate configuration
-python -m scripts.autonomous config
 ```
 
 ## Configuration
@@ -126,38 +194,45 @@ state_provider:
                           │ (Linear/GitHub) │
                           └────────┬────────┘
                                    │
-                                   │ Tasks
+              ┌────────────────────┼────────────────────┐
+              │                    │                    │
+              ▼                    ▼                    ▼
+┌─────────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│  Initializer Agent  │  │  Coding Agent   │  │  Coding Agent   │
+│    (Session 1)      │  │   (Session 2)   │  │   (Session 3)   │
+│                     │  │                 │  │                 │
+│  - Parse spec       │  │  - Get task     │  │  - Get task     │
+│  - Create tasks     │  │  - Implement    │  │  - Implement    │
+│  - Setup META       │  │  - Test         │  │  - Test         │
+│  - Write marker     │  │  - Update       │  │  - Update       │
+└─────────────────────┘  └─────────────────┘  └─────────────────┘
+              │                    │                    │
+              └────────────────────┼────────────────────┘
+                                   │
                                    ▼
-┌─────────────────────────────────────────────────────────┐
-│                   Autonomous Runner                      │
-│                                                         │
-│  ┌─────────────┐   ┌──────────────┐   ┌─────────────┐ │
-│  │ Task Queue  │──▶│ Claude API   │──▶│ Result      │ │
-│  │             │   │ (Anthropic)  │   │ Handler     │ │
-│  └─────────────┘   └──────────────┘   └─────────────┘ │
-│                           │                            │
-│         ┌─────────────────┼─────────────────┐         │
-│         ▼                 ▼                 ▼         │
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐ │
-│  │ Checkpoint  │   │ Progress    │   │ Turn        │ │
-│  │ Manager     │   │ Tracker     │   │ Counter     │ │
-│  └─────────────┘   └─────────────┘   └─────────────┘ │
-└─────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-                   ┌─────────────┐
-                   │   Output    │
-                   │ (Logs/Slack)│
-                   └─────────────┘
+                          ┌─────────────────┐
+                          │  .project_state │
+                          │      .json      │
+                          └─────────────────┘
 ```
 
 ## Execution Flow
+
+### Initializer Agent (Phase 1)
+
+1. **Parse Requirements**: Read spec/requirements file
+2. **Analyze**: Use Claude to break down into tasks
+3. **Create Tasks**: Create structured tasks in state provider
+4. **Setup META**: Create tracking issue for coordination
+5. **Write Marker**: Write `.project_state.json` for detection
+
+### Coding Agent (Phase 2)
 
 1. **Start Session**: Initialize provider, load state, start tracking
 2. **Get Next Task**: Fetch highest-priority TODO task
 3. **Execute Task**:
    - Build task prompt from description and criteria
-   - Call Claude API with system prompt
+   - Call Claude with system prompt
    - Parse response for completion/blocker signals
    - Continue conversation if needed
 4. **Update Status**: Mark task done, blocked, or keep in-progress
@@ -232,50 +307,57 @@ Tasks should include:
 - **Acceptance Criteria**: Checklist of requirements
 - **Test Steps**: How to verify completion
 
-Example from Linear:
+Example from spec file:
 
 ```markdown
-# Title: Add user authentication endpoint
+# Requirements
 
-## Description
-Implement POST /api/auth/login endpoint with JWT token generation.
+## User Authentication
 
-## Acceptance Criteria
-- [ ] Endpoint accepts username and password
-- [ ] Returns JWT token on success
-- [ ] Returns 401 on invalid credentials
-- [ ] Rate limited to 5 attempts per minute
+The system should support user authentication with:
+- Login with email/password
+- Password reset via email
+- Session management with JWT
+- Rate limiting on login attempts
 
-## Test Steps
-1. Send valid credentials, expect 200 with token
-2. Send invalid credentials, expect 401
-3. Send 6 requests in 1 minute, expect 429
+## Dashboard
+
+Users should see a dashboard with:
+- Overview metrics
+- Recent activity
+- Quick actions
 ```
+
+The initializer will parse this into structured tasks.
 
 ## Programmatic Usage
 
 ```python
-from scripts.autonomous.runner import AutonomousRunner, RunnerConfig
+from scripts.autonomous import ProjectInitializer, AutonomousRunner
+from scripts.autonomous import InitializerConfig, RunnerConfig
 
-# Create config
-config = RunnerConfig(
+# Phase 1: Initialize
+init_config = InitializerConfig(
     model="claude-opus-4-20250514",
-    max_tasks_per_session=5,
-    cost_limit_per_session=5.0
+    backend="claude-code"
 )
+initializer = ProjectInitializer(init_config)
+result = initializer.initialize("requirements.md", project_name="My App")
 
-# Create and run
-runner = AutonomousRunner(config)
+print(f"Created {result.tasks_created} tasks")
+
+# Phase 2: Execute
+runner_config = RunnerConfig(
+    model="claude-opus-4-20250514",
+    max_tasks_per_session=5
+)
+runner = AutonomousRunner(runner_config)
 runner.start()
-
-# Or resume from previous session
-runner.start(resume=True)
 
 # Check status
 status = runner.get_status()
 print(f"State: {status['state']}")
 print(f"Tasks: {status['tasks_completed']}")
-print(f"Cost: {status['total_cost']}")
 ```
 
 ## Troubleshooting
@@ -303,6 +385,12 @@ Check your state provider configuration. For Linear:
 export LINEAR_API_KEY='lin_api_...'
 ```
 
+### No tasks being parsed
+
+- Ensure your spec file has clear, structured requirements
+- Check the raw analysis output for debugging
+- Try simplifying the spec structure
+
 ### Tasks not completing
 
 - Check task has clear acceptance criteria
@@ -321,3 +409,4 @@ Increase `cost_limit_per_session` in config or start a new session.
 - [Execution Control](../execution/README.md)
 - [Progress Tracking](../progress/README.md)
 - [CHEAT_SHEET](../../docs/reference/CHEAT_SHEET/)
+- [Linear-Coding-Agent-Harness](https://github.com/coleam00/Linear-Coding-Agent-Harness) - Reference implementation
