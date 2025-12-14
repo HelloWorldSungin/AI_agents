@@ -505,18 +505,110 @@ Ensure each task is independently completable within a few hours."""
         return tasks
 
     def _extract_json(self, text: str) -> Optional[str]:
-        """Extract JSON from text that may contain markdown code blocks."""
+        """
+        Extract JSON from text that may contain markdown code blocks.
+
+        Uses a 3-strategy approach for robust extraction:
+        1. Code Block Extraction - handles ```json and ``` blocks
+        2. Smart JSON Object Detection - proper brace matching
+        3. Fallback Raw JSON - last resort pattern matching
+        """
         import re
 
-        # Try to find JSON in code blocks
-        json_match = re.search(r'```(?:json)?\s*\n(.*?)\n```', text, re.DOTALL)
-        if json_match:
-            return json_match.group(1).strip()
+        # Strategy 1: Code Block Extraction
+        # Handle ```json code blocks with flexible whitespace
+        patterns = [
+            r'```json\s*\n([\s\S]*?)\n\s*```',  # ```json with newlines
+            r'```json\s*([\s\S]*?)\s*```',       # ```json flexible whitespace
+            r'```\s*\n(\{[\s\S]*?\})\n\s*```',   # ``` with JSON object
+            r'```\s*(\{[\s\S]*?\})\s*```',       # ``` flexible whitespace
+        ]
 
-        # Try to find raw JSON object
-        json_match = re.search(r'\{[\s\S]*"tasks"[\s\S]*\}', text)
+        for pattern in patterns:
+            match = re.search(pattern, text, re.DOTALL)
+            if match:
+                candidate = match.group(1).strip()
+                # Validate it's actually JSON
+                try:
+                    json.loads(candidate)
+                    return candidate
+                except json.JSONDecodeError:
+                    continue
+
+        # Strategy 2: Smart JSON Object Detection
+        # Find JSON objects containing "tasks" key with proper brace matching
+        task_matches = []
+        for match in re.finditer(r'\{[^{}]*"tasks"', text):
+            start = match.start()
+            # Extend to find the complete JSON object
+            complete_json = self._extend_to_matching_brace(text, start)
+            if complete_json:
+                try:
+                    parsed = json.loads(complete_json)
+                    if "tasks" in parsed:
+                        task_matches.append(complete_json)
+                except json.JSONDecodeError:
+                    continue
+
+        # Return the longest valid JSON (most complete)
+        if task_matches:
+            return max(task_matches, key=len)
+
+        # Strategy 3: Fallback Raw JSON
+        # Last resort - search for any valid JSON pattern
+        json_match = re.search(r'\{[\s\S]*"tasks"\s*:\s*\[[\s\S]*\]\s*\}', text)
         if json_match:
-            return json_match.group(0)
+            candidate = json_match.group(0)
+            try:
+                json.loads(candidate)
+                return candidate
+            except json.JSONDecodeError:
+                pass
+
+        return None
+
+    def _extend_to_matching_brace(self, text: str, start: int) -> Optional[str]:
+        """
+        Extend from start position to find complete JSON object with matching braces.
+
+        Args:
+            text: Full text to search in
+            start: Starting position (should be at opening brace)
+
+        Returns:
+            Complete JSON string if valid, None otherwise
+        """
+        if start >= len(text) or text[start] != '{':
+            return None
+
+        depth = 0
+        in_string = False
+        escape_next = False
+
+        for i in range(start, len(text)):
+            char = text[i]
+
+            if escape_next:
+                escape_next = False
+                continue
+
+            if char == '\\' and in_string:
+                escape_next = True
+                continue
+
+            if char == '"' and not escape_next:
+                in_string = not in_string
+                continue
+
+            if in_string:
+                continue
+
+            if char == '{':
+                depth += 1
+            elif char == '}':
+                depth -= 1
+                if depth == 0:
+                    return text[start:i+1]
 
         return None
 
