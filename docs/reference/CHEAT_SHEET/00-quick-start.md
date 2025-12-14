@@ -252,18 +252,24 @@ orchestrator.py
 - Orchestration guide: `scripts/orchestration/COMPLETE_GUIDE.md`
 - Advanced patterns: [07-advanced.md](07-advanced.md)
 
-**Autonomous Runner (NEW v1.5.0):**
+**Autonomous Runner - Two-Agent Pattern (NEW v1.5.0):**
 
-Fully autonomous task execution using Claude Code CLI with state provider integration.
+Implements Anthropic's recommended **two-agent pattern** for optimal context window management:
+
+1. **Initializer Agent** - Analyzes spec and creates tasks
+2. **Coding Agent** - Executes tasks with fresh context
 
 ```bash
 # 1. Verify Claude Code CLI (uses your subscription!)
 claude --version
 
-# 2. Start runner
+# 2. Phase 1: Initialize project from spec
+python -m scripts.autonomous init --spec requirements.md
+
+# 3. Phase 2: Run coding agent
 python -m scripts.autonomous start
 
-# 3. Monitor
+# 4. Monitor
 python -m scripts.autonomous status
 ```
 
@@ -271,29 +277,30 @@ python -m scripts.autonomous status
 
 **How It Works:**
 ```
-State Provider (Linear/GitHub/File)
-        │
-        │ Tasks
-        ▼
-┌─────────────────────────┐
-│   Autonomous Runner     │
-│                         │
-│  Task Queue → Claude → Result Handler
-│       │          │           │
-│       ▼          ▼           ▼
-│  Checkpoint   Progress    Status
-│   Manager     Tracker     Update
-└─────────────────────────┘
-        │
-        ▼
-   Notifications (Slack/CLI)
+┌─────────────────────────────────────────────────────────────┐
+│                    INITIALIZER AGENT                         │
+│  (Phase 1 - Fresh Context)                                  │
+│                                                             │
+│  1. Read spec file → 2. Analyze with Claude                 │
+│  3. Create tasks in provider → 4. Write .project_state.json │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    CODING AGENT(S)                           │
+│  (Phase 2 - Fresh Context Each Session)                     │
+│                                                             │
+│  1. Get TODO task → 2. Implement with FRESH context         │
+│  3. Test/verify → 4. Update status → 5. Next task           │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 **Features:**
+- ✅ Two-agent pattern for optimal context management
 - ✅ Executes tasks from Linear/GitHub/file-based queues
-- ✅ Cost and rate limiting
+- ✅ Session recovery with `resume` command
 - ✅ Checkpoint-based safety controls
-- ✅ State persistence for resume
+- ✅ State persistence across sessions
 - ✅ Progress tracking with notifications
 
 **Configuration:**
@@ -313,10 +320,10 @@ execution:
 **When to Use:**
 - Autonomous task execution without human intervention
 - Integration with issue trackers (Linear, GitHub)
-- Cost-controlled batch processing
+- Multi-session projects with context recovery
 - CI/CD automation with Claude
 
-**See:** [06-scripts-tools.md](06-scripts-tools.md#autonomous-runner-new-v150) for complete documentation
+**See:** [06-scripts-tools.md](06-scripts-tools.md#autonomous-runner-two-agent-pattern) for complete documentation
 
 ---
 

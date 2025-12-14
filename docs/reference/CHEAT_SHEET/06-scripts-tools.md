@@ -148,16 +148,38 @@ else:
 
 ## Autonomous Runner (NEW v1.5.0)
 
-Fully autonomous task execution using the Anthropic Claude API.
+Implements Anthropic's recommended **two-agent pattern** for optimal context management.
 
 **Location:** `scripts/autonomous/`
 
 | File | Purpose |
 |------|---------|
-| `runner.py` | Main autonomous runner with Claude API integration |
-| `cli.py` | Command-line interface (start, stop, status, logs) |
+| `initializer.py` | Initializer agent - analyzes spec and creates tasks |
+| `runner.py` | Coding agent - executes tasks with fresh context |
+| `cli.py` | Command-line interface (init, start, resume, status, etc.) |
 | `config.yml` | Default configuration template |
 | `README.md` | Detailed documentation |
+
+### Two-Agent Pattern
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    INITIALIZER AGENT                         │
+│  (Phase 1 - `init` command)                                 │
+│                                                             │
+│  1. Read spec file → 2. Analyze with Claude                 │
+│  3. Create tasks in provider → 4. Write .project_state.json │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    CODING AGENT(S)                           │
+│  (Phase 2 - `start` command)                                │
+│                                                             │
+│  1. Get TODO task → 2. Implement with FRESH context         │
+│  3. Test/verify → 4. Update status → 5. Next task           │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ### Quick Start
 
@@ -165,10 +187,13 @@ Fully autonomous task execution using the Anthropic Claude API.
 # 1. Verify Claude Code CLI is installed (uses your subscription!)
 claude --version
 
-# 2. Start runner
+# 2. Phase 1: Initialize project from spec
+python -m scripts.autonomous init --spec requirements.md
+
+# 3. Phase 2: Run coding agent
 python -m scripts.autonomous start
 
-# 3. Monitor status
+# 4. Monitor status
 python -m scripts.autonomous status
 ```
 
@@ -177,8 +202,14 @@ python -m scripts.autonomous status
 ### CLI Commands
 
 ```bash
-# Start runner
+# Phase 1: Initialize project from spec (Initializer Agent)
+python -m scripts.autonomous init --spec FILE [--project-name NAME] [--force]
+
+# Phase 2: Run coding agent (Coding Agent)
 python -m scripts.autonomous start [--config CONFIG] [--resume]
+
+# Show session recovery context
+python -m scripts.autonomous resume
 
 # Check status
 python -m scripts.autonomous status
@@ -230,27 +261,45 @@ autonomous:
 ### Programmatic Usage
 
 ```python
-from scripts.autonomous.runner import AutonomousRunner, RunnerConfig
+from scripts.autonomous import ProjectInitializer, AutonomousRunner
+from scripts.autonomous import InitializerConfig, RunnerConfig
 
-config = RunnerConfig(
-    model="claude-opus-4-20250514",
-    max_tasks_per_session=5,
-    cost_limit_per_session=5.0
+# Phase 1: Initialize project from spec
+init_config = InitializerConfig(
+    model="opus",
+    backend="claude-code"
 )
+initializer = ProjectInitializer(init_config)
+result = initializer.initialize("requirements.md", project_name="My App")
 
-runner = AutonomousRunner(config)
+print(f"Created {result.tasks_created} tasks")
+
+# Phase 2: Execute tasks
+runner_config = RunnerConfig(
+    model="opus",
+    max_tasks_per_session=5
+)
+runner = AutonomousRunner(runner_config)
 runner.start()
 
 # Check status
 status = runner.get_status()
-print(f"Tasks: {status['tasks_completed']}, Cost: {status['total_cost']}")
+print(f"Tasks: {status['tasks_completed']}, State: {status['state']}")
 ```
 
 ### Execution Flow
 
+**Phase 1 - Initializer Agent:**
+1. **Read Spec**: Parse requirements/spec file
+2. **Analyze**: Use Claude to break down into tasks
+3. **Create Tasks**: Create structured tasks in state provider
+4. **Setup META**: Create tracking issue for coordination
+5. **Write Marker**: Write `.project_state.json` for detection
+
+**Phase 2 - Coding Agent:**
 1. **Start Session**: Initialize provider, load state
 2. **Get Task**: Fetch highest-priority TODO task
-3. **Execute**: Call Claude API with task prompt
+3. **Execute**: Call Claude with FRESH context
 4. **Parse Response**: Check for completion/blocker signals
 5. **Update Status**: Mark task done, blocked, or in-progress
 6. **Check Limits**: Cost, tasks, turns

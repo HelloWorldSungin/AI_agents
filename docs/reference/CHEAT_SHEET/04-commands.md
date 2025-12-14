@@ -897,9 +897,11 @@ Ready to continue.
 
 ---
 
-## Autonomous Runner CLI (NEW v1.5.0)
+## Autonomous Runner CLI - Two-Agent Pattern (NEW v1.5.0)
 
-Command-line interface for fully autonomous task execution using Claude API.
+Implements Anthropic's recommended **two-agent pattern** for optimal context management:
+1. **Initializer Agent** (Phase 1) - Analyzes spec and creates tasks
+2. **Coding Agent** (Phase 2) - Executes tasks with fresh context
 
 **Location:** `scripts/autonomous/`
 
@@ -911,16 +913,88 @@ claude --version
 
 | Command | Purpose | Usage |
 |---------|---------|-------|
-| `start` | Start autonomous runner | `python -m scripts.autonomous start [--config CONFIG] [--resume]` |
+| `init` | Initialize project from spec (Phase 1) | `python -m scripts.autonomous init --spec FILE [--project-name NAME]` |
+| `start` | Start coding agent (Phase 2) | `python -m scripts.autonomous start [--config CONFIG] [--resume]` |
+| `resume` | Show session recovery context | `python -m scripts.autonomous resume` |
 | `status` | Show runner status | `python -m scripts.autonomous status` |
 | `stop` | Stop runner gracefully | `python -m scripts.autonomous stop` |
 | `logs` | View runner logs | `python -m scripts.autonomous logs [--tail N]` |
 | `tasks` | Show tasks from state provider | `python -m scripts.autonomous tasks` |
 | `config` | Validate configuration | `python -m scripts.autonomous config [--config CONFIG]` |
 
-### start
+### init (Initializer Agent - Phase 1)
 
-**Purpose:** Start the autonomous runner to execute tasks
+**Purpose:** Initialize a project from a requirements/spec file
+
+**Usage:**
+```bash
+# Initialize from spec file
+python -m scripts.autonomous init --spec requirements.md
+
+# With custom project name
+python -m scripts.autonomous init --spec spec.md --project-name "My App"
+
+# Force re-initialization
+python -m scripts.autonomous init --spec requirements.md --force
+```
+
+**What It Does:**
+1. Reads the spec/requirements file
+2. Analyzes with Claude to break down into tasks
+3. Creates structured tasks in state provider (Linear/GitHub/File)
+4. Creates META tracking task
+5. Writes `.project_state.json` marker file
+
+**Output:**
+```
+============================================================
+INITIALIZER AGENT - Phase 1 of Two-Agent Pattern
+============================================================
+
+Spec file: requirements.md
+Config: .ai-agents/config.yml
+------------------------------------------------------------
+
+Backend: claude-code
+Model: opus
+------------------------------------------------------------
+
+Analyzing requirements...
+
+============================================================
+INITIALIZATION COMPLETE
+============================================================
+
+Project ID: proj-20251214150000
+Tasks Created: 12
+META Task ID: meta-001
+
+Task Breakdown by Category:
+  functional: 8
+  infrastructure: 2
+  testing: 2
+
+Priority Distribution:
+  HIGH: 4
+  NORMAL: 6
+  LOW: 2
+
+------------------------------------------------------------
+NEXT STEPS
+------------------------------------------------------------
+
+1. Review created tasks:
+   python -m scripts.autonomous tasks
+
+2. Start coding agent (Phase 2):
+   python -m scripts.autonomous start
+
+============================================================
+```
+
+### start (Coding Agent - Phase 2)
+
+**Purpose:** Start the coding agent to execute tasks
 
 **Usage:**
 ```bash
@@ -938,9 +1012,60 @@ python -m scripts.autonomous start --resume
 1. Initializes state provider (Linear/GitHub/File)
 2. Loads system prompt from `prompts/roles/software-developer.md`
 3. Fetches tasks in priority order
-4. Executes each task using Claude API
+4. Executes each task using Claude with FRESH context
 5. Updates task status based on results
 6. Respects checkpoints and cost limits
+
+### resume
+
+**Purpose:** Show session recovery context for continuing work
+
+**Usage:**
+```bash
+python -m scripts.autonomous resume
+```
+
+**Output:**
+```
+============================================================
+SESSION RECOVERY
+============================================================
+
+Project: My App
+Project ID: proj-20251214150000
+Provider: file
+Total tasks: 12
+Last session: 2
+
+------------------------------------------------------------
+CURRENT STATE
+------------------------------------------------------------
+
+Todo: 6
+In Progress: 1
+Done: 4
+Blocked: 1
+Completion: 33.3%
+
+------------------------------------------------------------
+IN PROGRESS TASKS
+------------------------------------------------------------
+
+  [task-5] Implement user dashboard
+    Build the main dashboard component with...
+
+------------------------------------------------------------
+NEXT STEPS
+------------------------------------------------------------
+
+1. Continue coding with:
+   python -m scripts.autonomous start --resume
+
+2. Or view all tasks:
+   python -m scripts.autonomous tasks
+
+============================================================
+```
 
 **Output:**
 ```

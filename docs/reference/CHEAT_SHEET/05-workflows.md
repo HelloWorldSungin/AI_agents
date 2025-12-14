@@ -282,6 +282,70 @@ Three ways to implement multi-agent coordination.
 
 ---
 
+### 4. Autonomous Runner - Two-Agent Pattern (NEW v1.5.0)
+
+**What:** Implements Anthropic's recommended two-agent pattern for optimal context management.
+
+**Best for:**
+- Fully autonomous task execution
+- Projects with clear requirements/specs
+- Integration with issue trackers (Linear, GitHub)
+- Multi-session projects with context recovery
+- CI/CD automation
+
+**How it Works:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    INITIALIZER AGENT                         │
+│  (Phase 1 - `python -m scripts.autonomous init`)            │
+│                                                             │
+│  1. Read spec file → 2. Analyze with Claude                 │
+│  3. Create tasks in provider → 4. Write .project_state.json │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    CODING AGENT(S)                           │
+│  (Phase 2 - `python -m scripts.autonomous start`)           │
+│                                                             │
+│  1. Get TODO task → 2. Implement with FRESH context         │
+│  3. Test/verify → 4. Update status → 5. Next task           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Communication:** External state provider (Linear, GitHub, or File)
+
+**Pros:**
+- Optimal context management (each agent starts fresh)
+- Fully autonomous (no human relay required)
+- Session continuity via state provider
+- Uses Claude Code subscription (no extra API costs)
+- Resume capability across sessions
+
+**Cons:**
+- Requires clear spec/requirements document
+- Less human oversight during execution
+- Requires state provider setup
+
+**Quick Start:**
+```bash
+# Phase 1: Initialize project from spec
+python -m scripts.autonomous init --spec requirements.md
+
+# Phase 2: Run coding agent
+python -m scripts.autonomous start
+
+# Resume later
+python -m scripts.autonomous resume
+python -m scripts.autonomous start --resume
+```
+
+**Guide:** `scripts/autonomous/README.md`
+
+**See:** [06-scripts-tools.md](06-scripts-tools.md#autonomous-runner-two-agent-pattern) for complete documentation
+
+---
+
 ## Multi-Session Manager Workflow
 
 For projects spanning multiple sessions, use this workflow to maintain state continuity while managing context limits.
