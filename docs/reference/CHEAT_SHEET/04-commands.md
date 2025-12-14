@@ -947,7 +947,7 @@ python -m scripts.autonomous start --resume
 Starting autonomous runner with config: .ai-agents/config.yml
 Resume mode: False
 --------------------------------------------------
-Model: claude-sonnet-4-20250514
+Model: claude-opus-4-20250514
 Execution mode: autonomous
 Max tasks per session: 10
 Cost limit: $10.0
@@ -1087,7 +1087,7 @@ RUNNER CONFIGURATION
 
 Config file: .ai-agents/config.yml
 
-Model: claude-sonnet-4-20250514
+Model: claude-opus-4-20250514
 Max tokens: 8192
 API key env: ANTHROPIC_API_KEY
 System prompt: prompts/roles/software-developer.md
@@ -1120,7 +1120,7 @@ state_provider:
 
 autonomous:
   backend: "claude-code"  # Uses subscription - no extra API costs!
-  model: "sonnet"
+  model: "opus"
   max_tokens: 8192
   system_prompt_path: "prompts/roles/software-developer.md"
   max_turns_per_task: 50

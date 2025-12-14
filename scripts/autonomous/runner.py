@@ -67,7 +67,7 @@ class RunnerConfig:
     backend: str = "claude-code"
 
     # Model to use (applies to both backends)
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "opus"
     max_tokens: int = 8192
 
     # API key (only needed for anthropic-sdk backend)

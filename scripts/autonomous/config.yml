@@ -33,9 +33,9 @@ autonomous:
   backend: "claude-code"
 
   # Model to use (applies to both backends)
-  # For claude-code: sonnet, opus, haiku (simplified names)
-  # For anthropic-sdk: claude-sonnet-4-20250514, claude-opus-4-20250514
-  model: "sonnet"
+  # For claude-code: opus, sonnet, haiku (simplified names)
+  # For anthropic-sdk: claude-opus-4-20250514, claude-sonnet-4-20250514
+  model: "opus"
 
   # Maximum tokens per response
   max_tokens: 8192

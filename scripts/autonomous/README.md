@@ -29,7 +29,7 @@ The autonomous runner executes development tasks without human intervention by:
 
    autonomous:
      backend: "claude-code"  # Uses your subscription!
-     model: "sonnet"
+     model: "opus"
      max_tasks_per_session: 10
 
    execution:
@@ -48,7 +48,7 @@ export ANTHROPIC_API_KEY='your-api-key'
 ```yaml
 autonomous:
   backend: "anthropic-sdk"  # Uses API credits
-  model: "claude-sonnet-4-20250514"
+  model: "claude-opus-4-20250514"
   cost_limit_per_session: 10.0
 ```
 
@@ -80,7 +80,7 @@ The runner is configured via `.ai-agents/config.yml`. See `config.yml` in this d
 | Setting | Description | Default |
 |---------|-------------|---------|
 | `autonomous.backend` | `claude-code` (subscription) or `anthropic-sdk` (API) | `claude-code` |
-| `autonomous.model` | Model to use (`sonnet`, `opus`, `haiku` for claude-code) | `sonnet` |
+| `autonomous.model` | Model to use (`opus`, `sonnet`, `haiku` for claude-code) | `opus` |
 | `autonomous.max_tokens` | Max tokens per response | `8192` |
 | `autonomous.max_turns_per_task` | Max turns per task | `50` |
 | `autonomous.max_tasks_per_session` | Max tasks before stopping | `10` |
@@ -259,7 +259,7 @@ from scripts.autonomous.runner import AutonomousRunner, RunnerConfig
 
 # Create config
 config = RunnerConfig(
-    model="claude-sonnet-4-20250514",
+    model="claude-opus-4-20250514",
     max_tasks_per_session=5,
     cost_limit_per_session=5.0
 )

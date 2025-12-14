@@ -301,7 +301,7 @@ State Provider (Linear/GitHub/File)
 # .ai-agents/config.yml
 autonomous:
   backend: "claude-code"  # Uses your subscription!
-  model: "sonnet"
+  model: "opus"
   max_tasks_per_session: 10
 
 execution:

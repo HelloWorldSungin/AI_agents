@@ -203,7 +203,7 @@ python -m scripts.autonomous config [--config CONFIG]
 autonomous:
   # Backend: "claude-code" (subscription) or "anthropic-sdk" (API)
   backend: "claude-code"  # Uses your Claude Code subscription!
-  model: "sonnet"  # sonnet, opus, haiku
+  model: "opus"  # opus, sonnet, haiku
   max_tokens: 8192
   system_prompt_path: "prompts/roles/software-developer.md"
   max_turns_per_task: 50
@@ -223,7 +223,7 @@ execution:
 autonomous:
   backend: "anthropic-sdk"  # Uses API credits
   api_key_env: "ANTHROPIC_API_KEY"
-  model: "claude-sonnet-4-20250514"
+  model: "claude-opus-4-20250514"
   cost_limit_per_session: 10.0
 ```
 
@@ -233,7 +233,7 @@ autonomous:
 from scripts.autonomous.runner import AutonomousRunner, RunnerConfig
 
 config = RunnerConfig(
-    model="claude-sonnet-4-20250514",
+    model="claude-opus-4-20250514",
     max_tasks_per_session=5,
     cost_limit_per_session=5.0
 )
