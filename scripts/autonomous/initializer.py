@@ -577,9 +577,9 @@ Ensure each task is independently completable within a few hours."""
                 status=TaskStatus.TODO,
                 priority=parsed.priority,
                 category=parsed.category,
-                acceptance_criteria=parsed.acceptance_criteria,
-                test_steps=parsed.test_steps,
-                labels=parsed.labels,
+                acceptance_criteria=parsed.acceptance_criteria or [],
+                test_steps=parsed.test_steps or [],
+                labels=parsed.labels or [],
                 created_at=now,
                 updated_at=now
             )
@@ -659,6 +659,8 @@ Created by Initializer Agent on {datetime.now().strftime('%Y-%m-%d %H:%M')}.
             status=TaskStatus.IN_PROGRESS,  # META is always in progress
             priority=TaskPriority.URGENT,
             category=TaskCategory.DOCUMENTATION,
+            acceptance_criteria=[],
+            test_steps=[],
             labels=["meta", "tracking"],
             created_at=now,
             updated_at=now
