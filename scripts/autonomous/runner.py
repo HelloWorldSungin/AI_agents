@@ -573,7 +573,75 @@ Always be thorough, test your work, and report both successes and failures clear
 
         tasks.sort(key=sort_key)
 
-        return tasks[0]
+        # Cross-phase dependency checking
+        # Ensure prerequisite tasks are complete before starting dependent tasks
+        # For phase-ordered tasks ([PREFIX-X.Y]):
+        # 1. All earlier tasks in the same phase must be DONE
+        # 2. All tasks in earlier phases must be DONE
+        all_tasks = self.provider.get_tasks()  # Get all tasks to check dependencies
+
+        def extract_phase_task(title: str) -> Optional[tuple]:
+            """Extract (phase, task_num) from title, or None if not phased."""
+            # Pattern: [PREFIX-X.Y] format
+            match = re.search(r'\[\w+-(\d+)\.(\d+)\]', title)
+            if match:
+                return (int(match.group(1)), int(match.group(2)))
+            # Pattern: X.Y: at start
+            match = re.search(r'^(\d+)\.(\d+)[\s:\-]', title)
+            if match:
+                return (int(match.group(1)), int(match.group(2)))
+            # Pattern: Phase X.Y or Task X.Y
+            match = re.search(r'(?:phase|task)\s*(\d+)\.(\d+)', title, re.IGNORECASE)
+            if match:
+                return (int(match.group(1)), int(match.group(2)))
+            return None
+
+        for candidate in tasks:
+            # Extract phase and task number from candidate
+            candidate_pt = extract_phase_task(candidate.title)
+            if not candidate_pt:
+                # Not a phased task, no dependency check needed
+                return candidate
+
+            phase, task_num = candidate_pt
+
+            # Check dependencies
+            blocking_tasks = []
+            for other_task in all_tasks:
+                if other_task.id == candidate.id:
+                    continue  # Skip self
+
+                other_pt = extract_phase_task(other_task.title)
+                if not other_pt:
+                    continue
+
+                other_phase, other_task_num = other_pt
+
+                # Block if:
+                # 1. Earlier phase (any task not DONE blocks this phase)
+                # 2. Same phase, earlier task number
+                is_blocker = False
+                if other_phase < phase:
+                    is_blocker = True  # Earlier phase must be complete
+                elif other_phase == phase and other_task_num < task_num:
+                    is_blocker = True  # Earlier task in same phase
+
+                if is_blocker and other_task.status != TaskStatus.DONE:
+                    blocking_tasks.append(f"{other_task.id} ({other_task.status.value})")
+
+            if not blocking_tasks:
+                # No blockers, this task is ready
+                return candidate
+            else:
+                # Log why task was skipped
+                blockers_str = ', '.join(blocking_tasks[:5])
+                if len(blocking_tasks) > 5:
+                    blockers_str += '...'
+                self.logger.info(f"Skipping {candidate.id} - blocked by: {blockers_str}")
+
+        # All tasks are blocked by dependencies
+        self.logger.warning("No tasks ready - all TODO tasks blocked by dependencies")
+        return None
 
     def _execute_task(self, task: Task) -> TaskResult:
         """

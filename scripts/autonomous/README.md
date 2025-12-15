@@ -292,6 +292,27 @@ Execution order:
 4. `[AUTH-1.3] Validate login form` (phase 1, task 3)
 5. `[AUTH-2.1] Add password reset` (phase 2, task 1)
 
+### Cross-Phase Dependency Checking
+
+The runner enforces **strict dependency ordering**:
+
+1. **Earlier phases block later phases** - Phase 2 tasks won't start until ALL Phase 1 tasks are DONE
+2. **Earlier tasks block later tasks** - Task 1.3 won't start until 1.1 and 1.2 are DONE
+3. **Blocked tasks are logged** - Runner logs which tasks are blocking
+
+Example scenario:
+```
+[AUTH-1.1] DONE
+[AUTH-1.2] IN_PROGRESS
+[AUTH-1.3] TODO
+[AUTH-2.1] TODO
+```
+
+Runner behavior:
+- `[AUTH-1.3]` is blocked by `[AUTH-1.2]` (same phase, earlier task not done)
+- `[AUTH-2.1]` is blocked by `[AUTH-1.2]` and `[AUTH-1.3]` (earlier phase not complete)
+- Logs: `Skipping AUTH-2.1 - blocked by: AUTH-1.2 (in_progress), AUTH-1.3 (todo)`
+
 ### Best Practices for Task Titles
 
 Use consistent naming in your spec file:

@@ -328,6 +328,13 @@ Tasks are sorted by **phase → task number → priority**:
 - [APP-2.1] Implement auth
 ```
 
+### Cross-Phase Dependency Checking
+
+Runner enforces strict ordering:
+- **Earlier phases block later** - Phase 2 waits for ALL Phase 1 to be DONE
+- **Earlier tasks block later** - Task 1.3 waits for 1.1 and 1.2
+- **Blocked tasks logged** - Shows which tasks are blocking
+
 ### Safety Features
 
 - **Cost Limits**: Stop when session cost exceeds limit
