@@ -229,7 +229,7 @@ state_provider:
 ### Coding Agent (Phase 2)
 
 1. **Start Session**: Initialize provider, load state, start tracking
-2. **Get Next Task**: Fetch highest-priority TODO task
+2. **Get Next Task**: Fetch next task using phase-aware sorting (see below)
 3. **Execute Task**:
    - Build task prompt from description and criteria
    - Call Claude with system prompt
@@ -249,6 +249,64 @@ Checkpoints pause execution for human review:
 - **Context High**: When context usage exceeds threshold
 
 In **autonomous mode**, only critical checkpoints (failures, high context) trigger.
+
+## Task Execution Order
+
+The coding agent uses **phase-aware sorting** to determine task execution order. This ensures tasks run in the correct sequence, respecting phases and dependencies.
+
+### Supported Title Patterns
+
+| Pattern | Example | Sort Key |
+|---------|---------|----------|
+| META tasks | `META: Project Tracker` | Always first (phase 0) |
+| `[PREFIX-X.Y]` | `[AUTH-1.2] Implement login` | phase=1, task=2 |
+| `X.Y:` at start | `1.2: Setup database` | phase=1, task=2 |
+| `Phase X.Y` | `Phase 2.1 - Add tests` | phase=2, task=1 |
+| `Task X.Y` | `Task 1.5 API endpoints` | phase=1, task=5 |
+| Linear-style ID | `ARK-123` | sorted by ID number |
+| Other | `Fix bug in login` | priority only |
+
+### Sort Priority
+
+Tasks are sorted by: `(phase, task_number, priority)`
+
+1. **Phase number** - Lower phases run first (Phase 1 before Phase 2)
+2. **Task number** - Within a phase, lower task numbers run first (1.1 before 1.2)
+3. **Priority** - If phase/task are equal, higher priority tasks run first
+
+### Example Execution Order
+
+Given these tasks:
+```
+[AUTH-2.1] Add password reset     (Priority: HIGH)
+[AUTH-1.3] Validate login form    (Priority: NORMAL)
+[AUTH-1.1] Create login endpoint  (Priority: HIGH)
+META: Authentication Project      (Priority: LOW)
+[AUTH-1.2] Add session handling   (Priority: HIGH)
+```
+
+Execution order:
+1. `META: Authentication Project` (phase 0)
+2. `[AUTH-1.1] Create login endpoint` (phase 1, task 1)
+3. `[AUTH-1.2] Add session handling` (phase 1, task 2)
+4. `[AUTH-1.3] Validate login form` (phase 1, task 3)
+5. `[AUTH-2.1] Add password reset` (phase 2, task 1)
+
+### Best Practices for Task Titles
+
+Use consistent naming in your spec file:
+```markdown
+## Phase 1: Core Authentication
+- [AUTH-1.1] Create user model and database schema
+- [AUTH-1.2] Implement login endpoint
+- [AUTH-1.3] Add JWT token generation
+
+## Phase 2: Enhanced Features
+- [AUTH-2.1] Add password reset flow
+- [AUTH-2.2] Implement email verification
+```
+
+The initializer agent will preserve these patterns when creating tasks.
 
 ## Safety Features
 

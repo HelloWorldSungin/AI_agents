@@ -291,19 +291,42 @@ print(f"Tasks: {status['tasks_completed']}, State: {status['state']}")
 
 **Phase 1 - Initializer Agent:**
 1. **Read Spec**: Parse requirements/spec file
-2. **Analyze**: Use Claude to break down into tasks
+2. **Analyze**: Use Claude to break down into tasks (robust 3-strategy JSON extraction)
 3. **Create Tasks**: Create structured tasks in state provider
 4. **Setup META**: Create tracking issue for coordination
 5. **Write Marker**: Write `.project_state.json` for detection
 
 **Phase 2 - Coding Agent:**
 1. **Start Session**: Initialize provider, load state
-2. **Get Task**: Fetch highest-priority TODO task
+2. **Get Task**: Fetch next task using phase-aware sorting
 3. **Execute**: Call Claude with FRESH context
 4. **Parse Response**: Check for completion/blocker signals
 5. **Update Status**: Mark task done, blocked, or in-progress
 6. **Check Limits**: Cost, tasks, turns
 7. **Repeat** until complete
+
+### Task Execution Order
+
+Tasks are sorted by **phase → task number → priority**:
+
+| Pattern | Example | Sort Key |
+|---------|---------|----------|
+| META tasks | `META: Project` | phase 0 (always first) |
+| `[PREFIX-X.Y]` | `[AUTH-1.2] Login` | phase=1, task=2 |
+| `X.Y:` at start | `1.2: Setup DB` | phase=1, task=2 |
+| `Phase X.Y` | `Phase 2.1 tests` | phase=2, task=1 |
+| Linear ID | `ARK-123` | sorted by ID |
+| Other | `Fix bug` | priority only |
+
+**Best practice:** Name tasks with `[PREFIX-X.Y]` pattern in your spec:
+```markdown
+## Phase 1: Setup
+- [APP-1.1] Create project structure
+- [APP-1.2] Configure database
+
+## Phase 2: Features
+- [APP-2.1] Implement auth
+```
 
 ### Safety Features
 
