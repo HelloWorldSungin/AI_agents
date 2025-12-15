@@ -321,6 +321,10 @@ Session updates are added as comments.
 
     def create_task(self, task_data: Dict[str, Any]) -> str:
         """Create a new issue in Linear."""
+        # Handle Task objects by converting to dict
+        if isinstance(task_data, Task):
+            task_data = task_data.to_dict()
+
         # Build description with acceptance criteria and test steps
         description = task_data.get("description", "")
 

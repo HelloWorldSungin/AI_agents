@@ -530,8 +530,33 @@ Always be thorough, test your work, and report both successes and failures clear
         if not tasks:
             return None
 
-        # Sort by priority (lower is higher priority)
-        tasks.sort(key=lambda t: t.priority.value)
+        # Sort by phase order, then task number, then priority
+        # Extracts phase/task from titles like "[CI-1.2]" or "ARK-56"
+        import re
+
+        def sort_key(task):
+            # Try to extract phase and task number from title
+            # Pattern 1: [CI-1.2] format
+            match = re.search(r'\[CI-(\d+)\.(\d+)', task.title)
+            if match:
+                phase = int(match.group(1))
+                task_num = int(match.group(2))
+                return (phase, task_num, task.priority.value)
+
+            # Pattern 2: META tasks (run first but low priority doesn't matter)
+            if 'META' in task.title:
+                return (0, 0, task.priority.value)  # Phase 0 = META
+
+            # Pattern 3: ARK-XX format or other - sort by ID
+            id_match = re.search(r'ARK-(\d+)', task.id)
+            if id_match:
+                task_id = int(id_match.group(1))
+                return (99, task_id, task.priority.value)  # Phase 99 = other
+
+            # Fallback: just priority
+            return (999, 999, task.priority.value)
+
+        tasks.sort(key=sort_key)
 
         return tasks[0]
 
