@@ -10,15 +10,16 @@ This guide covers migrating autonomous agents from the Claude Code CLI subproces
 
 ## Benefits
 
-| Feature | CLI Approach | SDK Approach |
-|---------|--------------|--------------|
+| Feature | CLI Approach | SDK Approach (with fixes) |
+|---------|--------------|---------------------------|
 | **Streaming** | ❌ Blocking subprocess | ✅ Real-time async streaming |
 | **Progress Updates** | ❌ Batch at end | ✅ Posted as they happen |
 | **Tool Visibility** | ❌ Silent execution | ✅ Real-time tool use logs |
-| **Error Messages** | ❌ Cryptic stderr | ✅ Detailed stack traces |
+| **Error Messages** | ❌ Cryptic (`error=None`) | ✅ Detailed + completion marker detection |
 | **Linear Integration** | ❌ Separate API calls | ✅ Direct MCP access |
 | **Performance** | ❌ 30min timeout risk | ✅ No blocking wait |
 | **Debugging** | ❌ Post-mortem only | ✅ Real-time visibility |
+| **Failure Handling** | ⚠️ Continues to next task | ✅ Stops immediately (prevents cascading failures) |
 
 ## Architecture Comparison
 
@@ -184,6 +185,11 @@ async def _execute_task(self, task: Task) -> TaskResult:
         self.logger.error(f"SDK execution error: {type(e).__name__}: {e}")
         error = str(e)
 
+    # CRITICAL: Detect when Claude finishes without completion marker
+    if not success and error is None:
+        error = "Task did not complete - no completion marker found in response. Claude may have finished work without explicitly stating 'task complete'."
+        self.logger.warning(error)
+
     return TaskResult(
         task_id=task.id,
         success=success,
@@ -210,7 +216,7 @@ async def _post_progress_updates(self, task_id: str, text: str):
             self.logger.info(f"Posted progress: {update}")
 ```
 
-### 4. Main Runner Loop
+### 4. Main Runner Loop (with Stop-on-Failure)
 
 ```python
 async def start(self):
@@ -234,11 +240,24 @@ async def start(self):
 
         if result.success:
             tasks_completed += 1
+            self.logger.info(f"Task {task.id} completed successfully")
+        else:
+            # CRITICAL: Stop on failure to prevent dependent tasks from running
+            self.logger.error(f"Task {task.id} failed: {result.error}")
+            self.logger.error("Stopping runner - cannot proceed with failed task")
+            self.state = RunnerState.ERROR
+            break  # Exit loop immediately
 
         # Pause between tasks
         if self.state == RunnerState.RUNNING:
             await asyncio.sleep(self.config.pause_between_tasks)
 ```
+
+**Why Stop on Failure?**
+- Prevents dependent tasks from running when prerequisites fail
+- Example: If "Create callback" fails, don't attempt "Add metrics to callback"
+- Ensures data integrity and prevents cascading failures
+- Failed tasks must be fixed and restarted manually
 
 ### 5. Entry Point
 
@@ -317,7 +336,66 @@ async def _execute_task(self, task: Task) -> TaskResult:
 - Subsequent tasks: Work normally
 - After first success: Connection stable
 
-### Issue 4: Task Prompt Building Errors
+### Issue 4: Runner Continues After Task Failure (CRITICAL)
+
+**Problem:** Runner proceeds to next task even when previous task fails, causing dependent tasks to fail.
+
+**Context:**
+- Task dependencies (e.g., ARK-56 creates callback, ARK-57 adds metrics to it)
+- If ARK-56 fails but ARK-57 runs anyway, ARK-57 will also fail
+- Creates cascading failures and wastes resources
+
+**Root Cause:** Original SDK runner loop didn't stop on failure:
+```python
+# WRONG - Continues to next task even after failure
+if result.success:
+    tasks_completed += 1
+# Loop continues here regardless of success/failure
+```
+
+**Solution:** Stop runner immediately when any task fails:
+```python
+if result.success:
+    tasks_completed += 1
+    self.logger.info(f"Task {task.id} completed successfully")
+else:
+    # CRITICAL FIX: Stop on failure
+    self.logger.error(f"Task {task.id} failed: {result.error}")
+    self.logger.error("Stopping runner - cannot proceed with failed task")
+    self.state = RunnerState.ERROR
+    break  # Exit loop immediately
+```
+
+**Why This Fix Is Critical:**
+- Prevents dependent tasks from running with missing prerequisites
+- Ensures data integrity (don't add metrics to non-existent callback)
+- Stops wasting compute resources on doomed tasks
+- Forces manual intervention to fix failed tasks before proceeding
+
+**Alternative Approaches:**
+- Add explicit dependency checking (more complex)
+- Allow optional "continue on failure" flag for independent tasks
+- Implement task retry logic before stopping
+
+**Recommended:** Always stop on failure unless tasks are explicitly marked as independent.
+
+### Issue 5: Missing Completion Marker Detection
+
+**Problem:** Task completes work but doesn't include "task complete" marker, runner marks it as failed with `error=None`.
+
+**Root Cause:** Completion detection relies on explicit markers like "task complete" or "successfully completed".
+
+**Solution:** Detect this specific case and provide clear error message:
+```python
+# After try-except block in _execute_task
+if not success and error is None:
+    error = "Task did not complete - no completion marker found in response. Claude may have finished work without explicitly stating 'task complete'."
+    self.logger.warning(error)
+```
+
+**Impact:** Provides actionable error message instead of cryptic `error=None`.
+
+### Issue 6: Task Prompt Building Errors
 
 **Error:** `TypeError: sequence item X: expected str instance, list found`
 
