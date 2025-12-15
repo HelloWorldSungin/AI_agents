@@ -587,7 +587,7 @@ Always be thorough, test your work, and report both successes and failures clear
         """
         # Mark task as in progress
         if self.provider:
-            self.provider.update_task(task.id, {"status": TaskStatus.IN_PROGRESS.value})
+            self.provider.update_task(task.id, {"status": TaskStatus.IN_PROGRESS})
 
         if self.progress_tracker:
             self.progress_tracker.task_started(task.id, task.title)
@@ -901,7 +901,7 @@ Always be thorough, test your work, and report both successes and failures clear
 
         if result.success:
             self.provider.update_task(task.id, {
-                "status": TaskStatus.DONE.value,
+                "status": TaskStatus.DONE,
                 "metadata": {
                     "turns_used": result.turns_used,
                     "files_changed": result.files_changed,
@@ -911,7 +911,7 @@ Always be thorough, test your work, and report both successes and failures clear
         elif result.error:
             if "blocker" in result.error.lower() or "blocked" in result.error.lower():
                 self.provider.update_task(task.id, {
-                    "status": TaskStatus.BLOCKED.value,
+                    "status": TaskStatus.BLOCKED,
                     "metadata": {
                         "blocker": result.error,
                         "turns_used": result.turns_used
