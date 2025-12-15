@@ -537,39 +537,42 @@ Always be thorough, test your work, and report both successes and failures clear
         def sort_key(task):
             # Pattern 1: META tasks always first
             if 'META' in task.title.upper():
-                return (0, 0, task.priority.value)
+                return (0, 0, '', task.priority.value)
 
-            # Pattern 2: [PREFIX-1.2] format (any project prefix)
-            # Matches: [AUTH-1.2], [CI-2.3], [API-1.5], etc.
-            match = re.search(r'\[\w+-(\d+)\.(\d+)\]', task.title)
+            # Pattern 2: [PREFIX-1.2a] format (any project prefix, optional letter suffix)
+            # Matches: [AUTH-1.2], [CI-2.3a], [API-1.5b], etc.
+            match = re.search(r'\[\w+-(\d+)\.(\d+)([a-z]?)\]', task.title)
             if match:
                 phase = int(match.group(1))
                 task_num = int(match.group(2))
-                return (phase, task_num, task.priority.value)
+                subtask = match.group(3) if match.group(3) else ''
+                return (phase, task_num, subtask, task.priority.value)
 
-            # Pattern 3: Standalone "1.2" or "1.2:" at start of title
-            # Matches: "1.2: Implement feature", "1.2 - Setup database"
-            match = re.search(r'^(\d+)\.(\d+)[\s:\-]', task.title)
+            # Pattern 3: Standalone "1.2a" or "1.2:" at start of title
+            # Matches: "1.2: Implement feature", "1.2a - Setup database"
+            match = re.search(r'^(\d+)\.(\d+)([a-z]?)[\s:\-]', task.title)
             if match:
                 phase = int(match.group(1))
                 task_num = int(match.group(2))
-                return (phase, task_num, task.priority.value)
+                subtask = match.group(3) if match.group(3) else ''
+                return (phase, task_num, subtask, task.priority.value)
 
             # Pattern 4: "Phase X.Y" or "Task X.Y" anywhere in title
-            match = re.search(r'(?:phase|task)\s*(\d+)\.(\d+)', task.title, re.IGNORECASE)
+            match = re.search(r'(?:phase|task)\s*(\d+)\.(\d+)([a-z]?)', task.title, re.IGNORECASE)
             if match:
                 phase = int(match.group(1))
                 task_num = int(match.group(2))
-                return (phase, task_num, task.priority.value)
+                subtask = match.group(3) if match.group(3) else ''
+                return (phase, task_num, subtask, task.priority.value)
 
             # Pattern 5: Linear-style ID with number - sort by ID number
             id_match = re.search(r'[A-Z]+-(\d+)', task.id)
             if id_match:
                 task_id = int(id_match.group(1))
-                return (99, task_id, task.priority.value)
+                return (99, task_id, '', task.priority.value)
 
             # Fallback: just priority
-            return (999, 999, task.priority.value)
+            return (999, 999, '', task.priority.value)
 
         tasks.sort(key=sort_key)
 
@@ -581,19 +584,22 @@ Always be thorough, test your work, and report both successes and failures clear
         all_tasks = self.provider.get_tasks()  # Get all tasks to check dependencies
 
         def extract_phase_task(title: str) -> Optional[tuple]:
-            """Extract (phase, task_num) from title, or None if not phased."""
-            # Pattern: [PREFIX-X.Y] format
-            match = re.search(r'\[\w+-(\d+)\.(\d+)\]', title)
+            """Extract (phase, task_num, subtask) from title, or None if not phased."""
+            # Pattern: [PREFIX-X.Ya] format (with optional letter suffix)
+            match = re.search(r'\[\w+-(\d+)\.(\d+)([a-z]?)\]', title)
             if match:
-                return (int(match.group(1)), int(match.group(2)))
-            # Pattern: X.Y: at start
-            match = re.search(r'^(\d+)\.(\d+)[\s:\-]', title)
+                subtask = match.group(3) if match.group(3) else ''
+                return (int(match.group(1)), int(match.group(2)), subtask)
+            # Pattern: X.Ya: at start
+            match = re.search(r'^(\d+)\.(\d+)([a-z]?)[\s:\-]', title)
             if match:
-                return (int(match.group(1)), int(match.group(2)))
+                subtask = match.group(3) if match.group(3) else ''
+                return (int(match.group(1)), int(match.group(2)), subtask)
             # Pattern: Phase X.Y or Task X.Y
-            match = re.search(r'(?:phase|task)\s*(\d+)\.(\d+)', title, re.IGNORECASE)
+            match = re.search(r'(?:phase|task)\s*(\d+)\.(\d+)([a-z]?)', title, re.IGNORECASE)
             if match:
-                return (int(match.group(1)), int(match.group(2)))
+                subtask = match.group(3) if match.group(3) else ''
+                return (int(match.group(1)), int(match.group(2)), subtask)
             return None
 
         for candidate in tasks:
@@ -603,7 +609,7 @@ Always be thorough, test your work, and report both successes and failures clear
                 # Not a phased task, no dependency check needed
                 return candidate
 
-            phase, task_num = candidate_pt
+            phase, task_num, subtask = candidate_pt
 
             # Check dependencies
             blocking_tasks = []
@@ -615,16 +621,19 @@ Always be thorough, test your work, and report both successes and failures clear
                 if not other_pt:
                     continue
 
-                other_phase, other_task_num = other_pt
+                other_phase, other_task_num, other_subtask = other_pt
 
                 # Block if:
                 # 1. Earlier phase (any task not DONE blocks this phase)
                 # 2. Same phase, earlier task number
+                # 3. Same phase and task number, earlier subtask (a < b < c)
                 is_blocker = False
                 if other_phase < phase:
                     is_blocker = True  # Earlier phase must be complete
                 elif other_phase == phase and other_task_num < task_num:
                     is_blocker = True  # Earlier task in same phase
+                elif other_phase == phase and other_task_num == task_num and other_subtask < subtask:
+                    is_blocker = True  # Earlier subtask (1.2a blocks 1.2b)
 
                 if is_blocker and other_task.status != TaskStatus.DONE:
                     blocking_tasks.append(f"{other_task.id} ({other_task.status.value})")
