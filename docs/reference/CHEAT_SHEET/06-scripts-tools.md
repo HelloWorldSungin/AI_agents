@@ -258,6 +258,21 @@ autonomous:
   cost_limit_per_session: 10.0
 ```
 
+**Advanced (Claude Code SDK):**
+
+For real-time streaming and Linear MCP integration:
+```bash
+pip install claude-code-sdk>=0.0.25
+```
+
+Benefits:
+- ✅ Real-time async streaming
+- ✅ Live progress updates to Linear
+- ✅ Tool use visibility
+- ✅ No 30-minute timeout
+
+See: [Claude SDK Migration Guide](../../../.ai-agents/library/guides/claude-sdk-migration.md)
+
 ### Programmatic Usage
 
 ```python

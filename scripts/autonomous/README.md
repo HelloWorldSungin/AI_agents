@@ -139,6 +139,32 @@ autonomous:
   cost_limit_per_session: 10.0
 ```
 
+## Claude Code SDK (Advanced)
+
+For real-time streaming, tool visibility, and Linear MCP integration:
+
+```bash
+pip install claude-code-sdk>=0.0.25
+```
+
+**Benefits:**
+- ✅ Real-time async streaming (no blocking)
+- ✅ Live progress updates posted to Linear
+- ✅ Tool use visibility in real-time
+- ✅ Direct Linear MCP integration
+- ✅ Better error messages with stack traces
+- ✅ No 30-minute timeout limits
+
+**Usage:**
+```python
+from scripts.autonomous.runner_sdk import AutonomousRunnerSDK
+
+runner = AutonomousRunnerSDK(config)
+await runner.start()  # Async execution
+```
+
+**See:** [Claude SDK Migration Guide](../../.ai-agents/library/guides/claude-sdk-migration.md) for complete implementation details
+
 ## Configuration
 
 The runner is configured via `.ai-agents/config.yml`. See `config.yml` in this directory for a complete example with all options.
