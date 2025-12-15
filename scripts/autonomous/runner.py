@@ -531,27 +531,42 @@ Always be thorough, test your work, and report both successes and failures clear
             return None
 
         # Sort by phase order, then task number, then priority
-        # Extracts phase/task from titles like "[CI-1.2]" or "ARK-56"
+        # Extracts phase/task from titles like "[PROJECT-1.2]", "1.2:", "Phase 1.2"
         import re
 
         def sort_key(task):
-            # Try to extract phase and task number from title
-            # Pattern 1: [CI-1.2] format
-            match = re.search(r'\[CI-(\d+)\.(\d+)', task.title)
+            # Pattern 1: META tasks always first
+            if 'META' in task.title.upper():
+                return (0, 0, task.priority.value)
+
+            # Pattern 2: [PREFIX-1.2] format (any project prefix)
+            # Matches: [AUTH-1.2], [CI-2.3], [API-1.5], etc.
+            match = re.search(r'\[\w+-(\d+)\.(\d+)\]', task.title)
             if match:
                 phase = int(match.group(1))
                 task_num = int(match.group(2))
                 return (phase, task_num, task.priority.value)
 
-            # Pattern 2: META tasks (run first but low priority doesn't matter)
-            if 'META' in task.title:
-                return (0, 0, task.priority.value)  # Phase 0 = META
+            # Pattern 3: Standalone "1.2" or "1.2:" at start of title
+            # Matches: "1.2: Implement feature", "1.2 - Setup database"
+            match = re.search(r'^(\d+)\.(\d+)[\s:\-]', task.title)
+            if match:
+                phase = int(match.group(1))
+                task_num = int(match.group(2))
+                return (phase, task_num, task.priority.value)
 
-            # Pattern 3: ARK-XX format or other - sort by ID
-            id_match = re.search(r'ARK-(\d+)', task.id)
+            # Pattern 4: "Phase X.Y" or "Task X.Y" anywhere in title
+            match = re.search(r'(?:phase|task)\s*(\d+)\.(\d+)', task.title, re.IGNORECASE)
+            if match:
+                phase = int(match.group(1))
+                task_num = int(match.group(2))
+                return (phase, task_num, task.priority.value)
+
+            # Pattern 5: Linear-style ID with number - sort by ID number
+            id_match = re.search(r'[A-Z]+-(\d+)', task.id)
             if id_match:
                 task_id = int(id_match.group(1))
-                return (99, task_id, task.priority.value)  # Phase 99 = other
+                return (99, task_id, task.priority.value)
 
             # Fallback: just priority
             return (999, 999, task.priority.value)
