@@ -139,31 +139,119 @@ autonomous:
   cost_limit_per_session: 10.0
 ```
 
-## Claude Code SDK (Advanced)
+## Claude Code SDK Backend (Recommended for Production)
 
-For real-time streaming, tool visibility, and Linear MCP integration:
+For real-time streaming, tool visibility, and Linear MCP integration, use the SDK-based runner:
+
+### Installation
 
 ```bash
 pip install claude-code-sdk>=0.0.25
 ```
 
-**Benefits:**
-- ✅ Real-time async streaming (no blocking)
-- ✅ Live progress updates posted to Linear
-- ✅ Tool use visibility in real-time
-- ✅ Direct Linear MCP integration
-- ✅ Better error messages with stack traces
-- ✅ No 30-minute timeout limits
-
-**Usage:**
-```python
-from scripts.autonomous.runner_sdk import AutonomousRunnerSDK
-
-runner = AutonomousRunnerSDK(config)
-await runner.start()  # Async execution
+Verify installation:
+```bash
+python -c "from claude_code_sdk import ClaudeCodeOptions; print('✓ SDK ready')"
 ```
 
-**See:** [Claude SDK Migration Guide](../../.ai-agents/library/guides/claude-sdk-migration.md) for complete implementation details
+### Benefits over CLI Backend
+
+| Feature | CLI Backend | SDK Backend |
+|---------|-------------|-------------|
+| **Streaming** | ❌ Blocking subprocess | ✅ Real-time async streaming |
+| **Progress Updates** | ❌ Batch at end | ✅ Posted as they happen |
+| **Tool Visibility** | ❌ Silent execution | ✅ Real-time tool use logs |
+| **Error Messages** | ❌ Basic (`error=None`) | ✅ Detailed with context |
+| **Linear Integration** | ❌ Separate API calls | ✅ Direct MCP access |
+| **Performance** | ❌ 30min timeout risk | ✅ No blocking wait |
+| **Debugging** | ❌ Post-mortem only | ✅ Real-time visibility |
+| **Failure Handling** | ⚠️ Continues to next task | ✅ Stops immediately |
+
+### Configuration
+
+```yaml
+autonomous:
+  backend: "claude-code-sdk"  # New SDK backend
+  model: "claude-opus-4-5-20251101"
+  max_turns_per_task: 150  # Increased for complex tasks
+  oauth_token_env: "CLAUDE_CODE_OAUTH_TOKEN"
+  linear_api_key_env: "LINEAR_API_KEY"
+  project_dir: "/path/to/project"
+```
+
+### CRITICAL: allowed_tools Configuration
+
+**IMPORTANT:** When using the Claude Code SDK, you MUST explicitly configure `allowed_tools` or the Write tool will not create files.
+
+The SDK runner automatically configures this:
+```python
+ClaudeCodeOptions(
+    model="claude-opus-4-5-20251101",
+    system_prompt=system_prompt,
+    max_turns=150,
+    cwd="/path/to/project",
+    allowed_tools=["Read", "Write", "Edit", "Glob", "Grep", "Bash", "TodoWrite"],  # Required!
+    mcp_servers=mcp_servers
+)
+```
+
+Without this parameter, Claude will attempt Write operations but files will not be created.
+
+### Usage
+
+#### Python (Async)
+```python
+import asyncio
+from scripts.autonomous.runner_sdk import AutonomousRunnerSDK, RunnerConfig
+
+async def main():
+    config = RunnerConfig.from_yaml(".ai-agents/config.yml")
+    runner = AutonomousRunnerSDK(config)
+    await runner.start()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+#### Command Line
+```bash
+# Start SDK runner
+python -m scripts.autonomous.runner_sdk
+
+# Or use the CLI wrapper (if available)
+python -m scripts.autonomous start --runner sdk
+```
+
+### Stop-on-Failure Pattern
+
+The SDK runner implements a **stop-on-failure pattern** to prevent cascading failures:
+
+```python
+if result.success:
+    tasks_completed += 1
+    self.logger.info(f"Task {task.id} completed successfully")
+else:
+    # CRITICAL: Stop on failure
+    self.logger.error(f"Task {task.id} failed: {result.error}")
+    self.logger.error("Stopping runner - cannot proceed with failed task")
+    self.state = RunnerState.ERROR
+    break  # Exit loop immediately
+```
+
+**Why this matters:**
+- Prevents dependent tasks from running when prerequisites fail
+- Example: If "[PROJECT-1.2] Create callback" fails, don't attempt "[PROJECT-1.3] Add metrics to callback"
+- Ensures data integrity and prevents wasted compute on doomed tasks
+
+### Troubleshooting
+
+See [SDK_TROUBLESHOOTING.md](./SDK_TROUBLESHOOTING.md) for common issues and solutions.
+
+### Reference Implementation
+
+For complete details and best practices:
+- [Claude SDK Migration Guide](../../.ai-agents/library/guides/claude-sdk-migration.md)
+- [Reference Implementation](https://github.com/coleam00/Linear-Coding-Agent-Harness)
 
 ## Configuration
 

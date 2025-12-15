@@ -27,14 +27,16 @@ state_provider:
 # Autonomous Runner Settings
 # --------------------------
 autonomous:
-  # Backend: "claude-code" (subscription) or "anthropic-sdk" (API)
+  # Backend: "claude-code" (subscription), "anthropic-sdk" (API), or "claude-code-sdk" (SDK)
   # claude-code: Uses Claude Code CLI with your subscription - no extra API costs
   # anthropic-sdk: Uses Anthropic Python SDK - requires API key and incurs usage costs
+  # claude-code-sdk: Uses Claude Code SDK - real-time streaming, best for production
   backend: "claude-code"
 
   # Model to use (applies to both backends)
   # For claude-code: opus, sonnet, haiku (simplified names)
   # For anthropic-sdk: claude-opus-4-20250514, claude-sonnet-4-20250514
+  # For claude-code-sdk: claude-opus-4-5-20251101 (recommended)
   model: "opus"
 
   # Maximum tokens per response
@@ -64,6 +66,36 @@ autonomous:
   # Logging
   log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR
   log_file: ".ai-agents/logs/autonomous.log"
+
+# SDK Backend Configuration (Recommended for Production)
+# -------------------------------------------------------
+# Uncomment this section to use the SDK-based runner.
+# Benefits: Real-time streaming, tool visibility, MCP integration, better error handling
+#
+# autonomous:
+#   backend: "claude-code-sdk"  # SDK backend
+#   model: "claude-opus-4-5-20251101"
+#   max_tokens: 8192
+#   max_turns_per_task: 150  # Increased for complex tasks
+#   max_tasks_per_session: 10
+#   pause_between_tasks: 2  # Faster iteration
+#
+#   # OAuth token for SDK authentication
+#   oauth_token_env: "CLAUDE_CODE_OAUTH_TOKEN"
+#
+#   # Linear API key (for MCP integration)
+#   linear_api_key_env: "LINEAR_API_KEY"
+#
+#   # Project directory (absolute path recommended)
+#   project_dir: "/path/to/your/project"
+#
+#   # Logging (DEBUG recommended for SDK to see tool usage)
+#   log_level: "DEBUG"
+#   log_file: ".ai-agents/logs/autonomous_sdk.log"
+#
+# CRITICAL: The SDK runner automatically configures allowed_tools
+# You don't need to specify this in the config - it's handled in runner_sdk.py
+# See SDK_TROUBLESHOOTING.md for details
 
 # Execution Control
 # -----------------

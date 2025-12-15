@@ -328,6 +328,43 @@ Testing:
 [How to verify the fix works]
 ```
 
+### Task Completion (Autonomous Execution)
+
+**CRITICAL**: When working in autonomous execution mode (e.g., with the autonomous runner), you MUST explicitly state "TASK COMPLETE" in your final message when you finish a task. The system will not detect completion otherwise.
+
+**Required Format:**
+
+```
+TASK COMPLETE
+
+## Changes Made
+- [Specific change 1]
+- [Specific change 2]
+- [Specific change 3]
+
+## Files Modified
+- path/to/file1.ext
+- path/to/file2.ext
+
+## Test Results
+[pytest output or verification results]
+
+## Notes
+[Any important information about the implementation]
+```
+
+**Important:**
+- The phrase "TASK COMPLETE" (case-insensitive) MUST appear in your response
+- Include specific details about what was changed
+- List all modified files
+- Include test results to verify the work
+- Add any notes about edge cases, assumptions, or future considerations
+
+**Without the completion marker:**
+- The autonomous runner will mark the task as failed
+- Dependent tasks will be blocked
+- Your work will need to be re-attempted
+
 ---
 
 ## Continuous Improvement
